@@ -1,0 +1,7 @@
+# Vercel Ignore
+.env
+.env.local
+.env.production
+node_modules
+uploads
+.git
