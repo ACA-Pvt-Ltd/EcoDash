@@ -780,7 +780,7 @@ createdAt, updatedAt
 ```
 
 ### CollectorPurchaseRequest (Collector bids on user offer)
-```
+
 _id, collectorId, offerId, userId
 offeredPrice (LKR)
 proposedPickupTime
