@@ -10,10 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { COLORS } from '@/constants/config';
+import LocationPicker from '@/components/LocationPicker';
 
 type Role = 'user' | 'collector' | 'vendor';
 
@@ -61,6 +63,7 @@ export default function RegisterScreen() {
     website: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -74,6 +77,26 @@ export default function RegisterScreen() {
         : [...current, wasteType];
       return { ...prev, acceptedWasteTypes: updated };
     });
+  };
+
+  const handleLocationSelect = (latitude: string, longitude: string, address: string) => {
+    if (latitude && longitude) {
+      setFormData(prev => ({
+        ...prev,
+        latitude,
+        longitude,
+      }));
+      // Extract street and city from address if possible
+      const addressParts = address.split(',').map(part => part.trim());
+      if (addressParts.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          street: addressParts[0] || prev.street,
+          city: addressParts[1] || prev.city,
+        }));
+      }
+    }
+    setShowLocationPicker(false);
   };
 
   const handleRegister = async () => {
@@ -345,27 +368,27 @@ export default function RegisterScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Location Coordinates *</Text>
-                <View style={styles.row}>
-                  <TextInput
-                    style={[styles.input, { flex: 1, marginRight: 8 }]}
-                    placeholder="Latitude (e.g., 6.9271)"
-                    placeholderTextColor="#9CA3AF"
-                    value={formData.latitude}
-                    onChangeText={(value) => handleChange('latitude', value)}
-                    keyboardType="decimal-pad"
-                  />
-                  <TextInput
-                    style={[styles.input, { flex: 1, marginLeft: 8 }]}
-                    placeholder="Longitude (e.g., 79.8612)"
-                    placeholderTextColor="#9CA3AF"
-                    value={formData.longitude}
-                    onChangeText={(value) => handleChange('longitude', value)}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
+                <Text style={styles.label}>Collection Location *</Text>
+                <TouchableOpacity
+                  style={styles.mapButton}
+                  onPress={() => setShowLocationPicker(true)}
+                >
+                  <Text style={styles.mapButtonIcon}>🗺️</Text>
+                  <View style={styles.mapButtonContent}>
+                    <Text style={styles.mapButtonTitle}>
+                      {formData.latitude && formData.longitude
+                        ? 'Location Selected'
+                        : 'Select Location on Map'}
+                    </Text>
+                    {formData.latitude && formData.longitude && (
+                      <Text style={styles.mapButtonCoords}>
+                        📍 {parseFloat(formData.latitude).toFixed(4)}, {parseFloat(formData.longitude).toFixed(4)}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
                 <Text style={styles.helpText}>
-                  💡 Tip: Use Google Maps to find your exact coordinates
+                  💡 Tap to open map and select your exact collection point location
                 </Text>
               </View>
 
@@ -472,6 +495,18 @@ export default function RegisterScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showLocationPicker}
+        animationType="slide"
+        onRequestClose={() => setShowLocationPicker(false)}
+      >
+        <LocationPicker
+          onLocationSelect={handleLocationSelect}
+          initialLat={formData.latitude}
+          initialLng={formData.longitude}
+        />
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -622,5 +657,32 @@ const styles = StyleSheet.create({
   businessTypeTextActive: {
     color: COLORS.white,
     fontWeight: 'bold',
+  },
+  mapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.light,
+    borderRadius: 10,
+    padding: 16,
+    backgroundColor: '#F0F7FF',
+    gap: 12,
+  },
+  mapButtonIcon: {
+    fontSize: 32,
+  },
+  mapButtonContent: {
+    flex: 1,
+  },
+  mapButtonTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.dark,
+    marginBottom: 4,
+  },
+  mapButtonCoords: {
+    fontSize: 12,
+    color: COLORS.gray,
+    fontFamily: 'monospace',
   },
 });
