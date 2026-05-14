@@ -34,8 +34,19 @@ setInterval(async () => {
 }, 30000);
 
 // Middleware
+const ALLOWED_ORIGINS = [
+  'https://eco-dash-rekj.vercel.app',   // deployed admin portal
+  'http://localhost:3000',               // local admin portal dev
+  'http://localhost:8081',               // Expo mobile dev
+];
+
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (React Native, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS blocked: ${origin}`));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));

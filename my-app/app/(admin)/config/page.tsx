@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { Settings, Tag, Plus, Trash2, Check } from 'lucide-react';
 
-interface WasteCategory {
-  label: string;
-  value: string;
-  icon: string;
-  color: string;
-}
+interface WasteCategory { label: string; value: string; icon: string; color: string; }
 
 interface AppConfig {
   waste_categories?: WasteCategory[];
@@ -20,78 +16,84 @@ interface AppConfig {
 }
 
 const DEFAULT_CATEGORIES: WasteCategory[] = [
-  { label: 'E-waste', value: 'E-waste', icon: '📱', color: '#FF6B6B' },
-  { label: 'Plastic', value: 'Plastic', icon: '♻️', color: '#4ECDC4' },
-  { label: 'Polythene', value: 'Polythene', icon: '🛍️', color: '#45B7D1' },
-  { label: 'Glass', value: 'Glass', icon: '🍾', color: '#96CEB4' },
-  { label: 'Paper', value: 'Paper', icon: '📄', color: '#FFEAA7' },
-  { label: 'Metal', value: 'Metal', icon: '🔩', color: '#DFE6E9' },
-  { label: 'Organic', value: 'Organic', icon: '🌱', color: '#00B894' },
+  { label: 'E-waste',   value: 'E-waste',   icon: '', color: '#ef4444' },
+  { label: 'Plastic',   value: 'Plastic',   icon: '', color: '#3b82f6' },
+  { label: 'Polythene', value: 'Polythene', icon: '', color: '#8b5cf6' },
+  { label: 'Glass',     value: 'Glass',     icon: '', color: '#06b6d4' },
+  { label: 'Paper',     value: 'Paper',     icon: '', color: '#f59e0b' },
+  { label: 'Metal',     value: 'Metal',     icon: '', color: '#6b7280' },
+  { label: 'Organic',   value: 'Organic',   icon: '', color: '#10b981' },
 ];
 
-function SaveButton({
-  onClick,
-  saving,
-  saved,
-}: {
-  onClick: () => void;
-  saving: boolean;
-  saved: boolean;
-}) {
+function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-gray-100 px-6 py-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 text-gray-500">{icon}</div>
+        <h2 className="text-[14px] font-semibold text-gray-800">{title}</h2>
+      </div>
+      <div className="px-6 py-5">{children}</div>
+    </div>
+  );
+}
+
+function SaveBtn({ onClick, saving, saved }: { onClick: () => void; saving: boolean; saved: boolean }) {
   return (
     <button
-      onClick={onClick}
-      disabled={saving}
-      className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-60 transition-colors flex items-center gap-2"
+      onClick={onClick} disabled={saving}
+      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all disabled:opacity-60 ${saved ? 'bg-emerald-50 text-emerald-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
     >
-      {saving ? (
-        <>
-          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          Saving...
-        </>
-      ) : saved ? (
-        '✓ Saved'
-      ) : (
-        'Save'
-      )}
+      {saving ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> : saved ? <Check size={13} /> : null}
+      {saving ? 'Saving...' : saved ? 'Saved' : 'Save Changes'}
     </button>
   );
 }
 
+function NumField({ label, desc, value, onChange, min, max, unit }: { label: string; desc?: string; value: number; onChange: (v: number) => void; min?: number; max?: number; unit?: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-3 border-b border-gray-50 last:border-0">
+      <div>
+        <div className="text-[13px] font-medium text-gray-800">{label}</div>
+        {desc && <div className="text-[11px] text-gray-400 mt-0.5">{desc}</div>}
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="number" min={min} max={max} value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          className="w-24 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[13px] font-semibold text-right focus:border-emerald-400 focus:bg-white focus:outline-none"
+        />
+        {unit && <span className="text-[12px] text-gray-400 w-8">{unit}</span>}
+      </div>
+    </div>
+  );
+}
+
+function Spinner() {
+  return <div className="flex justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-600 border-t-transparent" /></div>;
+}
+
 export default function ConfigPage() {
-  const [config, setConfig] = useState<AppConfig>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  // Collection settings state
-  const [radius, setRadius] = useState(10);
+  const [error, setError]     = useState('');
+  const [radius,    setRadius]    = useState(10);
   const [maxImages, setMaxImages] = useState(5);
-  const [maxVideo, setMaxVideo] = useState(60);
-  const [savingRadius, setSavingRadius] = useState(false);
-  const [savedRadius, setSavedRadius] = useState(false);
-  const [savingImages, setSavingImages] = useState(false);
-  const [savedImages, setSavedImages] = useState(false);
-  const [savingVideo, setSavingVideo] = useState(false);
-  const [savedVideo, setSavedVideo] = useState(false);
-
-  // Categories state
+  const [maxVideo,  setMaxVideo]  = useState(60);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [savedSettings,  setSavedSettings]  = useState(false);
   const [categories, setCategories] = useState<WasteCategory[]>([]);
-  const [newCat, setNewCat] = useState<WasteCategory>({ label: '', value: '', icon: '', color: '#4ECDC4' });
+  const [newCat, setNewCat]         = useState<WasteCategory>({ label: '', value: '', icon: '', color: '#10b981' });
   const [savingCats, setSavingCats] = useState(false);
-  const [savedCats, setSavedCats] = useState(false);
-
-  // Points/cash state
+  const [savedCats,  setSavedCats]  = useState(false);
   const [pointsPerKg, setPointsPerKg] = useState<Record<string, number>>({});
-  const [cashPerKg, setCashPerKg] = useState<Record<string, number>>({});
+  const [cashPerKg,   setCashPerKg]   = useState<Record<string, number>>({});
   const [savingRates, setSavingRates] = useState(false);
-  const [savedRates, setSavedRates] = useState(false);
+  const [savedRates,  setSavedRates]  = useState(false);
 
   useEffect(() => {
     apiFetch('/admin/config')
       .then(res => {
         if (res.success) {
           const d: AppConfig = res.data;
-          setConfig(d);
           setRadius(d.collector_search_radius_km ?? 10);
           setMaxImages(d.max_offer_images ?? 5);
           setMaxVideo(d.max_offer_video_seconds ?? 60);
@@ -107,65 +109,24 @@ export default function ConfigPage() {
   }, []);
 
   async function saveConfig(key: string, value: unknown) {
-    const res = await apiFetch('/admin/config', {
-      method: 'PUT',
-      body: JSON.stringify({ key, value }),
-    });
+    const res = await apiFetch('/admin/config', { method: 'PUT', body: JSON.stringify({ key, value }) });
     if (!res.success) throw new Error(res.message || 'Save failed');
   }
 
-  async function handleSaveRadius() {
-    setSavingRadius(true);
+  async function handleSaveSettings() {
+    setSavingSettings(true);
     try {
       await saveConfig('collector_search_radius_km', Number(radius));
-      setSavedRadius(true);
-      setTimeout(() => setSavedRadius(false), 2000);
-    } finally {
-      setSavingRadius(false);
-    }
-  }
-
-  async function handleSaveImages() {
-    setSavingImages(true);
-    try {
       await saveConfig('max_offer_images', Number(maxImages));
-      setSavedImages(true);
-      setTimeout(() => setSavedImages(false), 2000);
-    } finally {
-      setSavingImages(false);
-    }
-  }
-
-  async function handleSaveVideo() {
-    setSavingVideo(true);
-    try {
       await saveConfig('max_offer_video_seconds', Number(maxVideo));
-      setSavedVideo(true);
-      setTimeout(() => setSavedVideo(false), 2000);
-    } finally {
-      setSavingVideo(false);
-    }
+      setSavedSettings(true); setTimeout(() => setSavedSettings(false), 2000);
+    } finally { setSavingSettings(false); }
   }
 
   async function handleSaveCategories() {
     setSavingCats(true);
-    try {
-      await saveConfig('waste_categories', categories);
-      setSavedCats(true);
-      setTimeout(() => setSavedCats(false), 2000);
-    } finally {
-      setSavingCats(false);
-    }
-  }
-
-  function addCategory() {
-    if (!newCat.label || !newCat.value || !newCat.icon) return;
-    setCategories(prev => [...prev, { ...newCat }]);
-    setNewCat({ label: '', value: '', icon: '', color: '#4ECDC4' });
-  }
-
-  function removeCategory(index: number) {
-    setCategories(prev => prev.filter((_, i) => i !== index));
+    try { await saveConfig('waste_categories', categories); setSavedCats(true); setTimeout(() => setSavedCats(false), 2000); }
+    finally { setSavingCats(false); }
   }
 
   async function handleSaveRates() {
@@ -173,247 +134,137 @@ export default function ConfigPage() {
     try {
       await saveConfig('points_per_kg', pointsPerKg);
       await saveConfig('cash_per_kg', cashPerKg);
-      setSavedRates(true);
-      setTimeout(() => setSavedRates(false), 2000);
-    } finally {
-      setSavingRates(false);
-    }
+      setSavedRates(true); setTimeout(() => setSavedRates(false), 2000);
+    } finally { setSavingRates(false); }
   }
+
+  if (loading) return <Spinner />;
+  if (error)   return <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>;
 
   const wasteTypes = categories.map(c => c.value);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-lg bg-red-50 border border-red-200 px-6 py-4 text-red-700">{error}</div>
-    );
-  }
-
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-5 max-w-3xl">
 
-      {/* Section 1: Collection Settings */}
-      <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">Collection Settings</h2>
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Collector Search Radius (km)
-              </label>
-              <input
-                type="number"
-                min={1}
-                value={radius}
-                onChange={e => setRadius(Number(e.target.value))}
-                className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
-              />
-            </div>
-            <div className="pt-5">
-              <SaveButton onClick={handleSaveRadius} saving={savingRadius} saved={savedRadius} />
-            </div>
-          </div>
+      {/* Collection Settings */}
+      <SectionCard title="Collection Settings" icon={<Settings size={15} />}>
+        <NumField label="Collector Search Radius" desc="Max distance collectors appear in search" value={radius}    onChange={setRadius}    min={1}      unit="km"  />
+        <NumField label="Max Offer Images"         desc="Images allowed per offer listing"        value={maxImages} onChange={setMaxImages} min={1} max={20} unit="img" />
+        <NumField label="Max Video Duration"       desc="Max length for offer video attachments"  value={maxVideo}  onChange={setMaxVideo}  min={10}     unit="sec" />
+        <div className="pt-4 flex justify-end"><SaveBtn onClick={handleSaveSettings} saving={savingSettings} saved={savedSettings} /></div>
+      </SectionCard>
 
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Max Offer Images
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={maxImages}
-                onChange={e => setMaxImages(Number(e.target.value))}
-                className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
-              />
-            </div>
-            <div className="pt-5">
-              <SaveButton onClick={handleSaveImages} saving={savingImages} saved={savedImages} />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Max Video Duration (seconds)
-              </label>
-              <input
-                type="number"
-                min={10}
-                value={maxVideo}
-                onChange={e => setMaxVideo(Number(e.target.value))}
-                className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
-              />
-            </div>
-            <div className="pt-5">
-              <SaveButton onClick={handleSaveVideo} saving={savingVideo} saved={savedVideo} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Section 2: Waste Categories */}
-      <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-gray-800">Waste Categories</h2>
-          <SaveButton onClick={handleSaveCategories} saving={savingCats} saved={savedCats} />
-        </div>
-
-        <table className="min-w-full divide-y divide-gray-200 mb-5">
-          <thead className="bg-gray-50">
-            <tr>
-              {['Icon', 'Label', 'Value', 'Color', 'Action'].map(h => (
-                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {categories.map((cat, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-3 py-2 text-lg">{cat.icon}</td>
-                <td className="px-3 py-2 text-sm text-gray-800">{cat.label}</td>
-                <td className="px-3 py-2 text-sm text-gray-600 font-mono">{cat.value}</td>
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-5 w-5 rounded border border-gray-200"
-                      style={{ backgroundColor: cat.color }}
-                    />
-                    <span className="text-xs text-gray-500 font-mono">{cat.color}</span>
-                  </div>
-                </td>
-                <td className="px-3 py-2">
-                  <button
-                    onClick={() => removeCategory(i)}
-                    className="rounded px-2.5 py-1 text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                  >
-                    Delete
-                  </button>
-                </td>
+      {/* Waste Categories */}
+      <SectionCard title="Waste Categories" icon={<Tag size={15} />}>
+        <div className="mb-4 overflow-hidden rounded-lg border border-gray-100">
+          <table className="min-w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                {['Color', 'Icon', 'Label', 'Value Key', ''].map((h, i) => (
+                  <th key={i} className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {categories.map((cat, i) => (
+                <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                  <td className="px-4 py-2.5"><div className="h-4 w-4 rounded-full border border-gray-200" style={{ backgroundColor: cat.color }} /></td>
+                  <td className="px-4 py-2.5 text-base">{cat.icon}</td>
+                  <td className="px-4 py-2.5 text-[13px] font-medium text-gray-800">{cat.label}</td>
+                  <td className="px-4 py-2.5"><code className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">{cat.value}</code></td>
+                  <td className="px-4 py-2.5">
+                    <button onClick={() => setCategories(prev => prev.filter((_, j) => j !== i))} className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+                      <Trash2 size={13} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        {/* Add category form */}
-        <div className="rounded-lg border border-dashed border-gray-300 p-4">
-          <p className="text-sm font-medium text-gray-700 mb-3">Add New Category</p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Icon (emoji)</label>
-              <input
-                type="text"
-                placeholder="🗑️"
-                value={newCat.icon}
-                onChange={e => setNewCat(p => ({ ...p, icon: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-green-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Label</label>
-              <input
-                type="text"
-                placeholder="Cardboard"
-                value={newCat.label}
-                onChange={e => setNewCat(p => ({ ...p, label: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-green-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Value (key)</label>
-              <input
-                type="text"
-                placeholder="Cardboard"
-                value={newCat.value}
-                onChange={e => setNewCat(p => ({ ...p, value: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-green-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Color</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={newCat.color}
-                  onChange={e => setNewCat(p => ({ ...p, color: e.target.value }))}
-                  className="h-8 w-8 rounded cursor-pointer border border-gray-300"
+        <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 p-4 mb-4">
+          <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest mb-3">Add New Category</div>
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: 'Icon (emoji)', placeholder: '♻', key: 'icon' as const },
+              { label: 'Label',        placeholder: 'Cardboard', key: 'label' as const },
+              { label: 'Value key',    placeholder: 'Cardboard', key: 'value' as const },
+            ].map(({ label, placeholder, key }) => (
+              <div key={key}>
+                <label className="block text-[11px] text-gray-500 mb-1">{label}</label>
+                <input type="text" placeholder={placeholder} value={newCat[key]}
+                  onChange={e => setNewCat(p => ({ ...p, [key]: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[13px] focus:border-emerald-400 focus:outline-none"
                 />
-                <span className="text-xs text-gray-500 font-mono">{newCat.color}</span>
+              </div>
+            ))}
+            <div>
+              <label className="block text-[11px] text-gray-500 mb-1">Color</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={newCat.color} onChange={e => setNewCat(p => ({ ...p, color: e.target.value }))}
+                  className="h-8 w-8 cursor-pointer rounded-md border border-gray-200 bg-white p-0.5" />
+                <span className="text-[11px] font-mono text-gray-500">{newCat.color}</span>
               </div>
             </div>
           </div>
           <button
-            onClick={addCategory}
-            className="mt-3 rounded-lg border border-green-600 px-4 py-1.5 text-sm font-medium text-green-600 hover:bg-green-50 transition-colors"
+            onClick={() => {
+              if (!newCat.label || !newCat.value) return;
+              setCategories(prev => [...prev, { ...newCat }]);
+              setNewCat({ label: '', value: '', icon: '', color: '#10b981' });
+            }}
+            disabled={!newCat.label || !newCat.value}
+            className="mt-3 flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[12px] font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            + Add Category
+            <Plus size={12} /> Add Category
           </button>
         </div>
-      </div>
+        <div className="flex justify-end"><SaveBtn onClick={handleSaveCategories} saving={savingCats} saved={savedCats} /></div>
+      </SectionCard>
 
-      {/* Section 3: Points & Cash Per KG */}
-      <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-gray-800">Points & Cash Per KG</h2>
-          <SaveButton onClick={handleSaveRates} saving={savingRates} saved={savedRates} />
+      {/* Points & Cash per KG */}
+      <SectionCard title="Points & Cash Per KG" icon={<Settings size={15} />}>
+        <div className="mb-4 overflow-hidden rounded-lg border border-gray-100">
+          <table className="min-w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                {['Waste Type', 'Points / kg', 'Cash LKR / kg'].map((h, i) => (
+                  <th key={i} className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {wasteTypes.map(type => {
+                const cat = categories.find(c => c.value === type);
+                return (
+                  <tr key={type} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cat?.color ?? '#64748b' }} />
+                        <span className="text-[13px] font-medium text-gray-800">{cat?.icon && <span className="mr-1">{cat.icon}</span>}{type}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <input type="number" min={0} value={pointsPerKg[type] ?? 0}
+                        onChange={e => setPointsPerKg(prev => ({ ...prev, [type]: Number(e.target.value) }))}
+                        className="w-24 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[13px] font-semibold text-right focus:border-emerald-400 focus:bg-white focus:outline-none"
+                      />
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <input type="number" min={0} value={cashPerKg[type] ?? 0}
+                        onChange={e => setCashPerKg(prev => ({ ...prev, [type]: Number(e.target.value) }))}
+                        className="w-24 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[13px] font-semibold text-right focus:border-emerald-400 focus:bg-white focus:outline-none"
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              {['Waste Type', 'Points / kg', 'Cash LKR / kg'].map(h => (
-                <th key={h} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {wasteTypes.map(type => {
-              const catObj = categories.find(c => c.value === type);
-              return (
-                <tr key={type} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 text-sm font-medium text-gray-800">
-                    {catObj?.icon ?? ''} {type}
-                  </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      value={pointsPerKg[type] ?? 0}
-                      onChange={e =>
-                        setPointsPerKg(prev => ({ ...prev, [type]: Number(e.target.value) }))
-                      }
-                      className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-green-500 focus:outline-none"
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      value={cashPerKg[type] ?? 0}
-                      onChange={e =>
-                        setCashPerKg(prev => ({ ...prev, [type]: Number(e.target.value) }))
-                      }
-                      className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-green-500 focus:outline-none"
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+        <div className="flex justify-end"><SaveBtn onClick={handleSaveRates} saving={savingRates} saved={savedRates} /></div>
+      </SectionCard>
     </div>
   );
 }
