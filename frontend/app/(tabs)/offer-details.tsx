@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,52 +7,60 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Image,
+  FlatList,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL, ENDPOINTS } from '@/constants/config';
+import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
 import { router, useLocalSearchParams } from 'expo-router';
+
+const { width } = Dimensions.get('window');
+const CAROUSEL_HEIGHT = 280;
 
 interface PurchaseRequest {
   _id: string;
-  collector: {
-    _id: string;
-    name: string;
-    phone?: string;
-    email?: string;
-    businessName?: string;
-  };
+  collector: { _id: string; name: string; phone?: string; email?: string; businessName?: string };
   proposedPrice: number;
   offeredPrice: number;
   proposedPickupTime?: string;
   message?: string;
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
   createdAt: string;
-  respondedAt?: string;
-  completedAt?: string;
   finalPayment?: number;
 }
 
 interface UserWasteOffer {
   _id: string;
   wasteType: string;
-  quantity: {
-    value: number;
-    unit: string;
-  };
+  quantity: { value: number; unit: string };
   description?: string;
   expectedPrice: number;
-  location: {
-    address: string;
-    city: string;
-  };
+  location: { address: string; city: string };
   status: 'available' | 'pending' | 'sold' | 'cancelled';
   availableFrom: string;
   availableUntil?: string;
   pickupPreference?: string;
+  images?: string[];
+  video?: string;
   createdAt: string;
 }
+
+const STATUS_COLOR: Record<string, string> = {
+  available: '#2ECC71',
+  pending: '#F39C12',
+  sold: '#3498DB',
+  cancelled: '#E74C3C',
+};
+
+const REQUEST_STATUS_COLOR: Record<string, string> = {
+  pending: '#F39C12',
+  accepted: '#2ECC71',
+  rejected: '#E74C3C',
+  completed: '#3498DB',
+};
 
 export default function OfferDetailsScreen() {
   const { token } = useAuth();
@@ -60,76 +68,50 @@ export default function OfferDetailsScreen() {
   const [offer, setOffer] = useState<UserWasteOffer | null>(null);
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const mediaItems: { uri: string; isVideo: boolean }[] = [];
+  if (offer?.images) offer.images.forEach(uri => mediaItems.push({ uri, isVideo: false }));
+  if (offer?.video) mediaItems.push({ uri: offer.video, isVideo: true });
+
+  const wt = WASTE_TYPES.find(t => t.value === offer?.wasteType);
 
   const fetchOfferDetails = async () => {
     try {
-      const response = await fetch(`${API_URL}${ENDPOINTS.USER_OFFERS}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+      const res = await fetch(`${API_URL}${ENDPOINTS.USER_OFFERS}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      const data = await response.json();
-      
+      const data = await res.json();
       if (data.success) {
-        const foundOffer = data.data?.find((o: UserWasteOffer) => o._id === id);
-        if (foundOffer) {
-          setOffer(foundOffer);
-        } else {
-          Alert.alert('Error', 'Offer not found');
-          router.back();
-        }
-      } else {
-        Alert.alert('Error', data.message || 'Failed to fetch offer details');
+        const found = data.data?.find((o: UserWasteOffer) => o._id === id);
+        if (found) setOffer(found);
+        else { Alert.alert('Error', 'Offer not found'); router.push('/(tabs)/offers' as any); }
       }
-    } catch (error: any) {
-      console.error('Error fetching offer details:', error);
-      Alert.alert('Error', 'Failed to load offer details. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    } catch { Alert.alert('Error', 'Failed to load offer details.'); }
+    finally { setLoading(false); }
   };
 
   const fetchPurchaseRequests = async () => {
     try {
-      const response = await fetch(`${API_URL}${ENDPOINTS.USER_PURCHASE_REQUESTS}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+      const res = await fetch(`${API_URL}${ENDPOINTS.USER_PURCHASE_REQUESTS}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      const data = await response.json();
-      
-      console.log('Purchase requests response:', JSON.stringify(data, null, 2));
-      
+      const data = await res.json();
       if (data.success) {
-        // Filter requests for this specific offer
-        const offerRequests = data.data?.filter((req: any) => {
-          const offerId = req.userOffer?._id || req.userOffer;
-          return offerId === id;
-        }) || [];
-        
-        console.log('Filtered requests for offer:', id, offerRequests);
-        setRequests(offerRequests);
+        const filtered = data.data?.filter((r: any) => (r.userOffer?._id || r.userOffer) === id) || [];
+        setRequests(filtered);
       }
-    } catch (error: any) {
-      console.error('Error fetching purchase requests:', error);
-    }
+    } catch { /* silent */ }
   };
 
   useEffect(() => {
-    if (id) {
-      console.log('Loading offer details for ID:', id);
-      fetchOfferDetails();
-      fetchPurchaseRequests();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (id) { fetchOfferDetails(); fetchPurchaseRequests(); }
   }, [id]);
 
-  const handleRespondToRequest = async (requestId: string, action: 'accepted' | 'rejected') => {
+  const handleRespond = (requestId: string, action: 'accepted' | 'rejected') => {
     Alert.alert(
       action === 'accepted' ? 'Accept Request' : 'Reject Request',
-      `Are you sure you want to ${action === 'accepted' ? 'accept' : 'reject'} this purchase request?`,
+      `Are you sure you want to ${action === 'accepted' ? 'accept' : 'reject'} this request?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -137,357 +119,217 @@ export default function OfferDetailsScreen() {
           style: action === 'accepted' ? 'default' : 'destructive',
           onPress: async () => {
             try {
-              const response = await fetch(
-                `${API_URL}${ENDPOINTS.USER_RESPOND_REQUEST(requestId)}`,
-                {
-                  method: 'PUT',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                  },
-                  body: JSON.stringify({ status: action }),
-                }
-              );
-
-              const data = await response.json();
-
+              const res = await fetch(`${API_URL}${ENDPOINTS.USER_RESPOND_REQUEST(requestId)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ status: action }),
+              });
+              const data = await res.json();
               if (data.success) {
-                Alert.alert(
-                  'Success', 
-                  action === 'accepted' 
-                    ? 'Request accepted! The collector will contact you for pickup.' 
-                    : 'Request rejected successfully'
-                );
+                Alert.alert('Success', action === 'accepted' ? 'Request accepted!' : 'Request rejected');
                 fetchOfferDetails();
                 fetchPurchaseRequests();
-              } else {
-                Alert.alert('Error', data.message || `Failed to ${action === 'accepted' ? 'accept' : 'reject'} request`);
-              }
-            } catch (error: any) {
-              console.error(`Error ${action}ing request:`, error);
-              Alert.alert('Error', `Failed to ${action === 'accepted' ? 'accept' : 'reject'} request. Please try again.`);
-            }
+              } else Alert.alert('Error', data.message);
+            } catch { Alert.alert('Error', 'Action failed.'); }
           },
         },
       ]
     );
   };
 
-  const deleteOffer = async () => {
-    Alert.alert(
-      'Delete Offer',
-      'Are you sure you want to delete this offer?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const response = await fetch(
-                `${API_URL}${ENDPOINTS.USER_DELETE_OFFER(id)}`,
-                {
-                  method: 'DELETE',
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                  },
-                }
-              );
-
-              const data = await response.json();
-
-              if (data.success) {
-                Alert.alert('Success', 'Offer deleted successfully', [
-                  { text: 'OK', onPress: () => router.back() },
-                ]);
-              } else {
-                Alert.alert('Error', data.message || 'Failed to delete offer');
-              }
-            } catch (error: any) {
-              console.error('Error deleting offer:', error);
-              Alert.alert('Error', 'Failed to delete offer. Please try again.');
-            }
-          },
+  const deleteOffer = () => {
+    Alert.alert('Delete Offer', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          try {
+            const res = await fetch(`${API_URL}${ENDPOINTS.USER_DELETE_OFFER(id)}`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (data.success) Alert.alert('Success', 'Offer deleted', [{ text: 'OK', onPress: () => router.push('/(tabs)/offers' as any) }]);
+            else Alert.alert('Error', data.message);
+          } catch { Alert.alert('Error', 'Failed to delete offer.'); }
         },
-      ]
-    );
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available':
-        return '#2ECC71';
-      case 'pending':
-        return '#F39C12';
-      case 'sold':
-        return '#3498DB';
-      case 'cancelled':
-        return '#95A5A6';
-      default:
-        return '#7F8C8D';
-    }
-  };
-
-  const getRequestStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return '#F39C12';
-      case 'accepted':
-        return '#2ECC71';
-      case 'rejected':
-        return '#E74C3C';
-      case 'completed':
-        return '#3498DB';
-      default:
-        return '#7F8C8D';
-    }
+      },
+    ]);
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#2C3E50" />
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.navBar}>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/offers' as any)}>
+            <Ionicons name="chevron-back" size={26} color="#2C3E50" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Offer Details</Text>
-          <View style={{ width: 24 }} />
+          <Text style={styles.navTitle}>Offer Details</Text>
+          <View style={{ width: 26 }} />
         </View>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#2ECC71" />
-          <Text style={styles.loadingText}>Loading offer details...</Text>
-        </View>
+        <View style={styles.center}><ActivityIndicator size="large" color="#2ECC71" /></View>
       </SafeAreaView>
     );
   }
 
-  if (!offer) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#2C3E50" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Offer Details</Text>
-          <View style={{ width: 24 }} />
-        </View>
-        <View style={styles.emptyContainer}>
-          <Ionicons name="alert-circle-outline" size={80} color="#BDC3C7" />
-          <Text style={styles.emptyTitle}>Offer Not Found</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  if (!offer) return null;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#2C3E50" />
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* Nav bar */}
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/offers' as any)}>
+          <Ionicons name="chevron-back" size={26} color="#2ECC71" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Offer Details</Text>
-        {offer.status === 'available' && (
-          <TouchableOpacity onPress={deleteOffer}>
-            <Ionicons name="trash-outline" size={24} color="#E74C3C" />
-          </TouchableOpacity>
-        )}
-        {offer.status !== 'available' && <View style={{ width: 24 }} />}
+        <Text style={styles.navTitle} numberOfLines={1}>{offer.wasteType}</Text>
+        {offer.status === 'available'
+          ? <TouchableOpacity onPress={deleteOffer}><Ionicons name="trash-outline" size={22} color="#E74C3C" /></TouchableOpacity>
+          : <View style={{ width: 26 }} />}
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        {/* Status Badge */}
-        <View style={styles.section}>
-          <View style={[styles.statusBanner, { backgroundColor: getStatusColor(offer.status) }]}>
-            <Text style={styles.statusBannerText}>{offer.status.toUpperCase()}</Text>
-          </View>
-        </View>
-
-        {/* Waste Details */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Waste Details</Text>
-          <View style={styles.card}>
-            <View style={styles.detailRow}>
-              <Ionicons name="trash-bin-outline" size={20} color="#2ECC71" />
-              <Text style={styles.detailLabel}>Type:</Text>
-              <Text style={styles.detailValue}>{offer.wasteType}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="scale-outline" size={20} color="#2ECC71" />
-              <Text style={styles.detailLabel}>Quantity:</Text>
-              <Text style={styles.detailValue}>
-                {offer.quantity.value} {offer.quantity.unit}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="cash-outline" size={20} color="#2ECC71" />
-              <Text style={styles.detailLabel}>Expected Price:</Text>
-              <Text style={styles.detailValue}>LKR {offer.expectedPrice}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Description */}
-        {offer.description && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Description</Text>
-            <View style={styles.card}>
-              <Text style={styles.descriptionText}>{offer.description}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Location */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pickup Location</Text>
-          <View style={styles.card}>
-            <View style={styles.detailRow}>
-              <Ionicons name="location-outline" size={20} color="#2ECC71" />
-              <Text style={styles.detailLabel}>Address:</Text>
-              <Text style={styles.detailValue}>{offer.location.address}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="location-outline" size={20} color="#2ECC71" />
-              <Text style={styles.detailLabel}>City:</Text>
-              <Text style={styles.detailValue}>{offer.location.city}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Availability */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Availability</Text>
-          <View style={styles.card}>
-            <View style={styles.detailRow}>
-              <Ionicons name="calendar-outline" size={20} color="#2ECC71" />
-              <Text style={styles.detailLabel}>From:</Text>
-              <Text style={styles.detailValue}>
-                {new Date(offer.availableFrom).toLocaleString()}
-              </Text>
-            </View>
-            {offer.availableUntil && (
-              <View style={styles.detailRow}>
-                <Ionicons name="calendar-outline" size={20} color="#2ECC71" />
-                <Text style={styles.detailLabel}>Until:</Text>
-                <Text style={styles.detailValue}>
-                  {new Date(offer.availableUntil).toLocaleString()}
-                </Text>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Image Carousel */}
+        <View style={styles.carouselWrap}>
+          {mediaItems.length > 0 ? (
+            <>
+              <FlatList
+                data={mediaItems}
+                keyExtractor={(_, i) => String(i)}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={e => {
+                  setActiveSlide(Math.round(e.nativeEvent.contentOffset.x / width));
+                }}
+                renderItem={({ item }) => (
+                  <View style={styles.slide}>
+                    <Image source={{ uri: item.uri }} style={styles.slideImage} />
+                    {item.isVideo && (
+                      <View style={styles.videoOverlay}>
+                        <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.9)" />
+                      </View>
+                    )}
+                  </View>
+                )}
+              />
+              {/* Page counter */}
+              <View style={styles.pageBadge}>
+                <Text style={styles.pageText}>{activeSlide + 1}/{mediaItems.length}</Text>
               </View>
-            )}
-            {offer.pickupPreference && (
-              <View style={styles.detailRow}>
-                <Ionicons name="time-outline" size={20} color="#2ECC71" />
-                <Text style={styles.detailLabel}>Preference:</Text>
-                <Text style={styles.detailValue}>{offer.pickupPreference}</Text>
-              </View>
-            )}
+            </>
+          ) : (
+            <View style={[styles.slide, styles.carouselPlaceholder, { backgroundColor: (wt?.color || '#95A5A6') + '15' }]}>
+              <Text style={{ fontSize: 80 }}>{wt?.icon || '♻️'}</Text>
+            </View>
+          )}
+          {/* Status badge overlay */}
+          <View style={[styles.statusOverlay, { backgroundColor: STATUS_COLOR[offer.status] || '#95A5A6' }]}>
+            <Text style={styles.statusOverlayText}>{offer.status.toUpperCase()}</Text>
           </View>
+        </View>
+
+        {/* Price + Title */}
+        <View style={styles.priceSection}>
+          <Text style={styles.priceText}>LKR {offer.expectedPrice.toLocaleString()}</Text>
+          <Text style={styles.offerTitle}>{offer.wasteType}</Text>
+          {offer.description && (
+            <Text style={styles.descText}>{offer.description}</Text>
+          )}
+        </View>
+
+        {/* Metadata rows */}
+        <View style={styles.metaCard}>
+          <MetaRow label="Quantity" value={`${offer.quantity.value} ${offer.quantity.unit}`} />
+          <MetaRow label="Pickup time" value={offer.pickupPreference || '—'} />
+          <MetaRow label="Available from" value={new Date(offer.availableFrom).toLocaleDateString()} />
+          {offer.availableUntil && (
+            <MetaRow label="Available until" value={new Date(offer.availableUntil).toLocaleDateString()} last={!offer.location} />
+          )}
+          <MetaRow label="Address" value={offer.location.address} />
+          <MetaRow label="City" value={offer.location.city} last />
         </View>
 
         {/* Purchase Requests */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Purchase Requests ({requests.length})
-          </Text>
+          <Text style={styles.sectionTitle}>Purchase Requests ({requests.length})</Text>
           {requests.length === 0 ? (
-            <View style={styles.card}>
-              <Text style={styles.noRequestsText}>
+            <View style={styles.emptyRequests}>
+              <Text style={styles.emptyRequestsText}>
                 No purchase requests yet. Collectors will see your offer and can send requests.
               </Text>
             </View>
           ) : (
-            requests.map((request) => (
-              <View key={request._id} style={styles.requestCard}>
-                <View style={styles.requestHeader}>
+            requests.map(req => (
+              <View key={req._id} style={styles.reqCard}>
+                <View style={styles.reqHeader}>
                   <View>
-                    <Text style={styles.collectorName}>{request.collector?.name || 'Unknown Collector'}</Text>
-                    {request.collector?.phone && (
-                      <Text style={styles.collectorPhone}>{request.collector.phone}</Text>
-                    )}
+                    <Text style={styles.reqCollectorName}>{req.collector?.name || 'Unknown Collector'}</Text>
+                    {req.collector?.phone && <Text style={styles.reqCollectorPhone}>{req.collector.phone}</Text>}
                   </View>
-                  <View
-                    style={[
-                      styles.requestStatusBadge,
-                      { backgroundColor: getRequestStatusColor(request.status) },
-                    ]}
+                  <View style={[styles.reqStatusBadge, { backgroundColor: REQUEST_STATUS_COLOR[req.status] || '#95A5A6' }]}>
+                    <Text style={styles.reqStatusText}>{req.status.toUpperCase()}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.reqMeta}>
+                  <MetaRow label="Offered Price" value={`LKR ${req.proposedPrice || req.offeredPrice}`} />
+                  {req.proposedPickupTime && (
+                    <MetaRow label="Pickup Time" value={new Date(req.proposedPickupTime).toLocaleDateString()} />
+                  )}
+                  {req.status === 'completed' && req.finalPayment && (
+                    <MetaRow label="Final Payment" value={`LKR ${req.finalPayment}`} last />
+                  )}
+                </View>
+
+                {req.message && (
+                  <View style={styles.reqMessage}>
+                    <Text style={styles.reqMessageLabel}>Message</Text>
+                    <Text style={styles.reqMessageText}>{req.message}</Text>
+                  </View>
+                )}
+
+                {req.status === 'pending' && (
+                  <View style={styles.reqActions}>
+                    <TouchableOpacity style={styles.acceptBtn} onPress={() => handleRespond(req._id, 'accepted')}>
+                      <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                      <Text style={styles.actionBtnText}>Accept</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.rejectBtn} onPress={() => handleRespond(req._id, 'rejected')}>
+                      <Ionicons name="close-circle" size={18} color="#fff" />
+                      <Text style={styles.actionBtnText}>Reject</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {req.status === 'pending' && (
+                  <TouchableOpacity
+                    style={styles.chatBtn}
+                    onPress={() => router.push({
+                      pathname: '/(tabs)/chat',
+                      params: {
+                        collectorName: req.collector?.name || 'Collector',
+                        requestId: req._id,
+                      },
+                    } as any)}
                   >
-                    <Text style={styles.requestStatusText}>{request.status.toUpperCase()}</Text>
-                  </View>
-                </View>
+                    <Ionicons name="chatbubble-ellipses-outline" size={16} color={COLORS.primary} />
+                    <Text style={styles.chatBtnText}>Chat with Collector</Text>
+                  </TouchableOpacity>
+                )}
 
-                <View style={styles.requestDetails}>
-                  <View style={styles.requestDetailRow}>
-                    <Ionicons name="cash-outline" size={18} color="#7F8C8D" />
-                    <Text style={styles.requestDetailLabel}>Offered Price:</Text>
-                    <Text style={styles.requestDetailValue}>LKR {request.proposedPrice || request.offeredPrice}</Text>
-                  </View>
-                  {request.proposedPickupTime && (
-                    <View style={styles.requestDetailRow}>
-                      <Ionicons name="calendar-outline" size={18} color="#7F8C8D" />
-                      <Text style={styles.requestDetailLabel}>Pickup Time:</Text>
-                      <Text style={styles.requestDetailValue}>
-                        {new Date(request.proposedPickupTime).toLocaleDateString()}
-                      </Text>
-                    </View>
-                  )}
-                  {request.status === 'completed' && request.finalPayment && (
-                    <View style={styles.requestDetailRow}>
-                      <Ionicons name="checkmark-circle" size={18} color="#2ECC71" />
-                      <Text style={styles.requestDetailLabel}>Final Payment:</Text>
-                      <Text style={[styles.requestDetailValue, { color: '#2ECC71', fontWeight: 'bold' }]}>
-                        LKR {request.finalPayment}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {request.message && (
-                  <View style={styles.messageContainer}>
-                    <Text style={styles.messageLabel}>Message:</Text>
-                    <Text style={styles.messageText}>{request.message}</Text>
+                {req.status === 'accepted' && (
+                  <View style={styles.bannerGreen}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27AE60" />
+                    <Text style={styles.bannerText}>Accepted — waiting for collector to complete pickup</Text>
                   </View>
                 )}
 
-                {request.status === 'pending' && (
-                  <View style={styles.requestActions}>
-                    <TouchableOpacity
-                      style={styles.acceptButton}
-                      onPress={() => handleRespondToRequest(request._id, 'accepted')}
-                    >
-                      <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                      <Text style={styles.acceptButtonText}>Accept</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.rejectButton}
-                      onPress={() => handleRespondToRequest(request._id, 'rejected')}
-                    >
-                      <Ionicons name="close-circle" size={20} color="#fff" />
-                      <Text style={styles.rejectButtonText}>Reject</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {request.status === 'accepted' && (
-                  <View style={styles.acceptedBanner}>
-                    <Ionicons name="checkmark-circle" size={24} color="#2ECC71" />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.acceptedTitle}>Request Accepted!</Text>
-                      <Text style={styles.acceptedText}>
-                        Waiting for collector to complete pickup and payment.
-                      </Text>
-                    </View>
-                  </View>
-                )}
-
-                {request.status === 'completed' && (
-                  <View style={styles.completedBanner}>
-                    <Ionicons name="trophy" size={24} color="#F39C12" />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.completedTitle}>Transaction Completed!</Text>
-                      <Text style={styles.completedText}>
-                        You received LKR {request.finalPayment || request.proposedPrice} and earned points!
-                      </Text>
-                    </View>
+                {req.status === 'completed' && (
+                  <View style={styles.bannerGold}>
+                    <Ionicons name="trophy" size={20} color="#D68910" />
+                    <Text style={[styles.bannerText, { color: '#D68910' }]}>
+                      Completed — you received LKR {req.finalPayment || req.proposedPrice}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -495,266 +337,113 @@ export default function OfferDetailsScreen() {
           )}
         </View>
 
-        <View style={styles.bottomPadding} />
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+function MetaRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+  return (
+    <>
+      <View style={metaStyles.row}>
+        <Text style={metaStyles.label}>{label}</Text>
+        <Text style={metaStyles.value}>{value}</Text>
+      </View>
+      {!last && <View style={metaStyles.divider} />}
+    </>
+  );
+}
+
+const metaStyles = StyleSheet.create({
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 13, paddingHorizontal: 16 },
+  label: { fontSize: 14, color: '#2C3E50', fontWeight: '500' },
+  value: { fontSize: 14, color: '#7F8C8D', textAlign: 'right', flex: 1, marginLeft: 12 },
+  divider: { height: 1, backgroundColor: '#F0F0F0', marginHorizontal: 16 },
+});
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F6FA',
-  },
-  header: {
+  safe: { flex: 1, backgroundColor: '#fff' },
+  navBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
+    borderBottomColor: '#F0F0F0',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
+  navTitle: { fontSize: 16, fontWeight: '700', color: '#2C3E50', flex: 1, textAlign: 'center', marginHorizontal: 8 },
+  scroll: { flex: 1, backgroundColor: '#F5F6FA' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  carouselWrap: { position: 'relative', height: CAROUSEL_HEIGHT, backgroundColor: '#1a1a1a' },
+  slide: { width, height: CAROUSEL_HEIGHT },
+  slideImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  carouselPlaceholder: { justifyContent: 'center', alignItems: 'center' },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#7F8C8D',
+  pageBadge: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
+  pageText: { fontSize: 12, color: '#fff', fontWeight: '600' },
+  statusOverlay: {
+    position: 'absolute',
+    top: 14,
+    left: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    marginTop: 16,
-  },
-  section: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    marginBottom: 12,
-  },
-  statusBanner: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  statusBannerText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#7F8C8D',
-    marginLeft: 4,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#2C3E50',
-    flex: 1,
-  },
-  descriptionText: {
-    fontSize: 14,
-    color: '#2C3E50',
-    lineHeight: 20,
-  },
-  noRequestsText: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    textAlign: 'center',
-    padding: 20,
-    lineHeight: 20,
-  },
-  requestCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  requestHeader: {
+  statusOverlayText: { fontSize: 11, fontWeight: '800', color: '#fff', textTransform: 'uppercase' },
+  priceSection: { backgroundColor: '#fff', padding: 20, marginBottom: 8 },
+  priceText: { fontSize: 28, fontWeight: '800', color: '#2ECC71', marginBottom: 4 },
+  offerTitle: { fontSize: 20, fontWeight: '700', color: '#2C3E50', marginBottom: 8 },
+  descText: { fontSize: 14, color: '#7F8C8D', lineHeight: 21 },
+  metaCard: { backgroundColor: '#fff', marginBottom: 8 },
+  section: { paddingHorizontal: 16, marginBottom: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#2C3E50', marginBottom: 12, marginTop: 8 },
+  emptyRequests: { backgroundColor: '#fff', borderRadius: 12, padding: 20 },
+  emptyRequestsText: { fontSize: 13, color: '#7F8C8D', textAlign: 'center', lineHeight: 20 },
+  reqCard: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 12, overflow: 'hidden' },
+  reqHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    padding: 16,
+    paddingBottom: 0,
   },
-  collectorName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2C3E50',
+  reqCollectorName: { fontSize: 15, fontWeight: '700', color: '#2C3E50' },
+  reqCollectorPhone: { fontSize: 13, color: '#7F8C8D', marginTop: 2 },
+  reqStatusBadge: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10 },
+  reqStatusText: { fontSize: 10, fontWeight: '800', color: '#fff', textTransform: 'uppercase' },
+  reqMeta: { borderTopWidth: 1, borderTopColor: '#F0F0F0', marginTop: 12 },
+  reqMessage: { backgroundColor: '#F5F6FA', marginHorizontal: 16, marginBottom: 12, padding: 12, borderRadius: 8 },
+  reqMessageLabel: { fontSize: 11, fontWeight: '700', color: '#7F8C8D', marginBottom: 4 },
+  reqMessageText: { fontSize: 13, color: '#2C3E50', lineHeight: 18 },
+  reqActions: { flexDirection: 'row', gap: 10, padding: 16, paddingTop: 4 },
+  acceptBtn: { flex: 1, flexDirection: 'row', gap: 6, backgroundColor: '#2ECC71', paddingVertical: 12, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  rejectBtn: { flex: 1, flexDirection: 'row', gap: 6, backgroundColor: '#E74C3C', paddingVertical: 12, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  actionBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  bannerGreen: { flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: '#D5F4E6', margin: 16, marginTop: 4, padding: 12, borderRadius: 8 },
+  bannerGold: { flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: '#FEF5E7', margin: 16, marginTop: 4, padding: 12, borderRadius: 8 },
+  bannerText: { fontSize: 13, color: '#27AE60', flex: 1, lineHeight: 18 },
+  chatBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
+    marginHorizontal: 16, marginBottom: 14, paddingVertical: 11,
+    borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '10',
   },
-  collectorPhone: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    marginTop: 2,
-  },
-  requestStatusBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
-  requestStatusText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  requestDetails: {
-    marginBottom: 12,
-  },
-  requestDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
-  },
-  requestDetailLabel: {
-    fontSize: 13,
-    color: '#7F8C8D',
-    marginLeft: 4,
-  },
-  requestDetailValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#2C3E50',
-    flex: 1,
-  },
-  messageContainer: {
-    backgroundColor: '#F5F6FA',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-  messageLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#7F8C8D',
-    marginBottom: 4,
-  },
-  messageText: {
-    fontSize: 14,
-    color: '#2C3E50',
-    lineHeight: 20,
-  },
-  requestActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  acceptButton: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#2ECC71',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  acceptButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  rejectButton: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#E74C3C',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  rejectButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  acceptedBanner: {
-    flexDirection: 'row',
-    backgroundColor: '#D5F4E6',
-    borderRadius: 8,
-    padding: 12,
-    gap: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  acceptedTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2ECC71',
-    marginBottom: 4,
-  },
-  acceptedText: {
-    fontSize: 13,
-    color: '#27AE60',
-    lineHeight: 18,
-  },
-  completedBanner: {
-    flexDirection: 'row',
-    backgroundColor: '#FEF5E7',
-    borderRadius: 8,
-    padding: 12,
-    gap: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  completedTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#F39C12',
-    marginBottom: 4,
-  },
-  completedText: {
-    fontSize: 13,
-    color: '#D68910',
-    lineHeight: 18,
-  },
-  bottomPadding: {
-    height: 40,
-  },
+  chatBtnText: { fontSize: 14, fontWeight: '700', color: COLORS.primary },
 });

@@ -65,7 +65,7 @@ export default function CreatePurchaseRequestScreen() {
           [
             {
               text: 'OK',
-              onPress: () => router.back(),
+              onPress: () => router.push('/(collector-tabs)/user-offers' as any),
             },
           ]
         );
@@ -84,7 +84,7 @@ export default function CreatePurchaseRequestScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.push('/(collector-tabs)/user-offers' as any)}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Purchase Request</Text>

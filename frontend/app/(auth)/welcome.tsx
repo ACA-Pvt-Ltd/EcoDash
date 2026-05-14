@@ -89,10 +89,10 @@ export default function WelcomeScreen() {
                                 
                             </View>
 
-                            <Text style={styles.partnersTitle1}>DEVELOPED BY</Text>
+                            {/* <Text style={styles.partnersTitle1}>DEVELOPED BY</Text> */}
 
                             {/* Leo Club UOM - Premium Card (BOTTOM) */}
-                            <View style={styles.partnerCard}>
+                            {/* <View style={styles.partnerCard}>
                                 <View style={styles.logoFrame}>
                                     <Image
                                         source={require('@/assets/images/leo.png')}
@@ -101,7 +101,7 @@ export default function WelcomeScreen() {
                                         />
                                     </View>
                                     <Text style={styles.partnerName}>Leo Club of University of Moratuwa</Text>
-                                </View>
+                                </View> */}
                             </View>
                         </View>
                     </View>

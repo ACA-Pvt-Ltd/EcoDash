@@ -53,7 +53,10 @@ const wasteOfferSchema = new mongoose.Schema(
     },
     images: [{
       type: String
-    }]
+    }],
+    video: {
+      type: String
+    }
   },
   {
     timestamps: true

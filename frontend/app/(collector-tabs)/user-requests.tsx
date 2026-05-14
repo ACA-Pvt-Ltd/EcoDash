@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
 
@@ -337,13 +338,28 @@ export default function MyPurchaseRequestsScreen() {
 
         {/* Actions based on status */}
         {request.status === 'pending' && (
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => cancelRequest(request._id)}
-          >
-            <Ionicons name="close-circle" size={20} color="#E74C3C" />
-            <Text style={styles.cancelButtonText}>Cancel Request</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity
+              style={styles.chatButton}
+              onPress={() => router.push({
+                pathname: '/(collector-tabs)/chat',
+                params: {
+                  userName: request.user.name,
+                  requestId: request._id,
+                },
+              } as any)}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={18} color={COLORS.primary} />
+              <Text style={styles.chatButtonText}>Chat with User</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => cancelRequest(request._id)}
+            >
+              <Ionicons name="close-circle" size={20} color="#E74C3C" />
+              <Text style={styles.cancelButtonText}>Cancel Request</Text>
+            </TouchableOpacity>
+          </>
         )}
 
         {request.status === 'accepted' && (
@@ -743,6 +759,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  chatButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 7,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '10',
+    paddingVertical: 11,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  chatButtonText: {
+    color: COLORS.primary,
+    fontWeight: '700',
+    fontSize: 14,
+  },
   cancelButton: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -751,7 +784,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FADBD8',
     paddingVertical: 12,
     borderRadius: 8,
-    marginTop: 12,
+    marginTop: 10,
   },
   cancelButtonText: {
     color: '#E74C3C',

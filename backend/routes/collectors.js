@@ -25,6 +25,7 @@ const {
   cancelUserPurchaseRequest
 } = require('../controllers/collectorController');
 const { protect, authorize } = require('../middleware/auth');
+const { offerMediaUpload } = require('../middleware/upload');
 
 // All routes are protected and only for collectors
 router.use(protect);
@@ -41,7 +42,7 @@ router.get('/vendors', getVendors);
 router.put('/profile', updateProfile);
 
 // Waste Offers (Collector to Vendor)
-router.post('/offers', createOffer);
+router.post('/offers', offerMediaUpload, createOffer);
 router.get('/offers', getOffers);
 router.put('/offers/:id', updateOffer);
 router.delete('/offers/:id', deleteOffer);

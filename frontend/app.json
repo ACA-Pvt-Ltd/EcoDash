@@ -53,6 +53,12 @@
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermissions": "Allow EcoDash to access your location for getting directions"
+        }
       ]
     ],
     "experiments": {

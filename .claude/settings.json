@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('cloudinary'\\); require\\('multer-storage-cloudinary'\\); console.log\\('OK'\\)\")",
+      "Bash(npx expo *)"
+    ]
+  }
+}

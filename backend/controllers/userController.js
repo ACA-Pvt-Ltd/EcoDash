@@ -483,7 +483,27 @@ exports.getMyBadges = async (req, res) => {
 // @access  Private (User)
 exports.createWasteOffer = async (req, res) => {
   try {
-    const { wasteType, quantity, description, expectedPrice, location, pickupPreference, availableFrom, availableUntil } = req.body;
+    const body = req.body;
+
+    // Support both JSON body (no files) and multipart/form-data (with files)
+    const wasteType = body.wasteType;
+    const quantity = typeof body.quantity === 'string'
+      ? JSON.parse(body.quantity)
+      : body.quantity || { value: body.quantityValue, unit: body.quantityUnit || 'kg' };
+    const location = typeof body.location === 'string'
+      ? JSON.parse(body.location)
+      : body.location || { address: body.locationAddress, city: body.locationCity };
+    const description = body.description;
+    const expectedPrice = body.expectedPrice;
+    const pickupPreference = body.pickupPreference;
+    const availableFrom = body.availableFrom;
+    const availableUntil = body.availableUntil;
+
+    // Extract Cloudinary URLs from uploaded files
+    const imageFiles = req.files?.images || [];
+    const videoFile = req.files?.video?.[0] || null;
+    const imageUrls = imageFiles.map(f => f.path);
+    const videoUrl = videoFile ? videoFile.path : null;
 
     // Validate inputs
     if (!wasteType) {
@@ -516,6 +536,8 @@ exports.createWasteOffer = async (req, res) => {
       },
       description: description || '',
       expectedPrice: expectedPrice || 0,
+      images: imageUrls,
+      video: videoUrl,
       location,
       pickupPreference: pickupPreference || '',
       availableFrom: availableFrom || new Date(),

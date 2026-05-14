@@ -589,6 +589,12 @@ exports.createOffer = async (req, res) => {
       });
     }
 
+    // Extract Cloudinary URLs from uploaded files
+    const imageFiles = req.files?.images || [];
+    const videoFile = req.files?.video?.[0] || null;
+    const imageUrls = imageFiles.map(f => f.path);
+    const videoUrl = videoFile ? videoFile.path : null;
+
     const collector = await Collector.findById(req.user._id);
 
     const offer = await WasteOffer.create({
@@ -600,6 +606,8 @@ exports.createOffer = async (req, res) => {
       },
       minPricePerKg,
       description,
+      images: imageUrls,
+      video: videoUrl,
       expiresAt: expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       location: collector.location
     });

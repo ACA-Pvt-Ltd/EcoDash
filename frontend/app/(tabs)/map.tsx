@@ -9,6 +9,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
+import * as Location from 'expo-location';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS } from '@/constants/config';
 
@@ -93,6 +94,45 @@ export default function MapScreen() {
     }
   };
 
+  const handleGetDirections = async (collector: any) => {
+    try {
+      // Request location permissions
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required to get directions');
+        return;
+      }
+
+      // Get user's current location
+      const userLocation = await Location.getCurrentPositionAsync({});
+      const { latitude: userLat, longitude: userLng } = userLocation.coords;
+
+      // Collector coordinates
+      const collectorLat = collector.coordinates?.[1];
+      const collectorLng = collector.coordinates?.[0];
+
+      if (!collectorLat || !collectorLng) {
+        Alert.alert('Error', 'Collector location not available');
+        return;
+      }
+
+      // Open maps with directions
+      const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${collectorLat},${collectorLng}`;
+      
+      const canOpen = await Linking.canOpenURL(mapsUrl);
+      
+      if (canOpen) {
+        await Linking.openURL(mapsUrl);
+      } else {
+        Alert.alert('Error', 'Maps app not available on this device');
+      }
+    } catch (error) {
+      console.error('Error opening directions:', error);
+      Alert.alert('Error', 'Failed to open directions');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -168,7 +208,7 @@ export default function MapScreen() {
                 <View style={styles.cardActions}>
                   <TouchableOpacity
                     style={styles.actionButtonSecondary}
-                    onPress={() => Alert.alert('Directions', 'Opening maps...')}
+                    onPress={() => handleGetDirections(collector)}
                   >
                     <Text style={styles.actionButtonSecondaryText}>Get Directions</Text>
                   </TouchableOpacity>

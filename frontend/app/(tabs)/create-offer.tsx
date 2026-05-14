@@ -9,13 +9,22 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/AuthContext';
 import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
 import { router } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+interface MediaAsset {
+  uri: string;
+  type: 'image' | 'video';
+  name: string;
+  mimeType: string;
+}
 
 export default function CreateOfferScreen() {
   const { token } = useAuth();
@@ -29,13 +38,16 @@ export default function CreateOfferScreen() {
   const [expectedPrice, setExpectedPrice] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
-  const [pickupPreference, setPickupPreference] = useState('anytime'); // Default to 'anytime'
+  const [pickupPreference, setPickupPreference] = useState('anytime');
   const [availableFrom, setAvailableFrom] = useState(new Date());
   const [availableUntil, setAvailableUntil] = useState<Date | null>(null);
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showUntilPicker, setShowUntilPicker] = useState(false);
 
-  // Function to reset form
+  // Media state
+  const [images, setImages] = useState<MediaAsset[]>([]);
+  const [video, setVideo] = useState<MediaAsset | null>(null);
+
   const resetForm = () => {
     setWasteType('');
     setQuantity('');
@@ -47,27 +59,90 @@ export default function CreateOfferScreen() {
     setPickupPreference('anytime');
     setAvailableFrom(new Date());
     setAvailableUntil(null);
+    setImages([]);
+    setVideo(null);
+  };
+
+  const requestPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow access to your photo library.');
+      return false;
+    }
+    return true;
+  };
+
+  const pickImages = async () => {
+    if (images.length >= 5) {
+      Alert.alert('Limit Reached', 'You can add up to 5 photos.');
+      return;
+    }
+    const hasPermission = await requestPermission();
+    if (!hasPermission) return;
+
+    const remaining = 5 - images.length;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const picked: MediaAsset[] = result.assets.map(a => ({
+        uri: a.uri,
+        type: 'image',
+        name: a.fileName || `photo_${Date.now()}.jpg`,
+        mimeType: a.mimeType || 'image/jpeg',
+      }));
+      setImages(prev => [...prev, ...picked].slice(0, 5));
+    }
+  };
+
+  const pickVideo = async () => {
+    const hasPermission = await requestPermission();
+    if (!hasPermission) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsMultipleSelection: false,
+      videoMaxDuration: 60,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const a = result.assets[0];
+      setVideo({
+        uri: a.uri,
+        type: 'video',
+        name: a.fileName || `video_${Date.now()}.mp4`,
+        mimeType: a.mimeType || 'video/mp4',
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleCreateOffer = async () => {
-    // Validation
     if (!wasteType) {
       Alert.alert('Error', 'Please select a waste type');
       return;
     }
-    if (!quantity || quantity.trim() === '' || isNaN(parseFloat(quantity)) || parseFloat(quantity) <= 0) {
+    if (!quantity || isNaN(parseFloat(quantity)) || parseFloat(quantity) <= 0) {
       Alert.alert('Error', 'Please enter a valid quantity greater than 0');
       return;
     }
-    if (!expectedPrice || expectedPrice.trim() === '' || isNaN(parseFloat(expectedPrice)) || parseFloat(expectedPrice) <= 0) {
+    if (!expectedPrice || isNaN(parseFloat(expectedPrice)) || parseFloat(expectedPrice) <= 0) {
       Alert.alert('Error', 'Please enter a valid price greater than 0');
       return;
     }
-    if (!address || address.trim() === '') {
+    if (!address.trim()) {
       Alert.alert('Error', 'Please enter your address');
       return;
     }
-    if (!city || city.trim() === '') {
+    if (!city.trim()) {
       Alert.alert('Error', 'Please enter your city');
       return;
     }
@@ -75,55 +150,53 @@ export default function CreateOfferScreen() {
     setLoading(true);
 
     try {
-      const quantityValue = parseFloat(quantity);
-      const priceValue = parseFloat(expectedPrice);
+      const formData = new FormData();
+      formData.append('wasteType', wasteType);
+      formData.append('quantity', JSON.stringify({ value: parseFloat(quantity), unit }));
+      formData.append('description', description.trim());
+      formData.append('expectedPrice', String(parseFloat(expectedPrice)));
+      formData.append('location', JSON.stringify({ address: address.trim(), city: city.trim() }));
+      formData.append('pickupPreference', pickupPreference || 'anytime');
+      formData.append('availableFrom', availableFrom.toISOString());
+      if (availableUntil) {
+        formData.append('availableUntil', availableUntil.toISOString());
+      }
 
-      const offerData = {
-        wasteType,
-        quantity: {
-          value: quantityValue,
-          unit,
-        },
-        description: description.trim(),
-        expectedPrice: priceValue,
-        location: {
-          address: address.trim(),
-          city: city.trim(),
-        },
-        pickupPreference: pickupPreference || 'anytime', // Always send a valid value
-        availableFrom: availableFrom.toISOString(),
-        ...(availableUntil && { availableUntil: availableUntil.toISOString() }),
-      };
+      images.forEach(img => {
+        formData.append('images', {
+          uri: img.uri,
+          name: img.name,
+          type: img.mimeType,
+        } as any);
+      });
 
-      console.log('Sending offer data:', JSON.stringify(offerData, null, 2));
+      if (video) {
+        formData.append('video', {
+          uri: video.uri,
+          name: video.name,
+          type: video.mimeType,
+        } as any);
+      }
 
       const response = await fetch(`${API_URL}${ENDPOINTS.USER_CREATE_OFFER}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
-        body: JSON.stringify(offerData),
+        body: formData,
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // Reset form fields
         resetForm();
-        
         Alert.alert(
           'Success',
           'Your waste offer has been created successfully!',
           [
-            {
-              text: 'View Offers',
-              onPress: () => router.back(),
-            },
-            {
-              text: 'Create Another',
-              style: 'cancel',
-            },
+            { text: 'View Offers', onPress: () => router.push('/(tabs)/offers' as any) },
+            { text: 'Create Another', style: 'cancel' },
           ]
         );
       } else {
@@ -138,10 +211,10 @@ export default function CreateOfferScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/offers' as any)}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Waste Offer</Text>
@@ -245,6 +318,55 @@ export default function CreateOfferScreen() {
           />
         </View>
 
+        {/* Photos */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            Photos{' '}
+            <Text style={styles.hint}>({images.length}/5)</Text>
+          </Text>
+          <View style={styles.mediaGrid}>
+            {images.map((img, index) => (
+              <View key={index} style={styles.mediaThumbnail}>
+                <Image source={{ uri: img.uri }} style={styles.thumbnailImage} />
+                <TouchableOpacity
+                  style={styles.removeMediaBtn}
+                  onPress={() => removeImage(index)}
+                >
+                  <Ionicons name="close-circle" size={20} color="#E74C3C" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            {images.length < 5 && (
+              <TouchableOpacity style={styles.addMediaBtn} onPress={pickImages}>
+                <Ionicons name="camera-outline" size={28} color="#7F8C8D" />
+                <Text style={styles.addMediaText}>Add Photo</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Video */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            Video{' '}
+            <Text style={styles.hint}>(1 max · up to 60s)</Text>
+          </Text>
+          {video ? (
+            <View style={styles.videoRow}>
+              <Ionicons name="videocam" size={24} color="#2ECC71" />
+              <Text style={styles.videoName} numberOfLines={1}>{video.name}</Text>
+              <TouchableOpacity onPress={() => setVideo(null)}>
+                <Ionicons name="close-circle" size={22} color="#E74C3C" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.addVideoBtn} onPress={pickVideo}>
+              <Ionicons name="videocam-outline" size={28} color="#7F8C8D" />
+              <Text style={styles.addMediaText}>Add Video</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Location */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -273,7 +395,7 @@ export default function CreateOfferScreen() {
         {/* Availability */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Availability</Text>
-          
+
           <Text style={styles.label}>Available From</Text>
           <TouchableOpacity
             style={styles.dateButton}
@@ -281,7 +403,8 @@ export default function CreateOfferScreen() {
           >
             <Ionicons name="calendar-outline" size={20} color="#2ECC71" />
             <Text style={styles.dateText}>
-              {availableFrom.toLocaleDateString()} {availableFrom.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {availableFrom.toLocaleDateString()}{' '}
+              {availableFrom.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </TouchableOpacity>
 
@@ -387,11 +510,16 @@ export default function CreateOfferScreen() {
 
         <View style={styles.bottomPadding} />
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#2ECC71',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F5F6FA',
@@ -427,6 +555,11 @@ const styles = StyleSheet.create({
   },
   required: {
     color: '#E74C3C',
+  },
+  hint: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#7F8C8D',
   },
   wasteTypeGrid: {
     flexDirection: 'row',
@@ -503,6 +636,74 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
     paddingTop: 12,
+  },
+  mediaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  mediaThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  removeMediaBtn: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+  },
+  addMediaBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#E8E8E8',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F6FA',
+  },
+  addVideoBtn: {
+    height: 70,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#E8E8E8',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F6FA',
+    gap: 4,
+  },
+  addMediaText: {
+    fontSize: 11,
+    color: '#7F8C8D',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  videoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F0FFF4',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2ECC71',
+  },
+  videoName: {
+    flex: 1,
+    fontSize: 13,
+    color: '#2C3E50',
+    fontWeight: '500',
   },
   label: {
     fontSize: 14,

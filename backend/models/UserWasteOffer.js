@@ -29,6 +29,9 @@ const userWasteOfferSchema = new mongoose.Schema({
   images: [{
     type: String
   }],
+  video: {
+    type: String
+  },
   expectedPrice: {
     type: Number,
     default: 0
