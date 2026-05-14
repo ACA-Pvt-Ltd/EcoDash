@@ -60,7 +60,7 @@ function NumField({ label, desc, value, onChange, min, max, unit }: { label: str
         <input
           type="number" min={min} max={max} value={value}
           onChange={e => onChange(Number(e.target.value))}
-          className="w-24 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[13px] font-semibold text-right focus:border-emerald-400 focus:bg-white focus:outline-none"
+          className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px]  text-gray-600 text-right focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
         />
         {unit && <span className="text-[12px] text-gray-400 w-8">{unit}</span>}
       </div>
@@ -195,7 +195,7 @@ export default function ConfigPage() {
                 <label className="block text-[11px] text-gray-500 mb-1">{label}</label>
                 <input type="text" placeholder={placeholder} value={newCat[key]}
                   onChange={e => setNewCat(p => ({ ...p, [key]: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[13px] focus:border-emerald-400 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[13px] text-gray-600 focus:border-emerald-400 focus:outline-none"
                 />
               </div>
             ))}
@@ -248,13 +248,13 @@ export default function ConfigPage() {
                     <td className="px-4 py-2.5">
                       <input type="number" min={0} value={pointsPerKg[type] ?? 0}
                         onChange={e => setPointsPerKg(prev => ({ ...prev, [type]: Number(e.target.value) }))}
-                        className="w-24 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[13px] font-semibold text-right focus:border-emerald-400 focus:bg-white focus:outline-none"
+                        className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px] text-gray-600 text-right focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                       />
                     </td>
                     <td className="px-4 py-2.5">
                       <input type="number" min={0} value={cashPerKg[type] ?? 0}
                         onChange={e => setCashPerKg(prev => ({ ...prev, [type]: Number(e.target.value) }))}
-                        className="w-24 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[13px] font-semibold text-right focus:border-emerald-400 focus:bg-white focus:outline-none"
+                        className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px] text-gray-600 text-right focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                       />
                     </td>
                   </tr>
