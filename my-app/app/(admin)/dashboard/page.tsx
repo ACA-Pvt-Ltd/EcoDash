@@ -85,7 +85,7 @@ export default function DashboardPage() {
   const maxWaste     = Math.max(...wasteEntries.map(([, v]) => v), 1);
 
   return (
-    <div className="space-y-5 max-w-6xl">
+    <div className="space-y-5">
 
       {/* Primary stats */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">

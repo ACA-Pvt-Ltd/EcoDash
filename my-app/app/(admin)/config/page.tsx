@@ -144,7 +144,7 @@ export default function ConfigPage() {
   const wasteTypes = categories.map(c => c.value);
 
   return (
-    <div className="space-y-5 max-w-3xl">
+    <div className="space-y-5">
 
       {/* Collection Settings */}
       <SectionCard title="Collection Settings" icon={<Settings size={15} />}>

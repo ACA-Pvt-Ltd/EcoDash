@@ -53,7 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Leaf size={15} className="text-emerald-400" />
           </div>
           <div>
-            <div className="text-[15px] font-semibold tracking-tight text-white">EcoDash</div>
+            <div className="text-[16px] font-semibold tracking-tight text-white">EcoDash</div>
             <div className="text-[10px] font-medium tracking-widest text-white/40 uppercase">Admin Portal</div>
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={href}
                 href={href}
-                className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all ${
+                className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[16px] font-medium transition-all ${
                   isActive
                     ? 'bg-white/[0.09] text-white'
                     : 'text-white/50 hover:bg-white/[0.05] hover:text-white/80'
@@ -75,7 +75,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {isActive && (
                   <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-emerald-400" />
                 )}
-                <Icon size={15} className={isActive ? 'text-emerald-400' : ''} />
+                <Icon size={20} className={isActive ? 'text-emerald-400' : ''} />
                 {label}
               </Link>
             );
@@ -84,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Admin info + logout */}
         <div className="px-3 pb-4 pt-3 border-t border-white/[0.07] space-y-1">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg">
+          {/* <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg">
             <div
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
               style={{ backgroundColor: '#1e5c34', color: '#6ee7a0' }}
@@ -95,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="truncate text-[12px] font-semibold text-white/80">{adminName}</div>
               <div className="text-[10px] text-white/35">Super Admin</div>
             </div>
-          </div>
+          </div> */}
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-white/50 transition-all hover:bg-white/[0.05] hover:text-white/80"

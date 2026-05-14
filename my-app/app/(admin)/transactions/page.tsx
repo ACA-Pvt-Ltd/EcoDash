@@ -54,7 +54,7 @@ export default function TransactionsPage() {
   const pendingCount  = transactions.filter(t => t.status === 'pending').length;
 
   return (
-    <div className="space-y-5 max-w-6xl">
+    <div className="space-y-5">
 
       {/* Summary strip */}
       <div className="flex flex-wrap gap-4">
