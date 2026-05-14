@@ -3,7 +3,11 @@
     "allow": [
       "Bash(npm install *)",
       "Bash(node -e \"require\\('cloudinary'\\); require\\('multer-storage-cloudinary'\\); console.log\\('OK'\\)\")",
-      "Bash(npx expo *)"
+      "Bash(npx expo *)",
+      "Bash(pnpm exec *)",
+      "Bash(node -e ' *)",
+      "Bash(git -C /Users/avishka/Documents/EcoDash worktree list)",
+      "Bash(npx tsc *)"
     ]
   }
 }

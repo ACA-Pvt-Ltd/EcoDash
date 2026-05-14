@@ -6,6 +6,7 @@ const WasteTransaction = require('../models/WasteTransaction');
 const Reward = require('../models/Reward');
 const Challenge = require('../models/Challenge');
 const Badge = require('../models/Badge');
+const AppConfig = require('../models/AppConfig');
 const { generateToken } = require('../config/jwt');
 
 // @desc    Get admin dashboard overview
@@ -645,6 +646,159 @@ exports.getAnalytics = async (req, res) => {
         topCollectors,
         topUsers
       }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// ===== APP CONFIGURATION =====
+
+const DEFAULT_CONFIGS = [
+  {
+    key: 'waste_categories',
+    value: [
+      { label: 'E-waste', value: 'E-waste', icon: '📱', color: '#FF6B6B' },
+      { label: 'Plastic', value: 'Plastic', icon: '♻️', color: '#4ECDC4' },
+      { label: 'Polythene', value: 'Polythene', icon: '🛍️', color: '#45B7D1' },
+      { label: 'Glass', value: 'Glass', icon: '🍾', color: '#96CEB4' },
+      { label: 'Paper', value: 'Paper', icon: '📄', color: '#FFEAA7' },
+      { label: 'Metal', value: 'Metal', icon: '🔩', color: '#DFE6E9' },
+      { label: 'Organic', value: 'Organic', icon: '🌱', color: '#00B894' }
+    ],
+    description: 'List of waste categories accepted by the platform',
+    category: 'categories'
+  },
+  {
+    key: 'collector_search_radius_km',
+    value: 10,
+    description: 'Default radius in km to search for collectors',
+    category: 'collection'
+  },
+  {
+    key: 'points_per_kg',
+    value: {
+      'E-waste': 50,
+      'Plastic': 10,
+      'Polythene': 10,
+      'Glass': 5,
+      'Paper': 5,
+      'Metal': 20,
+      'Organic': 3
+    },
+    description: 'Points awarded per kg for each waste type',
+    category: 'rewards'
+  },
+  {
+    key: 'cash_per_kg',
+    value: {
+      'E-waste': 25,
+      'Plastic': 5,
+      'Polythene': 5,
+      'Glass': 2,
+      'Paper': 2,
+      'Metal': 10,
+      'Organic': 1
+    },
+    description: 'Cash (LKR) awarded per kg for each waste type',
+    category: 'rewards'
+  },
+  {
+    key: 'max_offer_images',
+    value: 5,
+    description: 'Maximum number of images allowed per offer',
+    category: 'offers'
+  },
+  {
+    key: 'max_offer_video_seconds',
+    value: 60,
+    description: 'Maximum video duration in seconds per offer',
+    category: 'offers'
+  }
+];
+
+// @desc    Get all app configuration
+// @route   GET /api/admin/config
+// @access  Private (Admin)
+exports.getAppConfig = async (req, res) => {
+  try {
+    let configs = await AppConfig.find();
+
+    // Seed defaults if empty
+    if (configs.length === 0) {
+      await AppConfig.insertMany(DEFAULT_CONFIGS);
+      configs = await AppConfig.find();
+    }
+
+    const configObj = {};
+    configs.forEach(c => {
+      configObj[c.key] = c.value;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: configObj
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Update a single app config key
+// @route   PUT /api/admin/config
+// @access  Private (Admin)
+exports.updateAppConfig = async (req, res) => {
+  try {
+    const { key, value } = req.body;
+
+    if (!key || value === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'key and value are required'
+      });
+    }
+
+    const config = await AppConfig.findOneAndUpdate(
+      { key },
+      { key, value },
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: config
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// ===== TRANSACTIONS =====
+
+// @desc    Get all waste transactions
+// @route   GET /api/admin/transactions
+// @access  Private (Admin)
+exports.getTransactions = async (req, res) => {
+  try {
+    const transactions = await WasteTransaction.find()
+      .populate('user', 'name email')
+      .populate('collector', 'name email')
+      .sort('-createdAt')
+      .limit(200);
+
+    res.status(200).json({
+      success: true,
+      count: transactions.length,
+      data: transactions
     });
   } catch (error) {
     res.status(500).json({

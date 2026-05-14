@@ -17,7 +17,10 @@ const {
   updateChallenge,
   createBadge,
   getBadges,
-  getAnalytics
+  getAnalytics,
+  getAppConfig,
+  updateAppConfig,
+  getTransactions
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -55,5 +58,12 @@ router.get('/badges', getBadges);
 
 // Analytics
 router.get('/analytics', getAnalytics);
+
+// App Configuration
+router.get('/config', getAppConfig);
+router.put('/config', updateAppConfig);
+
+// Transactions
+router.get('/transactions', getTransactions);
 
 module.exports = router;
