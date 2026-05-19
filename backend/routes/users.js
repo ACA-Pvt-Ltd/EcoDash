@@ -15,7 +15,8 @@ const {
   getMyOffers,
   getPurchaseRequests,
   respondToPurchaseRequest,
-  deleteWasteOffer
+  deleteWasteOffer,
+  rateCollector
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/auth');
 const { offerMediaUpload } = require('../middleware/upload');
@@ -41,5 +42,6 @@ router.get('/offers', getMyOffers);
 router.delete('/offers/:id', deleteWasteOffer);
 router.get('/purchase-requests', getPurchaseRequests);
 router.put('/purchase-requests/:id', respondToPurchaseRequest);
+router.post('/rate-collector', rateCollector);
 
 module.exports = router;

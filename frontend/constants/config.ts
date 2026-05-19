@@ -1,8 +1,8 @@
 // API Configuration
 // For local development (backend running on port 3000):
-// export const API_URL = 'http://192.168.43.215:3000/api';
+export const API_URL = 'http://192.168.43.215:3000/api';
 // For deployed backend on Vercel, use:
-export const API_URL = 'https://waste-management-app-five.vercel.app/api';
+// export const API_URL = 'https://waste-management-app-five.vercel.app/api';
 
 // API Endpoints
 export const ENDPOINTS = {
@@ -46,6 +46,9 @@ export const ENDPOINTS = {
   COLLECTOR_OFFERS: '/collectors/offers', // Manage waste offers
   COLLECTOR_CREATE_OFFER: '/collectors/offers', // Create new offer
   COLLECTOR_PURCHASE_REQUESTS: '/collectors/purchase-requests', // View purchase requests
+  COLLECTOR_ACCEPT_PURCHASE: (id: string) => `/collectors/purchase-requests/${id}/accept`,
+  COLLECTOR_REJECT_PURCHASE: (id: string) => `/collectors/purchase-requests/${id}/reject`,
+  COLLECTOR_COMPLETE_PURCHASE: (id: string) => `/collectors/purchase-requests/${id}/complete`,
   
   // Collector User Waste Marketplace (Browse and buy from users)
   COLLECTOR_USER_OFFERS: '/collectors/user-offers', // Browse user waste offers
@@ -62,6 +65,9 @@ export const ENDPOINTS = {
   VENDOR_OFFERS: '/vendors/offers', // Browse waste from collectors
   VENDOR_PURCHASE: '/vendors/purchase', // Purchase waste
   VENDOR_PURCHASES: '/vendors/purchases', // View purchase history
+  VENDOR_CANCEL_PURCHASE: (id: string) => `/vendors/purchases/${id}/cancel`,
+  USER_RATE_COLLECTOR: '/users/rate-collector',
+  COLLECTOR_RATE_VENDOR: '/collectors/rate-vendor',
   VENDOR_INVENTORY: '/vendors/inventory', // Purchased waste inventory
   VENDOR_PRICING: '/vendors/pricing', // Pricing management
   VENDOR_PROFILE: '/vendors/profile',

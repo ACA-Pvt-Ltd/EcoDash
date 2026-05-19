@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS, WASTE_TYPES } from '@/constants/config';
+import RatingModal from '@/components/RatingModal';
 
 const { width } = Dimensions.get('window');
 
@@ -42,6 +43,7 @@ interface PurchaseRequest {
   quantity: { value: number; unit: string } | number;
   totalAmount: number;
   status: string;
+  collectorRated: boolean;
   notes?: string;
   pickupDate?: string;
   createdAt: string;
@@ -49,9 +51,10 @@ interface PurchaseRequest {
 
 const STATUS_COLOR: Record<string, { bg: string; text: string; label: string }> = {
   available: { bg: '#27AE60', text: '#fff', label: 'Available' },
-  sold: { bg: '#2980B9', text: '#fff', label: 'Sold' },
-  pending: { bg: '#F39C12', text: '#fff', label: 'Pending' },
-  expired: { bg: '#95A5A6', text: '#fff', label: 'Expired' },
+  reserved:  { bg: '#F39C12', text: '#fff', label: 'Reserved' },
+  sold:      { bg: '#2980B9', text: '#fff', label: 'Sold' },
+  expired:   { bg: '#95A5A6', text: '#fff', label: 'Expired' },
+  cancelled: { bg: '#E74C3C', text: '#fff', label: 'Cancelled' },
 };
 
 const REQ_STATUS_COLOR: Record<string, { bg: string; text: string }> = {
@@ -81,6 +84,7 @@ export default function MyOfferDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
   const carouselRef = useRef<FlatList>(null);
+  const [ratingRequest, setRatingRequest] = useState<PurchaseRequest | null>(null);
 
   useEffect(() => {
     loadData();
@@ -120,7 +124,7 @@ export default function MyOfferDetailsScreen() {
         text: 'Accept',
         onPress: async () => {
           try {
-            const res: any = await api.put(`${ENDPOINTS.COLLECTOR_PURCHASE_REQUESTS}/${requestId}/accept`);
+            const res: any = await api.put(ENDPOINTS.COLLECTOR_ACCEPT_PURCHASE(requestId));
             if (res.success) {
               Alert.alert('Accepted!', 'The vendor will be notified.');
               loadData();
@@ -141,7 +145,7 @@ export default function MyOfferDetailsScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            const res: any = await api.put(`${ENDPOINTS.COLLECTOR_PURCHASE_REQUESTS}/${requestId}/reject`);
+            const res: any = await api.put(ENDPOINTS.COLLECTOR_REJECT_PURCHASE(requestId));
             if (res.success) {
               Alert.alert('Rejected', 'Request has been rejected.');
               loadData();
@@ -152,6 +156,50 @@ export default function MyOfferDetailsScreen() {
         },
       },
     ]);
+  };
+
+  const handleChat = (requestId: string, vendorName: string) => {
+    router.push({
+      pathname: '/(collector-tabs)/chat',
+      params: { requestId, userName: vendorName },
+    } as any);
+  };
+
+  const handleComplete = async (requestId: string) => {
+    Alert.alert('Mark as Complete', 'Confirm that waste has been delivered to the vendor?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Complete',
+        onPress: async () => {
+          try {
+            const res: any = await api.put(ENDPOINTS.COLLECTOR_COMPLETE_PURCHASE(requestId));
+            if (res.success) {
+              Alert.alert('Done!', 'Purchase marked as completed.');
+              loadData();
+            }
+          } catch (e: any) {
+            Alert.alert('Error', e.message || 'Failed to complete');
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleRateVendor = async (score: number, comment: string) => {
+    if (!ratingRequest) return;
+    const res: any = await api.post(ENDPOINTS.COLLECTOR_RATE_VENDOR, {
+      purchaseId: ratingRequest._id,
+      score,
+      comment,
+    });
+    if (res.success) {
+      setRatingRequest(null);
+      Alert.alert('Thanks!', 'Your rating has been submitted.');
+      loadData();
+    } else {
+      Alert.alert('Error', res.message || 'Failed to submit rating');
+      throw new Error(res.message);
+    }
   };
 
   const handleDelete = async () => {
@@ -324,6 +372,7 @@ export default function MyOfferDetailsScreen() {
                       request={req}
                       onAccept={() => handleAccept(req._id, req.pricePerUnit)}
                       onReject={() => handleReject(req._id)}
+                      onChat={() => handleChat(req._id, req.vendor?.name || 'Vendor')}
                     />
                   ))}
                 </>
@@ -332,7 +381,13 @@ export default function MyOfferDetailsScreen() {
                 <>
                   <Text style={styles.reqGroupLabel}>Other</Text>
                   {otherReqs.map(req => (
-                    <RequestCard key={req._id} request={req} />
+                    <RequestCard
+                      key={req._id}
+                      request={req}
+                      onComplete={req.status === 'accepted' ? () => handleComplete(req._id) : undefined}
+                      onChat={req.status === 'accepted' ? () => handleChat(req._id, req.vendor?.name || 'Vendor') : undefined}
+                      onRate={req.status === 'completed' && !req.collectorRated ? () => setRatingRequest(req) : undefined}
+                    />
                   ))}
                 </>
               )}
@@ -340,6 +395,13 @@ export default function MyOfferDetailsScreen() {
           )}
         </View>
       </ScrollView>
+
+      <RatingModal
+        visible={!!ratingRequest}
+        title={`Rate ${ratingRequest?.vendor?.name ?? 'Vendor'}`}
+        onClose={() => setRatingRequest(null)}
+        onSubmit={handleRateVendor}
+      />
     </SafeAreaView>
   );
 }
@@ -348,10 +410,16 @@ function RequestCard({
   request,
   onAccept,
   onReject,
+  onComplete,
+  onChat,
+  onRate,
 }: {
   request: PurchaseRequest;
   onAccept?: () => void;
   onReject?: () => void;
+  onComplete?: () => void;
+  onChat?: () => void;
+  onRate?: () => void;
 }) {
   const reqStatus = REQ_STATUS_COLOR[request.status] || REQ_STATUS_COLOR.pending;
   const qty = typeof request.quantity === 'object'
@@ -400,6 +468,12 @@ function RequestCard({
         <Text style={styles.reqNotes}>"{request.notes}"</Text>
       )}
 
+      {(request.status === 'pending' || request.status === 'accepted') && onChat && (
+        <TouchableOpacity style={styles.chatBtn} onPress={onChat}>
+          <Ionicons name="chatbubble-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.chatBtnText}>Chat with {request.vendor?.name || 'Vendor'}</Text>
+        </TouchableOpacity>
+      )}
       {request.status === 'pending' && onAccept && onReject && (
         <View style={styles.reqActions}>
           <TouchableOpacity style={styles.rejectBtn} onPress={onReject}>
@@ -410,6 +484,24 @@ function RequestCard({
             <Ionicons name="checkmark-circle" size={18} color="#fff" />
             <Text style={styles.acceptBtnText}>Accept</Text>
           </TouchableOpacity>
+        </View>
+      )}
+      {request.status === 'accepted' && onComplete && (
+        <TouchableOpacity style={styles.completeBtn} onPress={onComplete}>
+          <Ionicons name="checkmark-done-circle" size={18} color="#fff" />
+          <Text style={styles.acceptBtnText}>Mark as Delivered</Text>
+        </TouchableOpacity>
+      )}
+      {request.status === 'completed' && onRate && (
+        <TouchableOpacity style={styles.rateBtn} onPress={onRate}>
+          <Ionicons name="star" size={16} color="#fff" />
+          <Text style={styles.rateBtnText}>Rate Vendor</Text>
+        </TouchableOpacity>
+      )}
+      {request.status === 'completed' && !onRate && request.collectorRated && (
+        <View style={styles.ratedBadge}>
+          <Ionicons name="star" size={13} color="#F39C12" />
+          <Text style={styles.ratedText}>Rated</Text>
         </View>
       )}
     </View>
@@ -516,4 +608,24 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary, paddingVertical: 10, borderRadius: 8, gap: 6,
   },
   acceptBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  chatBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, borderWidth: 1.5, borderColor: COLORS.primary, borderRadius: 8,
+    paddingVertical: 9, marginBottom: 8,
+  },
+  chatBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  completeBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#2980B9', paddingVertical: 10, borderRadius: 8, gap: 6,
+  },
+  rateBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#F39C12', paddingVertical: 10, borderRadius: 8, gap: 6, marginTop: 8,
+  },
+  rateBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  ratedBadge: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 4, marginTop: 8,
+  },
+  ratedText: { fontSize: 12, color: '#F39C12', fontWeight: '600' },
 });

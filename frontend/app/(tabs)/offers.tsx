@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -44,6 +45,13 @@ const STATUS_COLOR: Record<string, string> = {
   cancelled: '#E74C3C',
 };
 
+const STATUS_SORT: Record<string, number> = {
+  available: 0,
+  pending: 1,
+  sold: 2,
+  cancelled: 3,
+};
+
 const FILTER_TABS = ['all', 'available', 'pending', 'sold'] as const;
 
 export default function OffersScreen() {
@@ -53,9 +61,7 @@ export default function OffersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<typeof FILTER_TABS[number]>('all');
 
-  useEffect(() => { fetchOffers(); }, [filter]);
-
-  const fetchOffers = async () => {
+  const fetchOffers = useCallback(async () => {
     try {
       const url = filter === 'all'
         ? `${API_URL}${ENDPOINTS.USER_OFFERS}`
@@ -70,7 +76,11 @@ export default function OffersScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [filter, token]);
+
+  useFocusEffect(
+    useCallback(() => { fetchOffers(); }, [fetchOffers])
+  );
 
   const deleteOffer = (offerId: string) => {
     Alert.alert('Delete Offer', 'Are you sure you want to delete this offer?', [
@@ -199,7 +209,7 @@ export default function OffersScreen() {
         </View>
       ) : (
         <FlatList
-          data={offers}
+          data={[...offers].sort((a, b) => (STATUS_SORT[a.status] ?? 9) - (STATUS_SORT[b.status] ?? 9))}
           keyExtractor={o => o._id}
           numColumns={2}
           columnWrapperStyle={styles.row}

@@ -588,15 +588,15 @@ exports.purchaseWaste = async (req, res) => {
         });
       }
 
-      // Mark the offer as sold (remove from available listings)
-      offer.status = 'sold';
+      // Reserve the offer so other vendors can't purchase it while pending
+      offer.status = 'reserved';
       await offer.save();
     }
 
     // Calculate total amount
     const totalAmount = quantity * pricePerUnit;
 
-    // Create purchase record as completed immediately
+    // Create purchase record as pending — collector must accept before it completes
     const purchase = await WastePurchase.create({
       vendor: req.user._id,
       collector: collectorId,
@@ -608,13 +608,10 @@ exports.purchaseWaste = async (req, res) => {
       },
       pricePerUnit,
       totalAmount,
-      status: 'completed',
-      pickupDate: pickupDate || new Date(),
+      status: 'pending',
+      pickupDate: pickupDate || null,
       vendorNotes: notes,
       location: collector.location,
-      collectorResponse: {
-        status: 'accepted'
-      }
     });
 
     await purchase.populate('collector', 'name address phone');
@@ -624,7 +621,7 @@ exports.purchaseWaste = async (req, res) => {
     res.status(201).json({
       success: true,
       data: purchase,
-      message: 'Purchase completed successfully.'
+      message: 'Purchase request sent. Waiting for collector approval.'
     });
   } catch (error) {
     res.status(500).json({

@@ -80,7 +80,8 @@ const wastePurchaseSchema = new mongoose.Schema(
       coordinates: {
         type: [Number]
       }
-    }
+    },
+    collectorRated: { type: Boolean, default: false }
   },
   {
     timestamps: true

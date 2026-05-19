@@ -26,9 +26,10 @@ const CARD_WIDTH = (width - 48) / 2;
 
 const STATUS_COLOR: Record<string, { bg: string; text: string; label: string }> = {
   available: { bg: '#27AE60', text: '#fff', label: 'Available' },
-  sold: { bg: '#2980B9', text: '#fff', label: 'Sold' },
-  pending: { bg: '#F39C12', text: '#fff', label: 'Pending' },
-  expired: { bg: '#95A5A6', text: '#fff', label: 'Expired' },
+  reserved:  { bg: '#F39C12', text: '#fff', label: 'Reserved' },
+  sold:      { bg: '#2980B9', text: '#fff', label: 'Sold' },
+  expired:   { bg: '#95A5A6', text: '#fff', label: 'Expired' },
+  cancelled: { bg: '#E74C3C', text: '#fff', label: 'Cancelled' },
 };
 
 interface MediaAsset {
@@ -51,6 +52,7 @@ export default function CollectorOffersScreen() {
   const [activeTab, setActiveTab] = useState<'offers' | 'requests'>('offers');
   const [images, setImages] = useState<MediaAsset[]>([]);
   const [video, setVideo] = useState<MediaAsset | null>(null);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -153,6 +155,7 @@ export default function CollectorOffersScreen() {
       return;
     }
 
+    setCreating(true);
     try {
       const formData = new FormData();
       formData.append('wasteType', selectedWasteType);
@@ -188,6 +191,8 @@ export default function CollectorOffersScreen() {
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to create offer');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -464,16 +469,25 @@ export default function CollectorOffersScreen() {
         visible={showCreateModal}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setShowCreateModal(false)}
+        onRequestClose={() => { if (!creating) setShowCreateModal(false); }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create New Offer</Text>
-              <TouchableOpacity onPress={() => setShowCreateModal(false)}>
-                <Ionicons name="close" size={28} color={COLORS.gray} />
+              <TouchableOpacity onPress={() => { if (!creating) setShowCreateModal(false); }} disabled={creating}>
+                <Ionicons name="close" size={28} color={creating ? '#D0D0D0' : COLORS.gray} />
               </TouchableOpacity>
             </View>
+
+            {/* Creating overlay */}
+            {creating && (
+              <View style={styles.creatingOverlay}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text style={styles.creatingText}>Creating your offer...</Text>
+                <Text style={styles.creatingSubText}>Please wait, uploading media</Text>
+              </View>
+            )}
 
             <ScrollView style={styles.modalForm}>
               <Text style={styles.label}>Waste Type *</Text>
@@ -564,10 +578,14 @@ export default function CollectorOffersScreen() {
               )}
 
               <TouchableOpacity
-                style={styles.submitButton}
+                style={[styles.submitButton, creating && styles.submitButtonDisabled]}
                 onPress={handleCreateOffer}
+                disabled={creating}
               >
-                <Text style={styles.submitButtonText}>Create Offer</Text>
+                {creating
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Text style={styles.submitButtonText}>Create Offer</Text>
+                }
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -700,7 +718,7 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%',
+    backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -748,4 +766,12 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.primary, marginBottom: 4,
   },
   videoName: { flex: 1, fontSize: 13, color: '#2C3E50', fontWeight: '500' },
+  submitButtonDisabled: { opacity: 0.7 },
+  creatingOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(255,255,255,0.92)', zIndex: 10,
+    justifyContent: 'center', alignItems: 'center', borderRadius: 20, gap: 12,
+  },
+  creatingText: { fontSize: 17, fontWeight: '700', color: '#2C3E50' },
+  creatingSubText: { fontSize: 13, color: '#7F8C8D' },
 });

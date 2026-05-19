@@ -720,3 +720,59 @@ exports.deleteWasteOffer = async (req, res) => {
     });
   }
 };
+
+// @desc    User rates a collector after completed pickup
+// @route   POST /api/users/rate-collector
+// @access  Private (User)
+exports.rateCollector = async (req, res) => {
+  try {
+    const { requestId, score, comment } = req.body;
+
+    if (!requestId || !score || score < 1 || score > 5) {
+      return res.status(400).json({ success: false, message: 'Provide requestId and score (1–5)' });
+    }
+
+    const Rating = require('../models/Rating');
+    const CollectorPurchaseRequest = require('../models/CollectorPurchaseRequest');
+    const Collector = require('../models/Collector');
+
+    const request = await CollectorPurchaseRequest.findOne({
+      _id: requestId,
+      user: req.user._id,
+      status: 'completed',
+    });
+
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Completed request not found' });
+    }
+
+    if (request.userRated) {
+      return res.status(400).json({ success: false, message: 'You have already rated this collector for this pickup' });
+    }
+
+    await Rating.create({
+      rater: req.user._id,
+      raterRole: 'user',
+      ratee: request.collector,
+      rateeRole: 'collector',
+      score,
+      comment: comment?.trim() || '',
+      relatedId: requestId,
+    });
+
+    request.userRated = true;
+    await request.save();
+
+    // Update collector's average rating
+    const ratings = await Rating.find({ ratee: request.collector, rateeRole: 'collector' });
+    const avg = ratings.reduce((s, r) => s + r.score, 0) / ratings.length;
+    await Collector.findByIdAndUpdate(request.collector, {
+      averageRating: parseFloat(avg.toFixed(2)),
+      ratingCount: ratings.length,
+    });
+
+    res.status(201).json({ success: true, message: 'Rating submitted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

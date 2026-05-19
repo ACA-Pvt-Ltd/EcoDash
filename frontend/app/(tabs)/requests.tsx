@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@/context/AuthContext';
 import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
+import RatingModal from '@/components/RatingModal';
 
 interface PurchaseRequest {
   _id: string;
@@ -38,6 +40,7 @@ interface PurchaseRequest {
   proposedPickupTime: string;
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
   userResponse?: string;
+  userRated: boolean;
   createdAt: string;
 }
 
@@ -46,17 +49,22 @@ export default function PurchaseRequestsScreen() {
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'accepted'>('pending');
-  
+  const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'completed'>('pending');
+
   // Response modal state
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
   const [responseMessage, setResponseMessage] = useState('');
   const [responding, setResponding] = useState(false);
 
-  useEffect(() => {
-    fetchRequests();
-  }, []);
+  // Rating state
+  const [ratingRequest, setRatingRequest] = useState<PurchaseRequest | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchRequests();
+    }, [])
+  );
 
   const fetchRequests = async () => {
     try {
@@ -148,6 +156,24 @@ export default function PurchaseRequestsScreen() {
       Alert.alert('Error', 'Failed to respond. Please try again.');
     } finally {
       setResponding(false);
+    }
+  };
+
+  const handleRateCollector = async (score: number, comment: string) => {
+    if (!ratingRequest) return;
+    const response = await fetch(`${API_URL}${ENDPOINTS.USER_RATE_COLLECTOR}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ requestId: ratingRequest._id, score, comment }),
+    });
+    const data = await response.json();
+    if (data.success) {
+      setRatingRequest(null);
+      Alert.alert('Thanks!', 'Your rating has been submitted.');
+      fetchRequests();
+    } else {
+      Alert.alert('Error', data.message || 'Failed to submit rating');
+      throw new Error(data.message);
     }
   };
 
@@ -285,6 +311,23 @@ export default function PurchaseRequestsScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Rate Collector for Completed + Unrated */}
+        {request.status === 'completed' && !request.userRated && (
+          <TouchableOpacity
+            style={styles.rateButton}
+            onPress={() => setRatingRequest(request)}
+          >
+            <Ionicons name="star" size={18} color="#fff" />
+            <Text style={styles.rateButtonText}>Rate Collector</Text>
+          </TouchableOpacity>
+        )}
+        {request.status === 'completed' && request.userRated && (
+          <View style={styles.ratedBadge}>
+            <Ionicons name="star" size={14} color="#F39C12" />
+            <Text style={styles.ratedText}>Rated</Text>
+          </View>
+        )}
+
         {/* Created Time */}
         <Text style={styles.timestamp}>
           Received: {new Date(request.createdAt).toLocaleString()}
@@ -306,7 +349,7 @@ export default function PurchaseRequestsScreen() {
       {/* Filter Tabs */}
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {(['pending', 'accepted', 'all'] as const).map((status) => (
+          {(['pending', 'accepted', 'completed', 'all'] as const).map((status) => (
             <TouchableOpacity
               key={status}
               style={[styles.filterTab, filter === status && styles.filterTabActive]}
@@ -354,6 +397,14 @@ export default function PurchaseRequestsScreen() {
           <View style={styles.bottomPadding} />
         </ScrollView>
       )}
+
+      {/* Rating Modal */}
+      <RatingModal
+        visible={!!ratingRequest}
+        title={`Rate ${ratingRequest?.collector.name ?? 'Collector'}`}
+        onClose={() => setRatingRequest(null)}
+        onSubmit={handleRateCollector}
+      />
 
       {/* Response Modal */}
       <Modal
@@ -628,6 +679,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 14,
+  },
+  rateButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F39C12',
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  rateButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  ratedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 12,
+    justifyContent: 'center',
+  },
+  ratedText: {
+    fontSize: 13,
+    color: '#F39C12',
+    fontWeight: '600',
   },
   timestamp: {
     fontSize: 11,

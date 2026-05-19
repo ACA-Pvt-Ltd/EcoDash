@@ -68,6 +68,7 @@ export default function VendorTabLayout() {
       />
       <Tabs.Screen name="offer-details" options={{ href: null }} />
       <Tabs.Screen name="chat" options={{ href: null }} />
+      <Tabs.Screen name="purchases" options={{ href: null }} />
     </Tabs>
     </>
   );

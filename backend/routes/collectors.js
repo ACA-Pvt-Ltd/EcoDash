@@ -22,7 +22,8 @@ const {
   createUserPurchaseRequest,
   getMyUserPurchaseRequests,
   completeUserWastePickup,
-  cancelUserPurchaseRequest
+  cancelUserPurchaseRequest,
+  rateVendor
 } = require('../controllers/collectorController');
 const { protect, authorize } = require('../middleware/auth');
 const { offerMediaUpload } = require('../middleware/upload');
@@ -60,5 +61,6 @@ router.post('/user-offers/:offerId/request', createUserPurchaseRequest);
 router.get('/user-purchase-requests', getMyUserPurchaseRequests);
 router.put('/user-purchase-requests/:requestId/complete', completeUserWastePickup);
 router.delete('/user-purchase-requests/:requestId', cancelUserPurchaseRequest);
+router.post('/rate-vendor', rateVendor);
 
 module.exports = router;

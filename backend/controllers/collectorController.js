@@ -769,7 +769,7 @@ exports.acceptPurchaseRequest = async (req, res) => {
       });
     }
 
-    purchase.status = 'completed';
+    purchase.status = 'accepted';
     purchase.collectorResponse = {
       status: 'accepted',
       message: notes || 'Accepted',
@@ -838,6 +838,12 @@ exports.rejectPurchaseRequest = async (req, res) => {
 
     await purchase.save();
     await purchase.populate('vendor', 'name phone');
+
+    // Release the offer back to available so other vendors can purchase it
+    if (purchase.offer) {
+      const WasteOffer = require('../models/WasteOffer');
+      await WasteOffer.findByIdAndUpdate(purchase.offer, { status: 'available' });
+    }
 
     // TODO: Send notification to vendor
 
@@ -1271,5 +1277,61 @@ exports.cancelUserPurchaseRequest = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+// @desc    Collector rates a vendor after completed sale
+// @route   POST /api/collectors/rate-vendor
+// @access  Private (Collector)
+exports.rateVendor = async (req, res) => {
+  try {
+    const { purchaseId, score, comment } = req.body;
+
+    if (!purchaseId || !score || score < 1 || score > 5) {
+      return res.status(400).json({ success: false, message: 'Provide purchaseId and score (1–5)' });
+    }
+
+    const Rating = require('../models/Rating');
+    const WastePurchase = require('../models/WastePurchase');
+    const Vendor = require('../models/Vendor');
+
+    const purchase = await WastePurchase.findOne({
+      _id: purchaseId,
+      collector: req.user._id,
+      status: 'completed',
+    });
+
+    if (!purchase) {
+      return res.status(404).json({ success: false, message: 'Completed purchase not found' });
+    }
+
+    if (purchase.collectorRated) {
+      return res.status(400).json({ success: false, message: 'You have already rated this vendor for this sale' });
+    }
+
+    await Rating.create({
+      rater: req.user._id,
+      raterRole: 'collector',
+      ratee: purchase.vendor,
+      rateeRole: 'vendor',
+      score,
+      comment: comment?.trim() || '',
+      relatedId: purchaseId,
+    });
+
+    purchase.collectorRated = true;
+    await purchase.save();
+
+    // Update vendor's average rating
+    const ratings = await Rating.find({ ratee: purchase.vendor, rateeRole: 'vendor' });
+    const avg = ratings.reduce((s, r) => s + r.score, 0) / ratings.length;
+    await Vendor.findByIdAndUpdate(purchase.vendor, {
+      averageRating: parseFloat(avg.toFixed(2)),
+      ratingCount: ratings.length,
+    });
+
+    res.status(201).json({ success: true, message: 'Rating submitted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

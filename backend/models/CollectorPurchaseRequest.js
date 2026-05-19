@@ -48,7 +48,8 @@ const collectorPurchaseRequestSchema = new mongoose.Schema({
   userResponse: {
     type: String,
     trim: true
-  }
+  },
+  userRated: { type: Boolean, default: false }
 }, {
   timestamps: true
 });
