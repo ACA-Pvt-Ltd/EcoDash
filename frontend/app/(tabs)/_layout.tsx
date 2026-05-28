@@ -46,10 +46,8 @@ export default function TabLayout() {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: "#9E9E9E",
         headerShown: false,
-        // Performance optimizations
-        lazy: true, // Lazy load tabs
-        freezeOnBlur: true, // Freeze inactive tabs to save memory
-        animation: 'shift', // Smooth tab transitions
+        lazy: true,
+        animation: 'shift',
         tabBarStyle: {
           backgroundColor: "#FFFFFF",
           borderTopWidth: 0,

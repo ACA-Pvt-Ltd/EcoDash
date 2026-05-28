@@ -8,7 +8,13 @@
       "Bash(node -e ' *)",
       "Bash(git -C /Users/avishka/Documents/EcoDash worktree list)",
       "Bash(npx tsc *)",
-      "Bash(grep -n \"totalWaste\\\\|isActive\\\\|isVerified\\\\|phone\\\\|}\\\\s*,$\" /Users/avishka/Documents/EcoDash/backend/models/Collector.js)"
+      "Bash(grep -n \"totalWaste\\\\|isActive\\\\|isVerified\\\\|phone\\\\|}\\\\s*,$\" /Users/avishka/Documents/EcoDash/backend/models/Collector.js)",
+      "Bash(firebase --version)",
+      "Bash(npm list *)",
+      "Bash(npx firebase *)",
+      "Bash(firebase login:list)",
+      "Read(//usr/local/bin/**)",
+      "Read(//usr/local/**)"
     ]
   }
 }

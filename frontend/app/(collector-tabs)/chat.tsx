@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { COLORS, ENDPOINTS } from '@/constants/config';
+import { ref, push, onValue, query, orderByChild } from 'firebase/database';
+import { db } from '@/services/firebase';
+import { COLORS } from '@/constants/config';
 import { useAuth } from '@/context/AuthContext';
-import api from '@/services/api';
-import { connectSocket, disconnectSocket, getSocket } from '@/services/socketService';
 
 interface ChatMessage {
   _id: string;
@@ -33,94 +33,46 @@ export default function CollectorChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [connecting, setConnecting] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
-  // Room ID scoped to this specific request
   const roomId = `req_${requestId}`;
 
-  const scrollToEnd = useCallback(() => {
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
-  }, []);
-
-  // Load history + connect socket
   useEffect(() => {
-    let mounted = true;
+    const messagesRef = query(ref(db, `chats/${roomId}`), orderByChild('createdAt'));
 
-    const init = async () => {
-      // 1. Load persisted messages from REST
-      try {
-        const res: any = await api.get(ENDPOINTS.CHAT_HISTORY(roomId));
-        if (mounted && res.success) {
-          setMessages(res.data || []);
-          scrollToEnd();
-        }
-      } catch {
-        // history fetch failure is non-fatal
-      }
-
-      // 2. Connect socket
-      try {
-        const sock = await connectSocket();
-        if (!mounted) return;
-
-        sock.emit('join_room', { roomId });
-
-        sock.on('new_message', (msg: ChatMessage) => {
-          if (!mounted) return;
-          setMessages(prev => {
-            // Deduplicate by _id
-            if (prev.some(m => m._id === msg._id)) return prev;
-            return [...prev, msg];
-          });
-          scrollToEnd();
+    const unsubscribe = onValue(messagesRef, (snapshot) => {
+      const msgs: ChatMessage[] = [];
+      snapshot.forEach((child) => {
+        const val = child.val();
+        msgs.push({
+          _id: child.key!,
+          senderId: val.senderId,
+          senderName: val.senderName,
+          senderRole: val.senderRole,
+          text: val.text,
+          createdAt: new Date(val.createdAt).toISOString(),
         });
+      });
+      setMessages(msgs);
+      setConnecting(false);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 80);
+    });
 
-        sock.on('message_error', ({ message }: { message: string }) => {
-          setError(message);
-        });
+    return () => unsubscribe();
+  }, [roomId]);
 
-        setConnecting(false);
-      } catch {
-        if (mounted) {
-          setError('Could not connect to chat server. Check your network.');
-          setConnecting(false);
-        }
-      }
-    };
-
-    init();
-
-    return () => {
-      mounted = false;
-      const sock = getSocket();
-      if (sock) {
-        sock.emit('leave_room', { roomId });
-        sock.off('new_message');
-        sock.off('message_error');
-      }
-      disconnectSocket();
-    };
-  }, [roomId, scrollToEnd]);
-
-  const sendMessage = () => {
+  const sendMessage = async () => {
     const text = input.trim();
-    if (!text) return;
-
-    const sock = getSocket();
-    if (!sock?.connected) {
-      setError('Not connected. Please wait...');
-      return;
-    }
-
-    sock.emit('send_message', { roomId, text });
+    if (!text || !user) return;
     setInput('');
-    setError(null);
+    await push(ref(db, `chats/${roomId}`), {
+      senderId: user._id,
+      senderName: user.name,
+      senderRole: user.role,
+      text,
+      createdAt: Date.now(),
+    });
   };
-
-  function formatTime(iso: string) {
-    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isMe = item.senderId === user?._id;
@@ -134,7 +86,9 @@ export default function CollectorChatScreen() {
         <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
           {!isMe && <Text style={styles.senderName}>{item.senderName}</Text>}
           <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{item.text}</Text>
-          <Text style={[styles.bubbleTime, isMe && styles.bubbleTimeMe]}>{formatTime(item.createdAt)}</Text>
+          <Text style={[styles.bubbleTime, isMe && styles.bubbleTimeMe]}>
+            {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
         </View>
       </View>
     );
@@ -142,7 +96,6 @@ export default function CollectorChatScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.push('/(collector-tabs)/user-offers' as any)}>
           <Ionicons name="chevron-back" size={26} color={COLORS.primary} />
@@ -153,9 +106,7 @@ export default function CollectorChatScreen() {
           </View>
           <View>
             <Text style={styles.headerName}>{userName || 'User'}</Text>
-            <Text style={styles.headerStatus}>
-              {connecting ? 'Connecting...' : 'Request · #' + (requestId?.slice(-6) || '')}
-            </Text>
+            <Text style={styles.headerStatus}>{'Request · #' + (requestId?.slice(-6) || '')}</Text>
           </View>
         </View>
         <View style={{ width: 26 }} />
@@ -169,7 +120,7 @@ export default function CollectorChatScreen() {
         {connecting ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.connectingText}>Connecting to chat...</Text>
+            <Text style={styles.connectingText}>Loading chat...</Text>
           </View>
         ) : (
           <FlatList
@@ -188,15 +139,6 @@ export default function CollectorChatScreen() {
           />
         )}
 
-        {/* Error banner */}
-        {error && (
-          <View style={styles.errorBanner}>
-            <Ionicons name="warning-outline" size={14} color="#fff" />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-
-        {/* Input bar */}
         <View style={styles.inputBar}>
           <TextInput
             style={styles.input}
@@ -226,13 +168,9 @@ export default function CollectorChatScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    gap: 10,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: '#F0F0F0', gap: 10,
   },
   headerInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: {
@@ -244,13 +182,12 @@ const styles = StyleSheet.create({
   headerStatus: { fontSize: 11, color: '#95A5A6', marginTop: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   connectingText: { fontSize: 14, color: '#95A5A6' },
-  messageList: { padding: 16, paddingBottom: 8 },
+  messageList: { padding: 16, paddingBottom: 8, flexGrow: 1 },
   msgRow: { marginBottom: 12, alignItems: 'flex-start', flexDirection: 'row', gap: 8 },
   msgRowMe: { alignItems: 'flex-end', flexDirection: 'row-reverse', gap: 0 },
   senderAvatar: {
     width: 28, height: 28, borderRadius: 14,
-    backgroundColor: '#E8E8E8', justifyContent: 'center', alignItems: 'center',
-    marginTop: 2,
+    backgroundColor: '#E8E8E8', justifyContent: 'center', alignItems: 'center', marginTop: 2,
   },
   senderAvatarText: { fontSize: 12, fontWeight: '700', color: '#7F8C8D' },
   bubble: {
@@ -266,11 +203,6 @@ const styles = StyleSheet.create({
   bubbleTimeMe: { color: 'rgba(255,255,255,0.7)' },
   emptyChat: { flex: 1, alignItems: 'center', paddingTop: 80, gap: 12 },
   emptyChatText: { fontSize: 14, color: '#95A5A6' },
-  errorBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#E74C3C', paddingHorizontal: 14, paddingVertical: 8,
-  },
-  errorText: { color: '#fff', fontSize: 12, flex: 1 },
   inputBar: {
     flexDirection: 'row', alignItems: 'flex-end', gap: 10,
     paddingHorizontal: 16, paddingVertical: 12,
