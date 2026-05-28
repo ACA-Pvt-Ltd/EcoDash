@@ -10,10 +10,8 @@ export default function CollectorTabLayout() {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.gray,
         headerShown: false,
-        // Performance optimizations
-        lazy: true, // Lazy load tabs
-        freezeOnBlur: true, // Freeze inactive tabs to save memory
-        animation: 'shift', // Smooth tab transition
+        lazy: true,
+        animation: 'shift',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
