@@ -10,6 +10,7 @@ import {
   InteractionManager,
 } from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
+import { useAppConfig } from '@/context/AppConfigContext';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS, WASTE_TYPES } from '@/constants/config';
@@ -25,7 +26,8 @@ const StatBox = React.memo(({ icon, value, label }: { icon: string; value: numbe
 StatBox.displayName = 'StatBox';
 
 const WasteItem = React.memo(({ type, amount }: { type: string; amount: number }) => {
-  const wasteInfo = WASTE_TYPES.find(w => w.value === type);
+  const { wasteCategories } = useAppConfig();
+  const wasteInfo = wasteCategories.find(w => w.value === type);
   return (
     <View style={styles.wasteItem}>
       <Text style={styles.wasteIcon}>{wasteInfo?.icon || '♻️'}</Text>
@@ -37,6 +39,7 @@ const WasteItem = React.memo(({ type, amount }: { type: string; amount: number }
 WasteItem.displayName = 'WasteItem';
 
 export default function HomeScreen() {
+  const { wasteCategories } = useAppConfig();
   const router = useRouter();
   const { user, updateUser } = useAuth();
   const [dashboard, setDashboard] = useState<any>(null);
@@ -149,8 +152,20 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>This Month</Text>
         <View style={styles.monthlyCard}>
           <Text style={styles.monthlyText}>
-            {dashboard?.stats?.monthlyWaste || 0} kg waste recycled
+            ♻️ {dashboard?.stats?.monthlyWaste || 0} kg recycled
           </Text>
+          <View style={styles.monthlyRow}>
+            <Text style={styles.monthlySubText}>
+              🔍 {dashboard?.stats?.qrTransactions || 0} QR drop-offs · 📦 {dashboard?.stats?.marketplaceSales || 0} marketplace sales
+            </Text>
+          </View>
+          {(dashboard?.user?.cashEarned || 0) > 0 && (
+            <View style={styles.monthlyRow}>
+              <Text style={styles.cashText}>
+                💰 LKR {(dashboard?.user?.cashEarned || 0).toFixed(0)} total earned from sales
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -286,6 +301,18 @@ const styles = StyleSheet.create({
   monthlyText: {
     fontSize: 16,
     color: COLORS.dark,
+    fontWeight: '600',
+  },
+  monthlyRow: {
+    marginTop: 8,
+  },
+  monthlySubText: {
+    fontSize: 12,
+    color: '#555',
+  },
+  cashText: {
+    fontSize: 13,
+    color: '#27AE60',
     fontWeight: '600',
   },
   wasteItem: {

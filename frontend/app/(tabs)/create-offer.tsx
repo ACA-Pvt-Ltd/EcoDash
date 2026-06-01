@@ -15,7 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
+import { API_URL, ENDPOINTS, COLORS } from '@/constants/config';
+import { useAppConfig } from '@/context/AppConfigContext';
 import { router } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -28,6 +29,7 @@ interface MediaAsset {
 
 export default function CreateOfferScreen() {
   const { token } = useAuth();
+  const { wasteCategories, maxOfferImages } = useAppConfig();
   const [loading, setLoading] = useState(false);
 
   // Form state
@@ -73,14 +75,14 @@ export default function CreateOfferScreen() {
   };
 
   const pickImages = async () => {
-    if (images.length >= 5) {
+    if (images.length >= maxOfferImages) {
       Alert.alert('Limit Reached', 'You can add up to 5 photos.');
       return;
     }
     const hasPermission = await requestPermission();
     if (!hasPermission) return;
 
-    const remaining = 5 - images.length;
+    const remaining = maxOfferImages - images.length;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
@@ -228,7 +230,7 @@ export default function CreateOfferScreen() {
             Waste Type <Text style={styles.required}>*</Text>
           </Text>
           <View style={styles.wasteTypeGrid}>
-            {WASTE_TYPES.map((type) => (
+            {wasteCategories.map((type) => (
               <TouchableOpacity
                 key={type.value}
                 style={[
@@ -322,7 +324,7 @@ export default function CreateOfferScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             Photos{' '}
-            <Text style={styles.hint}>({images.length}/5)</Text>
+            <Text style={styles.hint}>({images.length}/{maxOfferImages})</Text>
           </Text>
           <View style={styles.mediaGrid}>
             {images.map((img, index) => (
@@ -336,7 +338,7 @@ export default function CreateOfferScreen() {
                 </TouchableOpacity>
               </View>
             ))}
-            {images.length < 5 && (
+            {images.length < maxOfferImages && (
               <TouchableOpacity style={styles.addMediaBtn} onPress={pickImages}>
                 <Ionicons name="camera-outline" size={28} color="#7F8C8D" />
                 <Text style={styles.addMediaText}>Add Photo</Text>

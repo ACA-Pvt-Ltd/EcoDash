@@ -18,7 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import api from '@/services/api';
-import { ENDPOINTS, COLORS, WASTE_TYPES } from '@/constants/config';
+import { ENDPOINTS, COLORS } from '@/constants/config';
+import { useAppConfig } from '@/context/AppConfigContext';
 import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
@@ -40,6 +41,7 @@ interface MediaAsset {
 }
 
 export default function CollectorOffersScreen() {
+  const { wasteCategories, maxOfferImages } = useAppConfig();
   const [myOffers, setMyOffers] = useState<any[]>([]);
   const [purchaseRequests, setPurchaseRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +104,7 @@ export default function CollectorOffersScreen() {
   };
 
   const pickImages = async () => {
-    if (images.length >= 5) {
+    if (images.length >= maxOfferImages) {
       Alert.alert('Limit Reached', 'You can add up to 5 photos.');
       return;
     }
@@ -112,7 +114,7 @@ export default function CollectorOffersScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
-      selectionLimit: 5 - images.length,
+      selectionLimit: maxOfferImages - images.length,
       quality: 0.8,
     });
 
@@ -264,7 +266,7 @@ export default function CollectorOffersScreen() {
   };
 
   const renderOfferCard = useCallback(({ item: offer }: { item: any }) => {
-    const wt = WASTE_TYPES.find(t => t.value === offer.wasteType);
+    const wt = wasteCategories.find(t => t.value === offer.wasteType);
     const hasImage = offer.images && offer.images.length > 0;
     const status = STATUS_COLOR[offer.status] || STATUS_COLOR.available;
     const qty = typeof offer.quantity === 'object'
@@ -492,7 +494,7 @@ export default function CollectorOffersScreen() {
             <ScrollView style={styles.modalForm}>
               <Text style={styles.label}>Waste Type *</Text>
               <View style={styles.wasteTypeGrid}>
-                {WASTE_TYPES.map((type) => (
+                {wasteCategories.map((type) => (
                   <TouchableOpacity
                     key={type.value}
                     style={[
@@ -540,7 +542,7 @@ export default function CollectorOffersScreen() {
                 onChangeText={setDescription}
               />
 
-              <Text style={styles.label}>Photos ({images.length}/5)</Text>
+              <Text style={styles.label}>Photos ({images.length}/{maxOfferImages})</Text>
               <View style={styles.mediaGrid}>
                 {images.map((img, index) => (
                   <View key={index} style={styles.mediaThumbnail}>
@@ -553,7 +555,7 @@ export default function CollectorOffersScreen() {
                     </TouchableOpacity>
                   </View>
                 ))}
-                {images.length < 5 && (
+                {images.length < maxOfferImages && (
                   <TouchableOpacity style={styles.addMediaBtn} onPress={pickImages}>
                     <Ionicons name="camera-outline" size={26} color="#7F8C8D" />
                     <Text style={styles.addMediaText}>Add</Text>

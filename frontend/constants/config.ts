@@ -1,6 +1,6 @@
 // API Configuration
 // For local development (backend running on port 3000):
-export const API_URL = 'http://192.168.43.215:3000/api';
+export const API_URL = 'http://192.168.1.181:3000/api';
 // For deployed backend on Vercel, use:
 // export const API_URL = 'https://waste-management-app-five.vercel.app/api';
 
@@ -71,6 +71,9 @@ export const ENDPOINTS = {
   VENDOR_INVENTORY: '/vendors/inventory', // Purchased waste inventory
   VENDOR_PRICING: '/vendors/pricing', // Pricing management
   VENDOR_PROFILE: '/vendors/profile',
+
+  // Public config (no auth)
+  APP_CONFIG: '/config',
 
   // Chat
   CHAT_HISTORY: (roomId: string) => `/chat/history/${roomId}`,

@@ -9,10 +9,12 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { COLORS, WASTE_TYPES, ENDPOINTS } from '@/constants/config';
+import { COLORS, ENDPOINTS } from '@/constants/config';
+import { useAppConfig } from '@/context/AppConfigContext';
 import api from '@/services/api';
 
 export default function PricingScreen() {
+  const { wasteCategories } = useAppConfig();
   const [pricing, setPricing] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,7 +43,7 @@ export default function PricingScreen() {
         }
         
         // Fallback to default values for missing types
-        WASTE_TYPES.forEach(type => {
+        wasteCategories.forEach(type => {
           if (!pricingMap[type.value]) {
             pricingMap[type.value] = '0';
           }
@@ -54,7 +56,7 @@ export default function PricingScreen() {
       console.error('💰❌ Error fetching vendor pricing:', error);
       // Set default pricing on error
       const defaultPricing: any = {};
-      WASTE_TYPES.forEach(type => {
+      wasteCategories.forEach(type => {
         defaultPricing[type.value] = '0';
       });
       setPricing(defaultPricing);
@@ -122,7 +124,7 @@ export default function PricingScreen() {
       </View>
 
       <View style={styles.pricingList}>
-        {WASTE_TYPES.map((type) => (
+        {wasteCategories.map((type) => (
           <View key={type.value} style={styles.pricingCard}>
             <View style={styles.pricingHeader}>
               <Text style={styles.wasteIcon}>{type.icon}</Text>

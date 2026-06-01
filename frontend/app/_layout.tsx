@@ -8,6 +8,7 @@ import React from 'react';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { AppConfigProvider } from '@/context/AppConfigContext';
 import { COLORS } from '@/constants/config';
 
 function RootLayoutNav() {
@@ -75,7 +76,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <RootLayoutNav />
+        <AppConfigProvider>
+          <RootLayoutNav />
+        </AppConfigProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

@@ -7,7 +7,9 @@ const Reward = require('../models/Reward');
 const Challenge = require('../models/Challenge');
 const Badge = require('../models/Badge');
 const AppConfig = require('../models/AppConfig');
+const CollectorPurchaseRequest = require('../models/CollectorPurchaseRequest');
 const { generateToken } = require('../config/jwt');
+const { sendWelcomeEmail } = require('../utils/email');
 
 // @desc    Get admin dashboard overview
 // @route   GET /api/admin/dashboard
@@ -20,46 +22,109 @@ exports.getDashboard = async (req, res) => {
     const totalVendors = await Vendor.countDocuments({ isActive: true });
     const totalTransactions = await WasteTransaction.countDocuments({ status: 'verified' });
 
-    // Get this month's stats
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    // Date boundaries — support ?month=5&year=2026 (month is 1-indexed)
+    const now = new Date();
+    const reqMonth = parseInt(req.query.month) - 1; // convert to 0-indexed
+    const reqYear  = parseInt(req.query.year);
+    const targetMonth = !isNaN(reqMonth) && !isNaN(reqYear) ? reqMonth : now.getMonth();
+    const targetYear  = !isNaN(reqYear) ? reqYear : now.getFullYear();
 
-    const monthlyTransactions = await WasteTransaction.find({
-      status: 'verified',
-      createdAt: { $gte: startOfMonth }
-    });
+    const startOfMonth = new Date(targetYear, targetMonth, 1, 0, 0, 0, 0);
+    const endOfMonth   = new Date(targetYear, targetMonth + 1, 1, 0, 0, 0, 0); // exclusive
 
-    const monthlyWaste = monthlyTransactions.reduce((sum, t) => sum + t.quantity.value, 0);
-    const monthlyPoints = monthlyTransactions.reduce((sum, t) => sum + t.pointsEarned, 0);
+    const startOfLastMonth = new Date(targetYear, targetMonth - 1, 1, 0, 0, 0, 0);
+    const endOfLastMonth   = startOfMonth; // same as startOfMonth
 
-    // Total waste collected
-    const allTransactions = await WasteTransaction.find({ status: 'verified' });
-    const totalWaste = allTransactions.reduce((sum, t) => sum + t.quantity.value, 0);
+    // QR-scan transactions (all time + selected month + previous month)
+    const [allQrTxns, monthlyQrTxns, lastMonthQrTxns] = await Promise.all([
+      WasteTransaction.find({ status: 'verified' }),
+      WasteTransaction.find({ status: 'verified', createdAt: { $gte: startOfMonth, $lt: endOfMonth } }),
+      WasteTransaction.find({ status: 'verified', createdAt: { $gte: startOfLastMonth, $lt: endOfLastMonth } }),
+    ]);
 
-    // Waste by type
+    // Marketplace sales (CollectorPurchaseRequest completions)
+    const [allMarketSales, monthlyMarketSales, lastMonthMarketSales] = await Promise.all([
+      CollectorPurchaseRequest.find({ status: 'completed' }).populate('userOffer', 'wasteType quantity'),
+      CollectorPurchaseRequest.find({ status: 'completed', completedAt: { $gte: startOfMonth, $lt: endOfMonth } }).populate('userOffer', 'wasteType quantity'),
+      CollectorPurchaseRequest.find({ status: 'completed', completedAt: { $gte: startOfLastMonth, $lt: endOfLastMonth } }).populate('userOffer', 'wasteType quantity'),
+    ]);
+
+    // Helper: sum waste from marketplace sales
+    const marketWaste = (sales) => sales.reduce((sum, s) => sum + (s.userOffer?.quantity?.value || 0), 0);
+    const marketPoints = (sales) => sales.reduce((sum, s) => sum + Math.floor((s.userOffer?.quantity?.value || 0) * 10), 0);
+
+    // Combined totals
+    const totalWaste =
+      allQrTxns.reduce((sum, t) => sum + t.quantity.value, 0) +
+      marketWaste(allMarketSales);
+
+    const totalTransactionsCombined = allQrTxns.length + allMarketSales.length;
+
+    const monthlyWaste  = monthlyQrTxns.reduce((sum, t) => sum + t.quantity.value, 0) + marketWaste(monthlyMarketSales);
+    const monthlyPoints = monthlyQrTxns.reduce((sum, t) => sum + t.pointsEarned, 0)   + marketPoints(monthlyMarketSales);
+
+    const lastMonthWaste  = lastMonthQrTxns.reduce((sum, t) => sum + t.quantity.value, 0) + marketWaste(lastMonthMarketSales);
+    const lastMonthPoints = lastMonthQrTxns.reduce((sum, t) => sum + t.pointsEarned, 0)   + marketPoints(lastMonthMarketSales);
+
+    const [monthlyNewUsers, lastMonthNewUsers] = await Promise.all([
+      User.countDocuments({ createdAt: { $gte: startOfMonth, $lt: endOfMonth } }),
+      User.countDocuments({ createdAt: { $gte: startOfLastMonth, $lt: endOfLastMonth } }),
+    ]);
+
+    // Waste by type — all time
     const wasteByType = {};
-    allTransactions.forEach(t => {
+    allQrTxns.forEach(t => {
       wasteByType[t.wasteType] = (wasteByType[t.wasteType] || 0) + t.quantity.value;
     });
+    allMarketSales.forEach(s => {
+      const type = s.userOffer?.wasteType;
+      const qty  = s.userOffer?.quantity?.value || 0;
+      if (type) wasteByType[type] = (wasteByType[type] || 0) + qty;
+    });
+
+    // Waste by type — selected period only
+    const wasteByTypePeriod = {};
+    monthlyQrTxns.forEach(t => {
+      wasteByTypePeriod[t.wasteType] = (wasteByTypePeriod[t.wasteType] || 0) + t.quantity.value;
+    });
+    monthlyMarketSales.forEach(s => {
+      const type = s.userOffer?.wasteType;
+      const qty  = s.userOffer?.quantity?.value || 0;
+      if (type) wasteByTypePeriod[type] = (wasteByTypePeriod[type] || 0) + qty;
+    });
+
+    const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
     res.status(200).json({
       success: true,
       data: {
+        period: {
+          month: targetMonth + 1,
+          year: targetYear,
+          label: `${MONTH_NAMES[targetMonth]} ${targetYear}`,
+          prevLabel: `${MONTH_NAMES[targetMonth === 0 ? 11 : targetMonth - 1]} ${targetMonth === 0 ? targetYear - 1 : targetYear}`,
+        },
         overview: {
           totalUsers,
           totalCollectors,
           totalVendors,
-          totalTransactions,
+          totalTransactions: totalTransactionsCombined,
           totalWaste
         },
         thisMonth: {
-          transactions: monthlyTransactions.length,
+          transactions: monthlyQrTxns.length + monthlyMarketSales.length,
           waste: monthlyWaste,
           points: monthlyPoints,
-          newUsers: await User.countDocuments({ createdAt: { $gte: startOfMonth } })
+          newUsers: monthlyNewUsers
         },
-        wasteByType
+        lastMonth: {
+          transactions: lastMonthQrTxns.length + lastMonthMarketSales.length,
+          waste: lastMonthWaste,
+          points: lastMonthPoints,
+          newUsers: lastMonthNewUsers
+        },
+        wasteByType,
+        wasteByTypePeriod
       }
     });
   } catch (error) {
@@ -141,6 +206,27 @@ exports.updateUserStatus = async (req, res) => {
   }
 };
 
+// @desc    Update user details
+// @route   PUT /api/admin/users/:id
+// @access  Private (Admin)
+exports.updateUser = async (req, res) => {
+  try {
+    const { name, phone, isActive } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { name, phone, isActive },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ===== COLLECTOR MANAGEMENT =====
 
 // @desc    Create a new collector
@@ -181,6 +267,11 @@ exports.createCollector = async (req, res) => {
       isVerified: true,
       verifiedBy: req.user._id
     });
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail({ to: email, name, role: 'collector', password }).catch(err =>
+      console.error('Welcome email failed:', err.message)
+    );
 
     res.status(201).json({
       success: true,
@@ -334,6 +425,11 @@ exports.createVendor = async (req, res) => {
       isVerified: true,
       verifiedBy: req.user._id
     });
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail({ to: email, name, role: 'vendor', password }).catch(err =>
+      console.error('Welcome email failed:', err.message)
+    );
 
     res.status(201).json({
       success: true,

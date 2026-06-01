@@ -9,10 +9,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAppConfig } from '@/context/AppConfigContext';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS, WASTE_TYPES } from '@/constants/config';
 
 export default function CollectorInventoryScreen() {
+  const { wasteCategories } = useAppConfig();
   const router = useRouter();
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,7 +196,7 @@ export default function CollectorInventoryScreen() {
           </View>
         ) : (
           getFilteredInventory().map((item, index) => {
-            const wasteInfo = WASTE_TYPES.find(w => w.value === item.wasteType);
+            const wasteInfo = wasteCategories.find(w => w.value === item.wasteType);
             return (
               <View key={index} style={styles.inventoryCard}>
                 <View style={styles.inventoryHeader}>

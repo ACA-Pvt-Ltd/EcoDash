@@ -15,8 +15,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useAppConfig } from '@/context/AppConfigContext';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
+import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
 
 interface CollectorPurchaseRequest {
   _id: string;
@@ -51,6 +52,7 @@ interface CollectorPurchaseRequest {
 }
 
 export default function MyPurchaseRequestsScreen() {
+  const { wasteCategories } = useAppConfig();
   const { token } = useAuth();
   const [requests, setRequests] = useState<CollectorPurchaseRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,12 +200,12 @@ export default function MyPurchaseRequestsScreen() {
   };
 
   const getWasteTypeIcon = (wasteType: string) => {
-    const type = WASTE_TYPES.find((t) => t.value === wasteType);
+    const type = wasteCategories.find((t) => t.value === wasteType);
     return type?.icon || '♻️';
   };
 
   const getWasteTypeColor = (wasteType: string) => {
-    const type = WASTE_TYPES.find((t) => t.value === wasteType);
+    const type = wasteCategories.find((t) => t.value === wasteType);
     return type?.color || '#95A5A6';
   };
 

@@ -103,6 +103,16 @@ export default function ProfileScreen() {
         </View>
         <Text style={styles.userName}>{user?.name}</Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
+        {(user as any)?.averageRating > 0 && (
+          <View style={styles.ratingRow}>
+            {[1,2,3,4,5].map(s => (
+              <Text key={s} style={[styles.star, s <= Math.round((user as any).averageRating) && styles.starActive]}>★</Text>
+            ))}
+            <Text style={styles.ratingText}>
+              {((user as any).averageRating as number).toFixed(1)} ({(user as any).ratingCount || 0} ratings)
+            </Text>
+          </View>
+        )}
         {userRank && (
           <View style={styles.rankBadge}>
             <Text style={styles.rankText}>Rank #{userRank}</Text>
@@ -309,6 +319,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    marginTop: 6,
+    marginBottom: 2,
+  },
+  star: { fontSize: 18, color: 'rgba(255,255,255,0.4)' },
+  starActive: { color: '#F39C12' },
+  ratingText: { fontSize: 13, color: 'rgba(255,255,255,0.9)', marginLeft: 6 },
   statsCard: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',

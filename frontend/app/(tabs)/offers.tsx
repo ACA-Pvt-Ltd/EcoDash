@@ -14,8 +14,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
+import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
 import { router } from 'expo-router';
+import { useAppConfig } from '@/context/AppConfigContext';
 import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
@@ -55,6 +56,7 @@ const STATUS_SORT: Record<string, number> = {
 const FILTER_TABS = ['all', 'available', 'pending', 'sold'] as const;
 
 export default function OffersScreen() {
+  const { wasteCategories } = useAppConfig();
   const { token } = useAuth();
   const [offers, setOffers] = useState<UserWasteOffer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,7 +106,7 @@ export default function OffersScreen() {
     ]);
   };
 
-  const getWasteType = (wt: string) => WASTE_TYPES.find(t => t.value === wt);
+  const getWasteType = (wt: string) => wasteCategories.find(t => t.value === wt);
 
   const renderCard = useCallback(({ item: offer }: { item: UserWasteOffer }) => {
     const wt = getWasteType(offer.wasteType);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,19 +10,22 @@ import {
   Image,
   FlatList,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
+import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useAppConfig } from '@/context/AppConfigContext';
+import RatingModal from '@/components/RatingModal';
 
 const { width } = Dimensions.get('window');
 const CAROUSEL_HEIGHT = 280;
 
 interface PurchaseRequest {
   _id: string;
-  collector: { _id: string; name: string; phone?: string; email?: string; businessName?: string };
+  collector: { _id: string; name: string; phone?: string; email?: string; averageRating?: number; ratingCount?: number };
   proposedPrice: number;
   offeredPrice: number;
   proposedPickupTime?: string;
@@ -30,6 +33,7 @@ interface PurchaseRequest {
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
   createdAt: string;
   finalPayment?: number;
+  userRated?: boolean;
 }
 
 interface UserWasteOffer {
@@ -63,18 +67,20 @@ const REQUEST_STATUS_COLOR: Record<string, string> = {
 };
 
 export default function OfferDetailsScreen() {
+  const { wasteCategories } = useAppConfig();
   const { token } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [offer, setOffer] = useState<UserWasteOffer | null>(null);
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [ratingRequest, setRatingRequest] = useState<PurchaseRequest | null>(null);
 
   const mediaItems: { uri: string; isVideo: boolean }[] = [];
   if (offer?.images) offer.images.forEach(uri => mediaItems.push({ uri, isVideo: false }));
   if (offer?.video) mediaItems.push({ uri: offer.video, isVideo: true });
 
-  const wt = WASTE_TYPES.find(t => t.value === offer?.wasteType);
+  const wt = wasteCategories.find(t => t.value === offer?.wasteType);
 
   const fetchOfferDetails = async () => {
     try {
@@ -107,6 +113,24 @@ export default function OfferDetailsScreen() {
   useEffect(() => {
     if (id) { fetchOfferDetails(); fetchPurchaseRequests(); }
   }, [id]);
+
+  const handleRateCollector = useCallback(async (score: number, comment: string) => {
+    if (!ratingRequest) return;
+    const res = await fetch(`${API_URL}${ENDPOINTS.USER_RATE_COLLECTOR}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ requestId: ratingRequest._id, score, comment }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setRatingRequest(null);
+      Alert.alert('Thanks!', 'Your rating has been submitted.');
+      fetchPurchaseRequests();
+    } else {
+      Alert.alert('Error', data.message || 'Failed to submit rating');
+      throw new Error(data.message);
+    }
+  }, [ratingRequest, token]);
 
   const handleRespond = (requestId: string, action: 'accepted' | 'rejected') => {
     Alert.alert(
@@ -160,6 +184,7 @@ export default function OfferDetailsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
         <View style={styles.navBar}>
           <TouchableOpacity onPress={() => router.push('/(tabs)/offers' as any)}>
             <Ionicons name="chevron-back" size={26} color="#2C3E50" />
@@ -176,6 +201,7 @@ export default function OfferDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       {/* Nav bar */}
       <View style={styles.navBar}>
         <TouchableOpacity onPress={() => router.push('/(tabs)/offers' as any)}>
@@ -264,7 +290,14 @@ export default function OfferDetailsScreen() {
                 <View style={styles.reqHeader}>
                   <View>
                     <Text style={styles.reqCollectorName}>{req.collector?.name || 'Unknown Collector'}</Text>
-                    {req.collector?.phone && <Text style={styles.reqCollectorPhone}>{req.collector.phone}</Text>}
+                    {req.collector?.averageRating != null && req.collector.averageRating > 0 && (
+                      <View style={styles.starRow}>
+                        {[1,2,3,4,5].map(s => (
+                          <Text key={s} style={[styles.starIcon, s <= Math.round(req.collector.averageRating!) && styles.starFilled]}>★</Text>
+                        ))}
+                        <Text style={styles.ratingLabel}>{req.collector.averageRating.toFixed(1)} ({req.collector.ratingCount})</Text>
+                      </View>
+                    )}
                   </View>
                   <View style={[styles.reqStatusBadge, { backgroundColor: REQUEST_STATUS_COLOR[req.status] || '#95A5A6' }]}>
                     <Text style={styles.reqStatusText}>{req.status.toUpperCase()}</Text>
@@ -325,12 +358,28 @@ export default function OfferDetailsScreen() {
                 )}
 
                 {req.status === 'completed' && (
-                  <View style={styles.bannerGold}>
-                    <Ionicons name="trophy" size={20} color="#D68910" />
-                    <Text style={[styles.bannerText, { color: '#D68910' }]}>
-                      Completed — you received LKR {req.finalPayment || req.proposedPrice}
-                    </Text>
-                  </View>
+                  <>
+                    <View style={styles.bannerGold}>
+                      <Ionicons name="trophy" size={20} color="#D68910" />
+                      <Text style={[styles.bannerText, { color: '#D68910' }]}>
+                        Completed — you received LKR {req.finalPayment || req.proposedPrice}
+                      </Text>
+                    </View>
+                    {!req.userRated ? (
+                      <TouchableOpacity
+                        style={styles.rateBtn}
+                        onPress={() => setRatingRequest(req)}
+                      >
+                        <Ionicons name="star" size={16} color="#fff" />
+                        <Text style={styles.rateBtnText}>Rate {req.collector?.name || 'Collector'}</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={styles.ratedRow}>
+                        <Ionicons name="star" size={14} color="#F39C12" />
+                        <Text style={styles.ratedText}>You rated this collector</Text>
+                      </View>
+                    )}
+                  </>
                 )}
               </View>
             ))
@@ -339,6 +388,13 @@ export default function OfferDetailsScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <RatingModal
+        visible={!!ratingRequest}
+        title={`Rate ${ratingRequest?.collector?.name ?? 'Collector'}`}
+        onClose={() => setRatingRequest(null)}
+        onSubmit={handleRateCollector}
+      />
     </SafeAreaView>
   );
 }
@@ -446,4 +502,16 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary + '10',
   },
   chatBtnText: { fontSize: 14, fontWeight: '700', color: COLORS.primary },
+  starRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 3 },
+  starIcon: { fontSize: 13, color: '#ddd' },
+  starFilled: { color: '#F39C12' },
+  ratingLabel: { fontSize: 11, color: '#7F8C8D', marginLeft: 4 },
+  rateBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
+    marginHorizontal: 16, marginTop: 8, marginBottom: 14, paddingVertical: 11,
+    borderRadius: 8, backgroundColor: '#F39C12',
+  },
+  rateBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  ratedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center', marginVertical: 10 },
+  ratedText: { fontSize: 13, color: '#F39C12', fontWeight: '600' },
 });
