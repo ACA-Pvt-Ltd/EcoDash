@@ -17,8 +17,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
+import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
 import { router } from 'expo-router';
+import { useAppConfig } from '@/context/AppConfigContext';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -41,6 +42,7 @@ interface UserWasteOffer {
 }
 
 export default function BrowseUserOffersScreen() {
+  const { wasteCategories } = useAppConfig();
   const { token } = useAuth();
   const [offers, setOffers] = useState<UserWasteOffer[]>([]);
   const [filteredOffers, setFilteredOffers] = useState<UserWasteOffer[]>([]);
@@ -76,7 +78,7 @@ export default function BrowseUserOffersScreen() {
     setFilteredOffers(f);
   };
 
-  const getWasteType = (wt: string) => WASTE_TYPES.find(t => t.value === wt);
+  const getWasteType = (wt: string) => wasteCategories.find(t => t.value === wt);
 
   const renderCard = useCallback(({ item: offer }: { item: UserWasteOffer }) => {
     const wt = getWasteType(offer.wasteType);
@@ -182,7 +184,7 @@ export default function BrowseUserOffersScreen() {
             >
               <Text style={[styles.chipText, !selectedWasteType && styles.chipTextActive]}>All</Text>
             </TouchableOpacity>
-            {WASTE_TYPES.map(type => (
+            {wasteCategories.map(type => (
               <TouchableOpacity
                 key={type.value}
                 style={[styles.chip, selectedWasteType === type.value && { backgroundColor: type.color + '25', borderColor: type.color }]}

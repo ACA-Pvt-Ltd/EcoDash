@@ -15,8 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '@/services/api';
-import { ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
+import { ENDPOINTS,  COLORS } from '@/constants/config';
 import { router } from 'expo-router';
+import { useAppConfig } from '@/context/AppConfigContext';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -66,6 +67,7 @@ function getPurchaseQty(q: Purchase['quantity']) {
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 export default function VendorOffersScreen() {
+  const { wasteCategories } = useAppConfig();
   const [section, setSection] = useState<'offers' | 'purchases'>('offers');
 
   // Offers state
@@ -115,7 +117,7 @@ export default function VendorOffersScreen() {
   }, [fetchOffers, fetchPurchases]));
 
   // ── Offer handlers ──────────────────────────────────────────────────────────
-  const getWasteType = (wt: string) => WASTE_TYPES.find(t => t.value === wt);
+  const getWasteType = (wt: string) => wasteCategories.find(t => t.value === wt);
   const getOfferQty = (q: CollectorOffer['quantity']) =>
     typeof q === 'object' ? `${q.value} ${q.unit}` : `${q} kg`;
   const getCollectorName = (c: CollectorOffer['collector']) =>

@@ -15,25 +15,49 @@ const { calculatePoints, generateRedemptionCode, generateRedemptionQRCode } = re
 exports.getDashboard = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate('badges');
-    
-    // Get transaction stats
-    const transactions = await WasteTransaction.find({ 
-      user: req.user._id,
-      status: 'verified'
-    });
 
     const thisMonth = new Date();
     thisMonth.setDate(1);
     thisMonth.setHours(0, 0, 0, 0);
 
-    const monthlyTransactions = transactions.filter(t => t.createdAt >= thisMonth);
-    const monthlyWaste = monthlyTransactions.reduce((sum, t) => sum + t.quantity.value, 0);
+    // QR-scan transactions
+    const transactions = await WasteTransaction.find({
+      user: req.user._id,
+      status: 'verified'
+    });
 
-    // Waste breakdown by type
+    // Marketplace sales (collector bought from user)
+    const marketplaceSales = await CollectorPurchaseRequest.find({
+      user: req.user._id,
+      status: 'completed'
+    }).populate('userOffer', 'wasteType quantity');
+
+    const totalTransactions = transactions.length + marketplaceSales.length;
+
+    // Monthly waste — both sources
+    const monthlyQrWaste = transactions
+      .filter(t => t.createdAt >= thisMonth)
+      .reduce((sum, t) => sum + t.quantity.value, 0);
+
+    const monthlyMarketWaste = marketplaceSales
+      .filter(s => s.completedAt >= thisMonth)
+      .reduce((sum, s) => sum + (s.userOffer?.quantity?.value || 0), 0);
+
+    const monthlyWaste = monthlyQrWaste + monthlyMarketWaste;
+
+    // Waste breakdown by type — both sources
     const wasteBreakdown = {};
     transactions.forEach(t => {
       wasteBreakdown[t.wasteType] = (wasteBreakdown[t.wasteType] || 0) + t.quantity.value;
     });
+    marketplaceSales.forEach(s => {
+      const type = s.userOffer?.wasteType;
+      const qty  = s.userOffer?.quantity?.value || 0;
+      if (type) wasteBreakdown[type] = (wasteBreakdown[type] || 0) + qty;
+    });
+
+    // Cash earned from marketplace
+    const marketplaceCash = marketplaceSales.reduce((sum, s) => sum + (s.finalPayment || 0), 0);
 
     res.status(200).json({
       success: true,
@@ -42,12 +66,16 @@ exports.getDashboard = async (req, res) => {
           name: user.name,
           email: user.email,
           points: user.points,
+          cashEarned: user.cashEarned || 0,
           totalWasteDisposed: user.totalWasteDisposed,
           badges: user.badges
         },
         stats: {
-          totalTransactions: transactions.length,
+          totalTransactions,
+          qrTransactions: transactions.length,
+          marketplaceSales: marketplaceSales.length,
           monthlyWaste,
+          marketplaceCash,
           wasteBreakdown
         }
       }
@@ -597,10 +625,10 @@ exports.getPurchaseRequests = async (req, res) => {
   try {
     const requests = await CollectorPurchaseRequest.find({
       user: req.user._id,
-      status: { $in: ['pending', 'accepted'] }
+      status: { $in: ['pending', 'accepted', 'completed', 'rejected', 'cancelled'] }
     })
       .populate('userOffer', 'wasteType quantity description')
-      .populate('collector', 'name phone businessName address')
+      .populate('collector', 'name phone address averageRating ratingCount')
       .sort('-createdAt');
 
     res.status(200).json({

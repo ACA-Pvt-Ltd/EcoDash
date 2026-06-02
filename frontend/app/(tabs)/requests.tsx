@@ -15,8 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
+import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
 import RatingModal from '@/components/RatingModal';
+import { useAppConfig } from '@/context/AppConfigContext';
 
 interface PurchaseRequest {
   _id: string;
@@ -45,6 +46,7 @@ interface PurchaseRequest {
 }
 
 export default function PurchaseRequestsScreen() {
+  const { wasteCategories } = useAppConfig();
   const { token } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -178,12 +180,12 @@ export default function PurchaseRequestsScreen() {
   };
 
   const getWasteTypeIcon = (wasteType: string) => {
-    const type = WASTE_TYPES.find(t => t.value === wasteType);
+    const type = wasteCategories.find(t => t.value === wasteType);
     return type?.icon || '♻️';
   };
 
   const getWasteTypeColor = (wasteType: string) => {
-    const type = WASTE_TYPES.find(t => t.value === wasteType);
+    const type = wasteCategories.find(t => t.value === wasteType);
     return type?.color || '#95A5A6';
   };
 

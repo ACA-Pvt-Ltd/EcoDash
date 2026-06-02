@@ -15,10 +15,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
-import { ENDPOINTS, COLORS, WASTE_TYPES, POINTS_PER_KG, CASH_PER_KG } from '@/constants/config';
+import { ENDPOINTS, COLORS } from '@/constants/config';
+import { useAppConfig } from '@/context/AppConfigContext';
 
 export default function ScanQRScreen() {
   const { refreshUser } = useAuth();
+  const { wasteCategories, pointsPerKg, cashPerKg } = useAppConfig();
   const [userQR, setUserQR] = useState('');
   const [scannedUser, setScannedUser] = useState<any>(null);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
@@ -106,13 +108,13 @@ export default function ScanQRScreen() {
   const calculatePoints = () => {
     if (!weight || !selectedWasteType) return 0;
     const weightValue = parseFloat(weight) || 0;
-    return Math.round(weightValue * (POINTS_PER_KG[selectedWasteType as keyof typeof POINTS_PER_KG] || 0));
+    return Math.round(weightValue * (pointsPerKg[selectedWasteType] || 0));
   };
 
   const calculateCash = () => {
     if (!weight || !selectedWasteType) return 0;
     const weightValue = parseFloat(weight) || 0;
-    return weightValue * (CASH_PER_KG[selectedWasteType as keyof typeof CASH_PER_KG] || 0);
+    return weightValue * (cashPerKg[selectedWasteType] || 0);
   };
 
   const handleSubmitCollection = async () => {
@@ -339,7 +341,7 @@ export default function ScanQRScreen() {
                 {recentTransactions.map((transaction, index) => (
                   <View key={index} style={styles.transactionItem}>
                     <View style={styles.transactionIcon}>
-                      <Text>{WASTE_TYPES.find(w => w.value === transaction.wasteType)?.icon || '♻️'}</Text>
+                      <Text>{wasteCategories.find(w => w.value === transaction.wasteType)?.icon || '♻️'}</Text>
                     </View>
                     <View style={styles.transactionInfo}>
                       <Text style={styles.transactionType}>{transaction.wasteType}</Text>
@@ -432,7 +434,7 @@ export default function ScanQRScreen() {
               {/* Waste Type Selection */}
               <Text style={styles.modalSectionTitle}>Select Waste Type</Text>
               <View style={styles.wasteTypeGrid}>
-                {WASTE_TYPES.map((type) => (
+                {wasteCategories.map((type) => (
                   <TouchableOpacity
                     key={type.value}
                     style={[
@@ -444,7 +446,7 @@ export default function ScanQRScreen() {
                     <Text style={styles.wasteTypeIcon}>{type.icon}</Text>
                     <Text style={styles.wasteTypeLabel}>{type.label}</Text>
                     <Text style={styles.wasteTypePoints}>
-                      {POINTS_PER_KG[type.value as keyof typeof POINTS_PER_KG]} pts/kg
+                      {pointsPerKg[type.value] || 0} pts/kg
                     </Text>
                   </TouchableOpacity>
                 ))}

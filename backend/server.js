@@ -36,7 +36,8 @@ setInterval(async () => {
 // Middleware
 const ALLOWED_ORIGINS = [
   'https://eco-dash-rekj.vercel.app',   // deployed admin portal
-  'http://localhost:3000',               // local admin portal dev
+  'http://localhost:3000',               // local backend / legacy
+  'http://localhost:3001',               // local admin portal dev (Next.js)
   'http://localhost:8081',               // Expo mobile dev
 ];
 
@@ -80,6 +81,7 @@ app.use('/api/collectors', require('./routes/collectors'));
 app.use('/api/vendors', require('./routes/vendors'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/config', require('./routes/config'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

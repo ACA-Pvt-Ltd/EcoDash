@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useAppConfig } from '@/context/AppConfigContext';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS, WASTE_TYPES } from '@/constants/config';
 import RatingModal from '@/components/RatingModal';
@@ -78,6 +79,7 @@ function MetaRow({ icon, label, value }: { icon: string; label: string; value: s
 }
 
 export default function MyOfferDetailsScreen() {
+  const { wasteCategories } = useAppConfig();
   const { offerId } = useLocalSearchParams<{ offerId: string }>();
   const [offer, setOffer] = useState<Offer | null>(null);
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -253,7 +255,7 @@ export default function MyOfferDetailsScreen() {
     );
   }
 
-  const wt = WASTE_TYPES.find(t => t.value === offer.wasteType);
+  const wt = wasteCategories.find(t => t.value === offer.wasteType);
   const status = STATUS_COLOR[offer.status] || STATUS_COLOR.available;
   const qty = typeof offer.quantity === 'object'
     ? `${offer.quantity.value} ${offer.quantity.unit}`

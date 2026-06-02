@@ -15,8 +15,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL, ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
+import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useAppConfig } from '@/context/AppConfigContext';
 
 const { width } = Dimensions.get('window');
 const CAROUSEL_HEIGHT = 280;
@@ -45,6 +46,7 @@ interface MyRequest {
 }
 
 export default function UserOfferDetailsScreen() {
+  const { wasteCategories } = useAppConfig();
   const { token } = useAuth();
   const { offerId } = useLocalSearchParams<{ offerId: string }>();
 
@@ -53,7 +55,7 @@ export default function UserOfferDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
 
-  const wt = WASTE_TYPES.find(t => t.value === offer?.wasteType);
+  const wt = wasteCategories.find(t => t.value === offer?.wasteType);
 
   // Build media array: images first, then video
   const mediaItems: { uri: string; isVideo: boolean }[] = [];

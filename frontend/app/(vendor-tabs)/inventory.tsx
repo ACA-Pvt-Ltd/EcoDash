@@ -8,10 +8,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, WASTE_TYPES, ENDPOINTS } from '@/constants/config';
+import { COLORS, ENDPOINTS } from '@/constants/config';
+import { useAppConfig } from '@/context/AppConfigContext';
 import api from '@/services/api';
 
 export default function VendorInventoryScreen() {
+  const { wasteCategories } = useAppConfig();
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,7 +84,7 @@ export default function VendorInventoryScreen() {
         {Array.isArray(inventory) && inventory.length > 0 ? (
           inventory.map((item, index) => {
             const wasteType = item.wasteType || item.type;
-            const wasteInfo = WASTE_TYPES.find(w => w.value === wasteType);
+            const wasteInfo = wasteCategories.find(w => w.value === wasteType);
             const weight = item.totalQuantity || item.weight || 0;
             const collections = item.purchases || item.collections || item.transactions || 0;
             

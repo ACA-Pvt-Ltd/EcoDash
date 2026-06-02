@@ -17,6 +17,8 @@ interface User {
   totalTransactions?: number;
   acceptedWasteTypes?: string[];
   badges?: any[];
+  averageRating?: number;
+  ratingCount?: number;
 }
 
 interface AuthContextType {

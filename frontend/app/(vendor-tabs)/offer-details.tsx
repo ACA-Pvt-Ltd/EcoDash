@@ -17,8 +17,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
-import { ENDPOINTS, WASTE_TYPES, COLORS } from '@/constants/config';
+import { ENDPOINTS,  COLORS } from '@/constants/config';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useAppConfig } from '@/context/AppConfigContext';
 
 const { width } = Dimensions.get('window');
 const CAROUSEL_HEIGHT = 280;
@@ -46,6 +47,7 @@ interface MyPurchase {
 }
 
 export default function VendorOfferDetailsScreen() {
+  const { wasteCategories } = useAppConfig();
   const { offerId } = useLocalSearchParams<{ offerId: string }>();
 
   const [offer, setOffer] = useState<CollectorOffer | null>(null);
@@ -58,7 +60,7 @@ export default function VendorOfferDetailsScreen() {
   const [pricePerKg, setPricePerKg] = useState('');
   const [purchasing, setPurchasing] = useState(false);
 
-  const wt = WASTE_TYPES.find(t => t.value === offer?.wasteType);
+  const wt = wasteCategories.find(t => t.value === offer?.wasteType);
 
   const mediaItems: { uri: string; isVideo: boolean }[] = [];
   if (offer?.images) offer.images.forEach(uri => mediaItems.push({ uri, isVideo: false }));

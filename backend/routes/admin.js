@@ -4,6 +4,7 @@ const {
   getDashboard,
   getUsers,
   updateUserStatus,
+  updateUser,
   createCollector,
   getCollectors,
   updateCollector,
@@ -34,6 +35,7 @@ router.get('/dashboard', getDashboard);
 // User Management
 router.get('/users', getUsers);
 router.put('/users/:id/status', updateUserStatus);
+router.put('/users/:id', updateUser);
 
 // Collector Management
 router.post('/collectors', createCollector);
