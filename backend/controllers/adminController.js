@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const Collector = require('../models/Collector');
+
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const Vendor = require('../models/Vendor');
 const Admin = require('../models/Admin');
 const WasteTransaction = require('../models/WasteTransaction');
@@ -147,8 +149,8 @@ exports.getUsers = async (req, res) => {
 
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { name: { $regex: escapeRegex(search), $options: 'i' } },
+        { email: { $regex: escapeRegex(search), $options: 'i' } }
       ];
     }
 
@@ -295,8 +297,8 @@ exports.getCollectors = async (req, res) => {
 
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { name: { $regex: escapeRegex(search), $options: 'i' } },
+        { email: { $regex: escapeRegex(search), $options: 'i' } }
       ];
     }
 
@@ -453,8 +455,8 @@ exports.getVendors = async (req, res) => {
 
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { name: { $regex: escapeRegex(search), $options: 'i' } },
+        { email: { $regex: escapeRegex(search), $options: 'i' } }
       ];
     }
 

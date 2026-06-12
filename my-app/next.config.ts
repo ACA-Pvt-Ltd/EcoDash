@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const BACKEND_API =
-  process.env.NODE_ENV === "development"
-    ? "http://localhost:3000/api"
-    : "https://waste-management-app-five.vercel.app/api";
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://eco-dash-tawny.vercel.app/api";
 
 const nextConfig: NextConfig = {
   async rewrites() {

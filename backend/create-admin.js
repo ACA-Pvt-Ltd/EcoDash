@@ -12,11 +12,16 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Admin = require('./models/Admin');
 
-// ─── CONFIG — edit these before running ────────────────────────────────────
-const ADMIN_NAME     = 'Super Admin';
-const ADMIN_EMAIL    = 'admin@ecodash.com';   // change to whatever you want
-const ADMIN_PASSWORD = 'Admin@12345';          // change to a strong password
-const ADMIN_ROLE     = 'superadmin';
+// ─── CONFIG — set these in your .env or pass as env vars ───────────────────
+const ADMIN_NAME     = process.env.ADMIN_NAME     || 'Super Admin';
+const ADMIN_EMAIL    = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_ROLE     = process.env.ADMIN_ROLE     || 'superadmin';
+
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+  console.error('❌ ADMIN_EMAIL and ADMIN_PASSWORD must be set as environment variables.');
+  process.exit(1);
+}
 // ───────────────────────────────────────────────────────────────────────────
 
 const PERMISSIONS = [

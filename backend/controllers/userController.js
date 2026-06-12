@@ -398,7 +398,8 @@ exports.joinChallenge = async (req, res) => {
 // @access  Private (User)
 exports.getLeaderboard = async (req, res) => {
   try {
-    const { period = 'all', limit = 50 } = req.query;
+    const { period = 'all' } = req.query;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
 
     let dateFilter = {};
     if (period === 'month') {
@@ -515,12 +516,21 @@ exports.createWasteOffer = async (req, res) => {
 
     // Support both JSON body (no files) and multipart/form-data (with files)
     const wasteType = body.wasteType;
-    const quantity = typeof body.quantity === 'string'
-      ? JSON.parse(body.quantity)
-      : body.quantity || { value: body.quantityValue, unit: body.quantityUnit || 'kg' };
-    const location = typeof body.location === 'string'
-      ? JSON.parse(body.location)
-      : body.location || { address: body.locationAddress, city: body.locationCity };
+    let quantity, location;
+    try {
+      quantity = typeof body.quantity === 'string'
+        ? JSON.parse(body.quantity)
+        : body.quantity || { value: body.quantityValue, unit: body.quantityUnit || 'kg' };
+    } catch {
+      return res.status(400).json({ success: false, message: 'Invalid quantity format' });
+    }
+    try {
+      location = typeof body.location === 'string'
+        ? JSON.parse(body.location)
+        : body.location || { address: body.locationAddress, city: body.locationCity };
+    } catch {
+      return res.status(400).json({ success: false, message: 'Invalid location format' });
+    }
     const description = body.description;
     const expectedPrice = body.expectedPrice;
     const pickupPreference = body.pickupPreference;

@@ -196,7 +196,11 @@ function OperatingHoursEditor({ value, onChange }: { value: HoursState; onChange
   );
 }
 
-function randomPassword() { return Math.random().toString(36).slice(2, 10); }
+function randomPassword() {
+  const chars = 'ABCDEFGHJKMNPQRSTWXYZabcdefghjkmnpqrstwxyz23456789!@#$%';
+  return Array.from(crypto.getRandomValues(new Uint8Array(14)))
+    .map(b => chars[b % chars.length]).join('');
+}
 
 const EMPTY_FORM = {
   name: '', email: '', password: '', phone: '', city: '', street: '',

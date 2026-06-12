@@ -55,7 +55,9 @@ function StatCard({ label, value, sub, color }: { label: string; value: string |
 }
 
 function randomPassword() {
-  return Math.random().toString(36).slice(2, 10);
+  const chars = 'ABCDEFGHJKMNPQRSTWXYZabcdefghjkmnpqrstwxyz23456789!@#$%';
+  return Array.from(crypto.getRandomValues(new Uint8Array(14)))
+    .map(b => chars[b % chars.length]).join('');
 }
 
 const EMPTY_FORM = { name: '', email: '', password: '', phone: '', businessType: 'Both', description: '', website: '', city: '', street: '' };

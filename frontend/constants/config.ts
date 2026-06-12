@@ -1,8 +1,8 @@
 // API Configuration
 // For local development (backend running on port 3000):
-export const API_URL = 'http://192.168.1.181:3000/api';
+// export const API_URL = 'http://192.168.1.181:3000/api';
 // For deployed backend on Vercel, use:
-// export const API_URL = 'https://waste-management-app-five.vercel.app/api';
+export const API_URL = 'https://eco-dash-tawny.vercel.app/api';
 
 // API Endpoints
 export const ENDPOINTS = {

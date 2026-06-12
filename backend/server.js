@@ -2,6 +2,7 @@ require('dotenv').config();
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
@@ -9,10 +10,21 @@ const connectDB = require('./config/db');
 const app = express();
 const server = http.createServer(app);
 
+// Security headers
+app.use(helmet({ crossOriginResourcePolicy: false }));
+
+// Allowed origins (defined before Socket.IO so we can reuse)
+const ALLOWED_ORIGINS = [
+  'https://eco-dash-rekj.vercel.app',   // deployed admin portal
+  'http://localhost:3000',               // local backend / legacy
+  'http://localhost:3001',               // local admin portal dev (Next.js)
+  'http://localhost:8081',               // Expo mobile dev
+];
+
 // Attach Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST'],
   },
   transports: ['websocket', 'polling'],
@@ -34,13 +46,6 @@ setInterval(async () => {
 }, 30000);
 
 // Middleware
-const ALLOWED_ORIGINS = [
-  'https://eco-dash-rekj.vercel.app',   // deployed admin portal
-  'http://localhost:3000',               // local backend / legacy
-  'http://localhost:3001',               // local admin portal dev (Next.js)
-  'http://localhost:8081',               // Expo mobile dev
-];
-
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (React Native, Postman, server-to-server)
@@ -51,8 +56,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50kb' }));
+app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 
 // Static folder for uploads
 app.use('/uploads', express.static('uploads'));
@@ -86,9 +91,10 @@ app.use('/api/config', require('./routes/config'));
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
+  const isProd = process.env.NODE_ENV === 'production';
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Server Error',
+    message: isProd ? 'Server Error' : (err.message || 'Server Error'),
   });
 });
 
