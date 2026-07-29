@@ -16,6 +16,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { COLORS } from '@/constants/config';
 import LocationPicker from '@/components/LocationPicker';
+import SupportContactBlock from '@/components/SupportContactBlock';
 
 type Role = 'user' | 'collector' | 'vendor';
 
@@ -493,6 +494,11 @@ export default function RegisterScreen() {
               <Text style={[styles.linkText, { color: roleConfig.color }]}>Login</Text>
             </TouchableOpacity>
           </View>
+
+          <SupportContactBlock
+            title="Having trouble registering?"
+            message="If your details keep being rejected or the account will not create, contact us:"
+          />
         </View>
       </ScrollView>
 

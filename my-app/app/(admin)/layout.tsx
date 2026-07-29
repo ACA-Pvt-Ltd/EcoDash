@@ -10,6 +10,7 @@ import {
   Building2,
   ClipboardList,
   Settings,
+  HelpCircle,
   LogOut,
   Leaf,
   type LucideIcon,
@@ -22,6 +23,7 @@ const NAV_ITEMS: { label: string; href: string; Icon: LucideIcon }[] = [
   { label: 'Vendors',       href: '/vendors',      Icon: Building2       },
   { label: 'Transactions',  href: '/transactions', Icon: ClipboardList   },
   { label: 'Configuration', href: '/config',       Icon: Settings        },
+  { label: 'Help Content',  href: '/content',      Icon: HelpCircle      },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

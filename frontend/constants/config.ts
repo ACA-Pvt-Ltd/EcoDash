@@ -122,6 +122,77 @@ export const CASH_PER_KG = {
 // Badge Levels
 export const BADGE_LEVELS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
 
+// Help & support fallbacks — the live content comes from the admin portal via
+// GET /config (see AppConfigContext). These only apply if that request fails,
+// so the help screen and the login-screen contact block still work offline.
+export type FaqRole = 'all' | 'user' | 'collector' | 'vendor';
+
+export interface FaqItem {
+  id: string;
+  role: FaqRole;
+  question: string;
+  answer: string;
+}
+
+export interface SupportContact {
+  email: string;
+  phone: string;
+  whatsapp?: string;
+  hours?: string;
+}
+
+export const SUPPORT_CONTACT: SupportContact = {
+  email: 'support@ecodash.lk',
+  phone: '+94 11 234 5678',
+  whatsapp: '+94 77 123 4567',
+  hours: 'Monday to Friday, 9:00 AM – 5:00 PM',
+};
+
+export const FAQ_ITEMS: FaqItem[] = [
+  {
+    id: 'gen-what-is',
+    role: 'all',
+    question: 'What is EcoDash?',
+    answer:
+      'EcoDash connects households, waste collectors and recycling vendors on one platform. You hand over recyclable waste, collectors pick it up or accept drop-offs, and vendors buy it on for recycling — and you get rewarded for taking part.',
+  },
+  {
+    id: 'gen-points-cash',
+    role: 'all',
+    question: 'How do points and cash rewards work?',
+    answer:
+      'Every waste type has a points rate and a cash rate per kilogram. When a collector records your waste, the reward is calculated automatically and added to your account.',
+  },
+  {
+    id: 'gen-account-trouble',
+    role: 'all',
+    question: 'I cannot log in or register. What should I do?',
+    answer:
+      'First check that you selected the correct role on the login screen — households, collectors and vendors each sign in under their own role. If that does not help, contact us using the details below.',
+  },
+  {
+    id: 'user-qr',
+    role: 'user',
+    question: 'What is my QR code for?',
+    answer:
+      'Your QR code identifies your account. When you drop waste off with a collector, they scan it and the reward goes straight to you.',
+  },
+  {
+    id: 'col-waste-types',
+    role: 'collector',
+    question: 'Can I change the waste types I accept?',
+    answer:
+      'Not from the app. You choose your accepted waste types when you register, and only an administrator can change them afterwards. Contact us and we will update your account.',
+  },
+  {
+    id: 'ven-buy',
+    role: 'vendor',
+    question: 'How do I buy waste from collectors?',
+    answer:
+      'Browse Offers shows what collectors currently have available. Send a purchase request on anything you want; the collector can accept, reject or send back a counter-offer.',
+  },
+];
+
 // Colors
 export const COLORS = {
   primary: '#2ECC71',

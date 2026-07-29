@@ -638,7 +638,7 @@ exports.getPurchaseRequests = async (req, res) => {
       status: { $in: ['pending', 'accepted', 'completed', 'rejected', 'cancelled'] }
     })
       .populate('userOffer', 'wasteType quantity description')
-      .populate('collector', 'name phone address averageRating ratingCount')
+      .populate('collector', 'name phone address averageRating ratingCount performance')
       .sort('-createdAt');
 
     res.status(200).json({

@@ -12,6 +12,7 @@ const AppConfig = require('../models/AppConfig');
 const CollectorPurchaseRequest = require('../models/CollectorPurchaseRequest');
 const { generateToken } = require('../config/jwt');
 const { sendWelcomeEmail } = require('../utils/email');
+const { DEFAULT_FAQ_ITEMS, DEFAULT_SUPPORT_CONTACT } = require('../config/contentDefaults');
 
 // @desc    Get admin dashboard overview
 // @route   GET /api/admin/dashboard
@@ -815,6 +816,18 @@ const DEFAULT_CONFIGS = [
     value: 60,
     description: 'Maximum video duration in seconds per offer',
     category: 'offers'
+  },
+  {
+    key: 'faq_items',
+    value: DEFAULT_FAQ_ITEMS,
+    description: 'Help & FAQ entries shown in the mobile app, filtered by role',
+    category: 'content'
+  },
+  {
+    key: 'support_contact',
+    value: DEFAULT_SUPPORT_CONTACT,
+    description: 'Support contact details shown in the app and on the login screen',
+    category: 'content'
   }
 ];
 
@@ -831,7 +844,13 @@ exports.getAppConfig = async (req, res) => {
       configs = await AppConfig.find();
     }
 
+    // Start from the defaults so keys added after this deployment was first
+    // configured still reach the portal — seeding only fires on an empty
+    // collection, which never happens again once an admin has saved anything.
     const configObj = {};
+    DEFAULT_CONFIGS.forEach(d => {
+      configObj[d.key] = d.value;
+    });
     configs.forEach(c => {
       configObj[c.key] = c.value;
     });

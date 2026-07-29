@@ -37,6 +37,7 @@ export const config = {
     '/vendors/:path*',
     '/transactions/:path*',
     '/config/:path*',
+    '/content/:path*',
     '/(admin)/:path*',
   ],
 };

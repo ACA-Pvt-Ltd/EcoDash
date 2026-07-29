@@ -8,12 +8,17 @@ const UserWasteOffer = require('../models/UserWasteOffer');
 const CollectorPurchaseRequest = require('../models/CollectorPurchaseRequest');
 const Badge = require('../models/Badge');
 const { calculatePoints, checkBadgeEligibility } = require('../utils/helpers');
+const { refreshPerformanceSafely } = require('../utils/collectorPerformance');
 
 // @desc    Get collector dashboard
 // @route   GET /api/collectors/dashboard
 // @access  Private (Collector)
 exports.getDashboard = async (req, res) => {
   try {
+    // Scores are otherwise only refreshed on write, so a collector who has gone
+    // quiet would keep a stale 30-day figure. Refresh their own view on load.
+    await refreshPerformanceSafely(req.user._id);
+
     const collector = await Collector.findById(req.user._id);
 
     // Get today's stats
@@ -168,6 +173,7 @@ exports.verifyDropoff = async (req, res) => {
       req.user.totalWasteCollected += quantity;
       req.user.totalTransactions += 1;
       await req.user.save();
+      await refreshPerformanceSafely(req.user._id);
 
       // Populate the transaction for response
       await transaction.populate('user', 'name email');
@@ -190,6 +196,7 @@ exports.verifyDropoff = async (req, res) => {
       req.user.totalWasteCollected += quantity;
       req.user.totalTransactions += 1;
       await req.user.save();
+      await refreshPerformanceSafely(req.user._id);
 
       // Populate the transaction for response
       await transaction.populate('user', 'name email');
@@ -484,7 +491,7 @@ exports.getVendors = async (req, res) => {
   try {
     // Show all active vendors (removed location filter and verification requirement)
     const vendors = await Vendor.find({ isActive: true })
-      .select('name description logo businessType address website phone location')
+      .select('name description logo businessType address website phone location averageRating ratingCount')
       .sort('-createdAt');
 
     res.status(200).json({
@@ -783,6 +790,7 @@ exports.acceptPurchaseRequest = async (req, res) => {
     }
 
     await purchase.save();
+    await refreshPerformanceSafely(req.user._id);
     await purchase.populate('vendor', 'name phone');
 
     // Update the linked offer status to 'sold' if it exists
@@ -837,6 +845,7 @@ exports.rejectPurchaseRequest = async (req, res) => {
     }
 
     await purchase.save();
+    await refreshPerformanceSafely(req.user._id);
     await purchase.populate('vendor', 'name phone');
 
     // Release the offer back to available so other vendors can purchase it
@@ -895,6 +904,7 @@ exports.counterOffer = async (req, res) => {
     };
 
     await purchase.save();
+    await refreshPerformanceSafely(req.user._id);
     await purchase.populate('vendor', 'name phone');
 
     // TODO: Send notification to vendor
@@ -1202,9 +1212,16 @@ exports.completeUserWastePickup = async (req, res) => {
       collector.inventory[inventoryKey] = offer.quantity.value;
     }
     
+    // Marketplace pickups are collections too — these counters previously only
+    // tracked QR drop-offs, which understated collectors who buy from users.
+    collector.totalWasteCollected = (collector.totalWasteCollected || 0) + offer.quantity.value;
+    collector.totalTransactions = (collector.totalTransactions || 0) + 1;
+
     collector.markModified('inventory');
     await collector.save();
-    
+
+    await refreshPerformanceSafely(collector._id);
+
     console.log('Collector inventory updated:', {
       collectorId: collector._id,
       inventoryKey,
@@ -1255,6 +1272,9 @@ exports.cancelUserPurchaseRequest = async (req, res) => {
 
     purchaseRequest.status = 'cancelled';
     await purchaseRequest.save();
+
+    // Cancelling counts against the collector's completion rate
+    await refreshPerformanceSafely(req.user._id);
 
     // Set offer back to available if no other pending requests
     const otherPendingRequests = await CollectorPurchaseRequest.countDocuments({

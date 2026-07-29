@@ -90,7 +90,16 @@ const collectorSchema = new mongoose.Schema({
     ref: 'Admin'
   },
   averageRating: { type: Number, default: 0 },
-  ratingCount: { type: Number, default: 0 }
+  ratingCount: { type: Number, default: 0 },
+  // Metrics-derived score, separate from the user-submitted star rating above.
+  // Recomputed by utils/collectorPerformance.js — see that file for the formula.
+  performance: {
+    score: { type: Number, default: null },              // 0-100; null = not enough activity yet
+    collectionsLast30Days: { type: Number, default: 0 },
+    completionRate: { type: Number, default: null },     // 0-100
+    avgResponseHours: { type: Number, default: null },
+    computedAt: { type: Date, default: null }
+  }
 }, {
   timestamps: true
 });

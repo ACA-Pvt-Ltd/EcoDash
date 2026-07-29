@@ -19,6 +19,16 @@ interface User {
   badges?: any[];
   averageRating?: number;
   ratingCount?: number;
+  performance?: CollectorPerformance;
+}
+
+// Metrics-derived collector score, separate from the star rating above
+export interface CollectorPerformance {
+  score: number | null;
+  collectionsLast30Days: number;
+  completionRate: number | null;
+  avgResponseHours: number | null;
+  computedAt?: string | null;
 }
 
 interface AuthContextType {

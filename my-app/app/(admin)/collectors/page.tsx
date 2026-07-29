@@ -20,6 +20,12 @@ interface Collector {
   isVerified: boolean;
   totalWasteCollected?: number;
   totalTransactions?: number;
+  performance?: {
+    score: number | null;
+    collectionsLast30Days?: number;
+    completionRate?: number | null;
+    avgResponseHours?: number | null;
+  } | null;
   createdAt: string;
 }
 
@@ -50,6 +56,34 @@ function Avatar({ name }: { name: string }) {
 
 function Spinner() {
   return <div className="flex justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-600 border-t-transparent" /></div>;
+}
+
+// Metrics-derived score — distinct from the user-submitted star rating.
+// A null score means too little activity to judge, never a bad collector.
+function PerformanceCell({ performance }: { performance?: Collector['performance'] }) {
+  const score = performance?.score;
+
+  if (score === null || score === undefined) {
+    return <span className="text-[11px] text-gray-400">No data yet</span>;
+  }
+
+  const tone =
+    score >= 80 ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+    : score >= 60 ? 'bg-blue-50 text-blue-700 ring-blue-100'
+    : score >= 40 ? 'bg-amber-50 text-amber-700 ring-amber-100'
+    : 'bg-gray-100 text-gray-500 ring-gray-200';
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${tone}`}>
+        {score}/100
+      </span>
+      <span className="text-[10px] text-gray-400">
+        {performance?.collectionsLast30Days ?? 0} in 30d
+        {performance?.completionRate != null && ` · ${performance.completionRate}% done`}
+      </span>
+    </div>
+  );
 }
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color: string }) {
@@ -396,14 +430,14 @@ export default function CollectorsPage() {
           <table className="min-w-full">
             <thead>
               <tr className="border-b border-gray-100">
-                {['Collector', 'Email', 'Phone', 'Waste Types', 'Status', 'Verification', 'Joined', ''].map((h, i) => (
+                {['Collector', 'Email', 'Phone', 'Waste Types', 'Performance', 'Status', 'Verification', 'Joined', ''].map((h, i) => (
                   <th key={i} className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={8} className="px-5 py-12 text-center text-[13px] text-gray-400">No collectors found.</td></tr>
+                <tr><td colSpan={9} className="px-5 py-12 text-center text-[13px] text-gray-400">No collectors found.</td></tr>
               ) : filtered.map(c => (
                 <tr key={c._id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
                   <td className="px-5 py-3.5">
@@ -420,6 +454,9 @@ export default function CollectorsPage() {
                       ))}
                       {(c.acceptedWasteTypes?.length || 0) > 3 && <span className="text-[10px] text-gray-400">+{(c.acceptedWasteTypes?.length || 0) - 3}</span>}
                     </div>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <PerformanceCell performance={c.performance} />
                   </td>
                   <td className="px-5 py-3.5">
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${c.isActive ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-gray-100 text-gray-500 ring-gray-200'}`}>
