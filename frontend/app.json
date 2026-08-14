@@ -60,7 +60,14 @@
           "locationAlwaysAndWhenInUsePermissions": "Allow EcoDash to access your location for getting directions"
         }
       ],
-      "@sentry/react-native/expo"
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://de.sentry.io/",
+          "organization": "avishka-0k",
+          "project": "react-native-wv"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

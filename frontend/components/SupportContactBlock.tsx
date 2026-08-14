@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F8FF',
     borderRadius: 10,
     borderLeftWidth: 4,
-    borderLeftColor: COLORS.secondary,
+    borderLeftColor: '#F0F8FF',
   },
   title: {
     fontSize: 14,

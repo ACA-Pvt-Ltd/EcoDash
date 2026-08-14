@@ -13,7 +13,7 @@ import { AppConfigProvider } from '@/context/AppConfigContext';
 import { COLORS } from '@/constants/config';
 
 Sentry.init({
-  dsn: 'https://1d5289ddcf5cdea8c85394b5503641d4@o4511554450423808.ingest.de.sentry.io/4511554476048464',
+  dsn: 'https://e74434a0ff9d898b4b7fe638b3bdee52@o4511554450423808.ingest.de.sentry.io/4511823532261456',
   enabled: !__DEV__,
   debug: false,
   enableAutoSessionTracking: true,

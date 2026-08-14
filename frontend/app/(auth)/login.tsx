@@ -210,6 +210,7 @@ const styles = StyleSheet.create({
   icon: {
     fontSize: 80,
     marginBottom: 10,
+    marginTop: 20,
   },
   title: {
     fontSize: 28,
