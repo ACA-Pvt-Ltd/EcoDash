@@ -170,7 +170,10 @@ export default function ProfileScreen() {
           <Text style={styles.menuText}>My Statistics</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push('/help' as any)}
+        >
           <Text style={styles.menuIcon}>❓</Text>
           <Text style={styles.menuText}>Help & Support</Text>
           <Text style={styles.menuArrow}>›</Text>

@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS } from '@/constants/config';
+import PerformanceBadge from '@/components/PerformanceBadge';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -137,6 +138,45 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>My Performance</Text>
+        <View style={styles.performanceCard}>
+          <View style={styles.performanceHeader}>
+            <PerformanceBadge performance={user?.performance} />
+            <Text style={styles.performanceCaption}>
+              Separate from your star rating — this reflects your activity.
+            </Text>
+          </View>
+
+          <View style={styles.performanceRow}>
+            <Text style={styles.performanceLabel}>Collections (last 30 days)</Text>
+            <Text style={styles.performanceValue}>
+              {user?.performance?.collectionsLast30Days ?? 0}
+            </Text>
+          </View>
+          <View style={styles.performanceRow}>
+            <Text style={styles.performanceLabel}>Pickups completed</Text>
+            <Text style={styles.performanceValue}>
+              {user?.performance?.completionRate != null
+                ? `${user.performance.completionRate}%`
+                : '—'}
+            </Text>
+          </View>
+          <View style={styles.performanceRow}>
+            <Text style={styles.performanceLabel}>Average response time</Text>
+            <Text style={styles.performanceValue}>
+              {user?.performance?.avgResponseHours != null
+                ? `${user.performance.avgResponseHours} hrs`
+                : '—'}
+            </Text>
+          </View>
+          <View style={[styles.performanceRow, styles.performanceRowLast]}>
+            <Text style={styles.performanceLabel}>Total waste collected</Text>
+            <Text style={styles.performanceValue}>{user?.totalWasteCollected || 0} kg</Text>
+          </View>
+        </View>
+      </View>
+
       {user?.badges && user.badges.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Badges Earned 🏅</Text>
@@ -216,7 +256,10 @@ export default function ProfileScreen() {
           <Text style={styles.menuText}>My Statistics</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push('/help' as any)}
+        >
           <Text style={styles.menuIcon}>❓</Text>
           <Text style={styles.menuText}>Help & Support</Text>
           <Text style={styles.menuArrow}>›</Text>
@@ -372,6 +415,42 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.dark,
     marginBottom: 15,
+  },
+  performanceCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 18,
+  },
+  performanceHeader: {
+    marginBottom: 12,
+  },
+  performanceCaption: {
+    fontSize: 12,
+    color: COLORS.gray,
+    marginTop: 8,
+    lineHeight: 17,
+  },
+  performanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  performanceRowLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
+  },
+  performanceLabel: {
+    fontSize: 14,
+    color: COLORS.gray,
+    flex: 1,
+  },
+  performanceValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.dark,
   },
   badgesContainer: {
     flexDirection: 'row',

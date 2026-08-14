@@ -16,6 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 import { COLORS } from '@/constants/config';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import SupportContactBlock from '@/components/SupportContactBlock';
 
 type Role = 'user' | 'collector' | 'vendor';
 
@@ -36,10 +37,6 @@ export default function LoginScreen() {
   ];
 
   const handleLogin = async () => {
-    console.log('🚀 handleLogin called');
-    console.log('📧 Email input:', email);
-    console.log('🔒 Password length:', password.length);
-    console.log('👤 Selected role:', role);
     
     if (!email || !password) {
       console.log('⚠️ Validation failed: Missing email or password');
@@ -188,9 +185,9 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        
+          <SupportContactBlock />
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -213,6 +210,7 @@ const styles = StyleSheet.create({
   icon: {
     fontSize: 80,
     marginBottom: 10,
+    marginTop: 20,
   },
   title: {
     fontSize: 28,
@@ -324,23 +322,5 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     fontWeight: 'bold',
-  },
-  demoSection: {
-    marginTop: 30,
-    padding: 15,
-    backgroundColor: '#F0F8FF',
-    borderRadius: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.secondary,
-  },
-  demoTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.dark,
-    marginBottom: 5,
-  },
-  demoText: {
-    fontSize: 12,
-    color: COLORS.gray,
   },
 });

@@ -30,11 +30,28 @@ kill $EXPO_PID 2>/dev/null
 echo "✅ Cache cleared"
 echo ""
 
-# Step 4: Build the release APK
+# Step 4: Decide whether Sentry can upload source maps
+# sentry-cli fails the whole build if it has no org/project/token, and
+# android/sentry.properties is a stub that defers to these env vars. Skip the
+# upload unless all three are present — set them and the upload runs again
+# automatically, no change needed here.
+if [ -n "$SENTRY_ORG" ] && [ -n "$SENTRY_PROJECT" ] && [ -n "$SENTRY_AUTH_TOKEN" ]; then
+    echo "📡 Sentry credentials found — source maps will be uploaded"
+    SENTRY_STATUS="ENABLED"
+else
+    export SENTRY_DISABLE_AUTO_UPLOAD=true
+    echo "⚠️  Sentry source map upload SKIPPED (SENTRY_ORG / SENTRY_PROJECT / SENTRY_AUTH_TOKEN not set)"
+    echo "   Crash reporting still works, but release stack traces will be minified."
+    SENTRY_STATUS="SKIPPED"
+fi
+echo ""
+
+# Step 5: Build the release APK
 echo "🔨 Building release APK..."
 echo "   - Hermes engine: ENABLED"
 echo "   - ProGuard: ENABLED"
 echo "   - Optimizations: ENABLED"
+echo "   - Sentry source maps: $SENTRY_STATUS"
 echo ""
 
 cd android

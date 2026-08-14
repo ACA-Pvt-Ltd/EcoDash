@@ -16,4 +16,7 @@ const ratingSchema = new mongoose.Schema(
 // One rating per rater per transaction
 ratingSchema.index({ rater: 1, relatedId: 1 }, { unique: true });
 
+// Every average-rating recompute filters on this pair
+ratingSchema.index({ ratee: 1, rateeRole: 1 });
+
 module.exports = mongoose.model('Rating', ratingSchema);

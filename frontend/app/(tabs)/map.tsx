@@ -13,6 +13,7 @@ import * as Location from 'expo-location';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS } from '@/constants/config';
 import { haversineKm, inRadiusBand } from '@/utils/distance';
+import PerformanceBadge from '@/components/PerformanceBadge';
 
 type RadiusFilter = 'all' | '0-50' | '50-150' | '150-250';
 type SortBy = 'nearest' | 'az' | 'rating';
@@ -93,6 +94,7 @@ export default function MapScreen() {
           coordinates: point.location?.coordinates ?? null, // [lng, lat]
           averageRating: point.averageRating || 0,
           ratingCount: point.ratingCount || 0,
+          performance: point.performance ?? null,
         }));
         setRawCollectors(formatted);
       } else {
@@ -279,6 +281,7 @@ export default function MapScreen() {
                     ) : (
                       <Text style={styles.noRatingText}>No ratings yet</Text>
                     )}
+                    <PerformanceBadge performance={collector.performance} compact />
                     <Text style={styles.collectorLocation}>📍 {collector.location}</Text>
                   </View>
                   <View style={styles.distanceBadge}>

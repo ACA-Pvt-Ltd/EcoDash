@@ -20,7 +20,7 @@ module.exports = (io) => {
     if (!token) return next(new Error('AUTH_REQUIRED'));
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
       const dbUser = await resolveUser(decoded.id, decoded.role);
       if (!dbUser) return next(new Error('USER_NOT_FOUND'));
 

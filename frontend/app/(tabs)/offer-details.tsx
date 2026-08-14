@@ -14,18 +14,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, type CollectorPerformance } from '@/context/AuthContext';
 import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAppConfig } from '@/context/AppConfigContext';
 import RatingModal from '@/components/RatingModal';
+import PerformanceBadge from '@/components/PerformanceBadge';
 
 const { width } = Dimensions.get('window');
 const CAROUSEL_HEIGHT = 280;
 
 interface PurchaseRequest {
   _id: string;
-  collector: { _id: string; name: string; phone?: string; email?: string; averageRating?: number; ratingCount?: number };
+  collector: { _id: string; name: string; phone?: string; email?: string; averageRating?: number; ratingCount?: number; performance?: CollectorPerformance | null };
   proposedPrice: number;
   offeredPrice: number;
   proposedPickupTime?: string;
@@ -298,6 +299,7 @@ export default function OfferDetailsScreen() {
                         <Text style={styles.ratingLabel}>{req.collector.averageRating.toFixed(1)} ({req.collector.ratingCount})</Text>
                       </View>
                     )}
+                    <PerformanceBadge performance={req.collector?.performance} compact />
                   </View>
                   <View style={[styles.reqStatusBadge, { backgroundColor: REQUEST_STATUS_COLOR[req.status] || '#95A5A6' }]}>
                     <Text style={styles.reqStatusText}>{req.status.toUpperCase()}</Text>

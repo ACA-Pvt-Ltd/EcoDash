@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const AppConfig = require('../models/AppConfig');
+const { DEFAULT_FAQ_ITEMS, DEFAULT_SUPPORT_CONTACT } = require('../config/contentDefaults');
 
 const DEFAULT_CONFIG = {
   waste_categories: [
@@ -16,6 +17,8 @@ const DEFAULT_CONFIG = {
   cash_per_kg:        { 'E-waste': 25, Plastic: 5,  Polythene: 5,  Glass: 2, Paper: 2, Metal: 10, Organic: 1 },
   max_offer_images:   6,
   max_video_duration: 60,
+  faq_items:          DEFAULT_FAQ_ITEMS,
+  support_contact:    DEFAULT_SUPPORT_CONTACT,
 };
 
 // GET /api/config — public, no auth required
