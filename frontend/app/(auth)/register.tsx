@@ -37,7 +37,12 @@ export default function RegisterScreen() {
   const { register } = useAuth();
   const params = useLocalSearchParams();
   
-  const role = (params.role as Role) || 'user';
+  // The role arrives from a deep link, so it cannot be trusted: an unknown value
+  // (or a repeated query param, which arrives as an array) previously left
+  // roleConfig undefined and crashed the header on roleConfig.icon.
+  const rawRole = Array.isArray(params.role) ? params.role[0] : params.role;
+  const role: Role =
+    typeof rawRole === 'string' && rawRole in roleConfigs ? (rawRole as Role) : 'user';
   const roleConfig = roleConfigs[role];
   
   const [formData, setFormData] = useState({

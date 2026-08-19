@@ -133,10 +133,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         STORAGE_KEYS.USER,
         STORAGE_KEYS.USER_ROLE,
       ]);
-      setToken(null);
-      setUser(null);
     } catch (error) {
       console.error('Error logging out:', error);
+    } finally {
+      // Always drop the in-memory session, even if clearing storage failed.
+      // Previously these sat after the await inside try, so a storage error
+      // left the user fully signed in while the UI had already navigated away.
+      setToken(null);
+      setUser(null);
     }
   };
 

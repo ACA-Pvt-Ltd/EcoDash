@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -28,7 +28,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('user');
   const [loading, setLoading] = useState(false);
-   const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const submittingRef = useRef(false);
 
   const roles = [
     { value: 'user' as Role, label: 'User', icon: '👤', color: '#2ECC71' },
@@ -37,41 +38,34 @@ export default function LoginScreen() {
   ];
 
   const handleLogin = async () => {
-    
+    // `loading` alone cannot gate this: setState is async, so two taps landing
+    // in the same frame both read loading === false and both submit.
+    if (submittingRef.current) return;
+
     if (!email || !password) {
-      console.log('⚠️ Validation failed: Missing email or password');
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    console.log('✅ Validation passed, starting login...');
+    submittingRef.current = true;
     setLoading(true);
     try {
       const processedEmail = email.toLowerCase().trim();
-      console.log('📧 Processed email:', processedEmail);
-      
+
       await login(processedEmail, password, role);
-      
-      console.log('✅ Login successful, navigating to role-specific screen...');
-      
+
       // Navigate based on role
       if (role === 'collector') {
-        console.log('🚛 Navigating to collector tabs');
         router.replace('/(collector-tabs)');
       } else if (role === 'vendor') {
-        console.log('🏭 Navigating to vendor tabs');
         router.replace('/(vendor-tabs)');
       } else {
-        console.log('👤 Navigating to user tabs');
         router.replace('/(tabs)');
       }
     } catch (error: any) {
-      console.log('❌ Login failed in handleLogin');
-      console.log('📝 Error:', error);
-      console.log('📝 Error message:', error.message);
       Alert.alert('Login Failed', error.message || 'Invalid credentials');
     } finally {
-      console.log('🏁 Login process finished, setting loading to false');
+      submittingRef.current = false;
       setLoading(false);
     }
   };

@@ -29,9 +29,17 @@ export default function CreatePurchaseRequestScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   const handleCreateRequest = async () => {
-    // Validation
-    if (!offeredPrice || parseFloat(offeredPrice) <= 0) {
+    // Number.isFinite rejects NaN and Infinity, which `<= 0` alone lets through:
+    // parseFloat('abc') is NaN and NaN <= 0 is false, so text used to pass here
+    // and JSON.stringify posted it as null.
+    const price = parseFloat(offeredPrice);
+    if (!offeredPrice || !Number.isFinite(price) || price <= 0) {
       Alert.alert('Error', 'Please enter a valid price offer');
+      return;
+    }
+
+    if (!offerId || typeof offerId !== 'string') {
+      Alert.alert('Error', 'This offer is no longer available. Please go back and try again.');
       return;
     }
 
@@ -39,7 +47,7 @@ export default function CreatePurchaseRequestScreen() {
 
     try {
       const requestData = {
-        offeredPrice: parseFloat(offeredPrice),
+        offeredPrice: price,
         message: message.trim(),
         proposedPickupTime: proposedPickupTime.toISOString(),
       };

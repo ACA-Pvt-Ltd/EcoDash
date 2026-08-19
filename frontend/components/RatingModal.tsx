@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -24,6 +24,16 @@ export default function RatingModal({ visible, title, onClose, onSubmit }: Ratin
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Parents keep this modal mounted and only toggle `visible`, so without an
+  // explicit reset a score or comment left behind by a failed submission was
+  // still showing when the modal reopened for a different person.
+  useEffect(() => {
+    if (visible) {
+      setScore(0);
+      setComment('');
+    }
+  }, [visible]);
+
   const handleSubmit = async () => {
     if (score === 0) return;
     setSubmitting(true);
@@ -31,6 +41,10 @@ export default function RatingModal({ visible, title, onClose, onSubmit }: Ratin
       await onSubmit(score, comment.trim());
       setScore(0);
       setComment('');
+    } catch {
+      // The caller has already shown the user why it failed; swallowing here
+      // keeps the modal open for a retry instead of emitting an unhandled
+      // rejection out of the onPress handler.
     } finally {
       setSubmitting(false);
     }
