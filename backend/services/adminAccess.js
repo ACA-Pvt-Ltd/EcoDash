@@ -4,20 +4,35 @@ const { PERMISSION_KEYS, DEFAULT_ROLES } = require('../config/adminPermissions')
 
 let defaultsReady = null;
 
-// Creates the built-in roles if they don't exist yet. Never overwrites edits an
-// Executive has made to Manager/Admin. Runs once per process (incl. serverless cold starts).
+// Creates the built-in roles if they don't exist yet, and grants each built-in
+// role any default permission it has never been given — so a feature added
+// later with e.g. Manager in its defaults reaches existing databases too. Each
+// default is granted only once: if an Executive switches it off, it stays off.
+// Runs once per process (incl. serverless cold starts).
 function ensureDefaultRoles() {
   if (!defaultsReady) {
-    defaultsReady = Promise.all(
-      DEFAULT_ROLES.map((role) =>
-        AdminRole.updateOne({ key: role.key }, { $setOnInsert: role }, { upsert: true })
-      )
-    ).catch((error) => {
+    defaultsReady = Promise.all(DEFAULT_ROLES.map(seedDefaultRole)).catch((error) => {
       defaultsReady = null; // retry on the next request
       throw error;
     });
   }
   return defaultsReady;
+}
+
+async function seedDefaultRole({ permissions, ...fields }) {
+  await AdminRole.updateOne(
+    { key: fields.key },
+    { $setOnInsert: { ...fields, permissions: [], seededPermissions: [] } },
+    { upsert: true }
+  );
+  const role = await AdminRole.findOne({ key: fields.key }).select('seededPermissions');
+  const ungranted = permissions.filter((key) => !(role.seededPermissions || []).includes(key));
+  if (ungranted.length) {
+    await AdminRole.updateOne(
+      { _id: role._id },
+      { $addToSet: { permissions: { $each: ungranted }, seededPermissions: { $each: ungranted } } }
+    );
+  }
 }
 
 // The Executive role, recreating the defaults if they were removed after this
@@ -50,6 +65,8 @@ async function assignExecutiveToUnassigned() {
 // existed (or by create-admin.js) have no adminRole and are made Executive, so
 // nobody loses the full access they had.
 async function resolveAdminAccess(admin) {
+  await ensureDefaultRoles(); // memoized; also delivers new default permissions to existing roles
+
   if (!admin.adminRole) {
     const executive = await getExecutiveRole();
     await Admin.updateOne({ _id: admin._id, adminRole: null }, { $set: { adminRole: executive._id } });

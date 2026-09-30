@@ -25,6 +25,11 @@ const adminRoleSchema = new mongoose.Schema({
   permissions: [{
     type: String
   }],
+  // Built-in roles only: default permission keys already granted once, so a key an
+  // Executive switched off isn't granted again (see ensureDefaultRoles)
+  seededPermissions: [{
+    type: String
+  }],
   // Built-in roles can't be renamed or deleted
   isSystem: {
     type: Boolean,

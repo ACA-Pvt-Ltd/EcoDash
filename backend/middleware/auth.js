@@ -54,6 +54,14 @@ exports.protect = async (req, res, next) => {
       });
     }
 
+    // 401 (not 403) so the mobile app signs the person out
+    if (user.deletedAt) {
+      return res.status(401).json({
+        success: false,
+        message: 'This account has been deleted'
+      });
+    }
+
     if (!user.isActive) {
       return res.status(403).json({
         success: false,

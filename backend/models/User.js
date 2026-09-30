@@ -67,6 +67,11 @@ const userSchema = new mongoose.Schema(
       enum: ["user"],
       default: "user",
     },
+    // Set when an admin deletes the account; personal data is removed at the same time
+    deletedAt: {
+      type: Date,
+      default: null
+    },
     isActive: {
       type: Boolean,
       default: true,

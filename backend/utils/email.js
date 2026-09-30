@@ -122,19 +122,11 @@ const escapeHtml = (value) =>
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[c]));
 
-// Tells an account holder that an admin deactivated or reactivated their account.
-// Returns true when sent, false when email isn't configured.
-async function sendAccountStatusEmail({ to, name, role, isActive, reason, supportContact = {} }) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn(`⚠️  EMAIL_USER / EMAIL_PASS not set — skipping account ${isActive ? 'reactivated' : 'deactivated'} email to ${to}`);
-    return false;
-  }
+const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1);
 
-  const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
-  const headerColor = isActive ? '#2ECC71' : '#E74C3C';
-  const title = isActive ? 'Your EcoDash account is active again ✅' : 'Your EcoDash account has been deactivated';
-
-  const contactRows = [
+// "Contact the admin team" box, listing whichever support channels are set
+function supportContactBox(supportContact, heading) {
+  const rows = [
     ['Email', supportContact.email],
     ['Phone', supportContact.phone],
     ['WhatsApp', supportContact.whatsapp],
@@ -143,42 +135,34 @@ async function sendAccountStatusEmail({ to, name, role, isActive, reason, suppor
     .map(([label, value]) =>
       `<p style="margin:0 0 6px;font-size:14px;color:#333"><span style="color:#888">${label}:</span> <strong>${escapeHtml(value)}</strong></p>`)
     .join('');
-  const contactBox = contactRows ? `
+  if (!rows) return '';
+  return `
       <div style="background:#f8f8f8;border-radius:8px;padding:16px 20px;margin:20px 0">
-        <p style="margin:0 0 10px;font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.5px">
-          ${isActive ? 'Need help? Contact the admin team' : 'Think this is a mistake? Contact the admin team'}
-        </p>
-        ${contactRows}
+        <p style="margin:0 0 10px;font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.5px">${heading}</p>
+        ${rows}
         ${supportContact.hours ? `<p style="margin:8px 0 0;font-size:12px;color:#888">${escapeHtml(supportContact.hours)}</p>` : ''}
-      </div>` : '';
+      </div>`;
+}
 
-  const body = isActive
-    ? `<p style="font-size:14px;color:#555;line-height:1.6">
-        Good news — an EcoDash administrator has reactivated your <strong>${roleLabel}</strong> account
-        (<strong>${escapeHtml(to)}</strong>). You can log in to the app again as before.
-      </p>`
-    : `<p style="font-size:14px;color:#555;line-height:1.6">
-        An EcoDash administrator has deactivated your <strong>${roleLabel}</strong> account
-        (<strong>${escapeHtml(to)}</strong>). You won't be able to log in until the account is reactivated.
-      </p>
-      ${reason ? `<div style="border-left:4px solid #E74C3C;background:#fdf2f2;border-radius:4px;padding:12px 16px;margin:16px 0">
+const reasonBlock = (reason, color) => reason ? `
+      <div style="border-left:4px solid ${color};background:#fdf2f2;border-radius:4px;padding:12px 16px;margin:16px 0">
         <p style="margin:0 0 4px;font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.5px">Reason</p>
         <p style="margin:0;font-size:14px;color:#333;line-height:1.5;white-space:pre-line">${escapeHtml(reason)}</p>
-      </div>` : ''}`;
+      </div>` : '';
 
-  const html = `
+// Shared shell for emails the admin team sends about someone's account
+const accountEmailHtml = ({ headerColor, title, subtitle, name, body }) => `
 <!DOCTYPE html>
 <html>
 <body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0">
   <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
     <div style="background:${headerColor};padding:28px 32px">
       <h1 style="color:#fff;margin:0;font-size:22px">${title}</h1>
-      <p style="color:rgba(255,255,255,.85);margin:6px 0 0;font-size:14px">EcoDash ${roleLabel} account</p>
+      <p style="color:rgba(255,255,255,.85);margin:6px 0 0;font-size:14px">${subtitle}</p>
     </div>
     <div style="padding:28px 32px">
       <p style="font-size:15px;color:#333">Hi <strong>${escapeHtml(name)}</strong>,</p>
       ${body}
-      ${contactBox}
     </div>
     <div style="background:#f0fdf4;padding:16px 32px;border-top:1px solid #e0e0e0">
       <p style="margin:0;font-size:12px;color:#999;text-align:center">
@@ -189,16 +173,81 @@ async function sendAccountStatusEmail({ to, name, role, isActive, reason, suppor
 </body>
 </html>`;
 
+// Sends an account email, or logs and returns false when email isn't configured
+async function sendAccountEmail({ to, subject, html, logLabel }) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn(`⚠️  EMAIL_USER / EMAIL_PASS not set — skipping account ${logLabel} email to ${to}`);
+    return false;
+  }
   const transporter = createTransporter();
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || `"EcoDash" <${process.env.EMAIL_USER}>`,
     to,
-    subject: isActive ? 'Your EcoDash account has been reactivated' : 'Your EcoDash account has been deactivated',
+    subject,
     html,
   });
-
-  console.log(`✉️  Account ${isActive ? 'reactivated' : 'deactivated'} email sent to ${to}`);
+  console.log(`✉️  Account ${logLabel} email sent to ${to}`);
   return true;
 }
 
-module.exports = { sendWelcomeEmail, sendPasswordResetEmail, sendAccountStatusEmail };
+// Tells an account holder that an admin deactivated or reactivated their account.
+// Returns true when sent, false when email isn't configured.
+async function sendAccountStatusEmail({ to, name, role, isActive, reason, supportContact = {} }) {
+  const roleLabel = capitalize(role);
+  const body = isActive
+    ? `<p style="font-size:14px;color:#555;line-height:1.6">
+        Good news — an EcoDash administrator has reactivated your <strong>${roleLabel}</strong> account
+        (<strong>${escapeHtml(to)}</strong>). You can log in to the app again as before.
+      </p>
+      ${supportContactBox(supportContact, 'Need help? Contact the admin team')}`
+    : `<p style="font-size:14px;color:#555;line-height:1.6">
+        An EcoDash administrator has deactivated your <strong>${roleLabel}</strong> account
+        (<strong>${escapeHtml(to)}</strong>). You won't be able to log in until the account is reactivated.
+      </p>
+      ${reasonBlock(reason, '#E74C3C')}
+      ${supportContactBox(supportContact, 'Think this is a mistake? Contact the admin team')}`;
+
+  return sendAccountEmail({
+    to,
+    subject: isActive ? 'Your EcoDash account has been reactivated' : 'Your EcoDash account has been deactivated',
+    logLabel: isActive ? 'reactivated' : 'deactivated',
+    html: accountEmailHtml({
+      headerColor: isActive ? '#2ECC71' : '#E74C3C',
+      title: isActive ? 'Your EcoDash account is active again ✅' : 'Your EcoDash account has been deactivated',
+      subtitle: `EcoDash ${roleLabel} account`,
+      name,
+      body,
+    }),
+  });
+}
+
+// Tells someone an admin deleted their account and removed their personal data.
+// Sent to the address the account had before deletion. Returns true when sent.
+async function sendAccountDeletedEmail({ to, name, role, reason, supportContact = {} }) {
+  const roleLabel = capitalize(role);
+  const body = `<p style="font-size:14px;color:#555;line-height:1.6">
+        An EcoDash administrator has deleted your <strong>${roleLabel}</strong> account
+        (<strong>${escapeHtml(to)}</strong>). Your personal details have been removed and you can no longer
+        log in with this account. Any open offers or requests were cancelled.
+      </p>
+      ${reasonBlock(reason, '#B42318')}
+      ${supportContactBox(supportContact, 'Think this is a mistake? Contact the admin team')}
+      <p style="font-size:13px;color:#888;line-height:1.6">
+        You're welcome to sign up for EcoDash again with this email address at any time.
+      </p>`;
+
+  return sendAccountEmail({
+    to,
+    subject: 'Your EcoDash account has been deleted',
+    logLabel: 'deleted',
+    html: accountEmailHtml({
+      headerColor: '#B42318',
+      title: 'Your EcoDash account has been deleted',
+      subtitle: `EcoDash ${roleLabel} account`,
+      name,
+      body,
+    }),
+  });
+}
+
+module.exports = { sendWelcomeEmail, sendPasswordResetEmail, sendAccountStatusEmail, sendAccountDeletedEmail };

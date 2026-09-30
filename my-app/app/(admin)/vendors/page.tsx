@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
-import { Search, Building2, ShieldCheck, Plus, Pencil, X, RefreshCw } from 'lucide-react';
-import { ConfirmDeactivateModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
+import { Search, Building2, ShieldCheck, Plus, Pencil, X, RefreshCw, Trash2 } from 'lucide-react';
+import { ConfirmDeactivateModal, ConfirmDeleteModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
 import { useAccess } from '@/lib/access';
 
 interface Vendor {
@@ -70,6 +70,7 @@ export default function VendorsPage() {
   const canCreate     = can('vendors.create');
   const canEdit       = can('vendors.edit');
   const canDeactivate = can('vendors.deactivate');
+  const canDelete     = can('vendors.delete');
   const [vendors, setVendors]     = useState<Vendor[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
@@ -90,6 +91,8 @@ export default function VendorsPage() {
   const [confirmTarget, setConfirmTarget]   = useState<{ vendor: Vendor; source: 'toggle' | 'edit' } | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [notice, setNotice]                 = useState<StatusNoticeData | null>(null);
+  const [deleteTarget, setDeleteTarget]   = useState<Vendor | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   function load() {
     setLoading(true);
@@ -153,6 +156,24 @@ export default function VendorsPage() {
       if (res.success) { setShowRegister(false); setRegForm({ ...EMPTY_FORM }); load(); }
       else setRegError(res.message || 'Registration failed');
     } catch { setRegError('Network error'); } finally { setRegLoading(false); }
+  }
+
+  async function confirmDelete(reason: string) {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    setDeleteLoading(true);
+    try {
+      const res = await apiFetch(`/admin/vendors/${target._id}`, { method: 'DELETE', body: JSON.stringify({ reason }) });
+      if (res.success) {
+        setVendors(prev => prev.filter(x => x._id !== target._id));
+        setNotice({ name: target.name, email: target.email, isActive: false, emailSent: !!res.emailSent, deleted: true });
+      } else {
+        window.alert(res.message || 'Delete failed');
+      }
+    } catch { window.alert('Network error — the account was not deleted.'); } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
+    }
   }
 
   function openEdit(v: Vendor) {
@@ -277,6 +298,12 @@ export default function VendorsPage() {
                           {toggling === v._id ? <RefreshCw size={11} className="animate-spin" /> : v.isActive ? 'Deactivate' : 'Activate'}
                         </button>
                       )}
+                      {canDelete && (
+                        <button onClick={() => setDeleteTarget(v)} aria-label={`Delete ${v.name}`}
+                          className="rounded-lg bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 hover:bg-red-100 transition-colors flex items-center gap-1">
+                          <Trash2 size={11} />Delete
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -380,6 +407,21 @@ export default function VendorsPage() {
         loading={confirmLoading}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={confirmDeactivate}
+      />
+
+
+      <ConfirmDeleteModal
+
+        target={deleteTarget}
+
+        roleLabel="Vendor"
+
+        loading={deleteLoading}
+
+        onCancel={() => setDeleteTarget(null)}
+
+        onConfirm={confirmDelete}
+
       />
     </div>
   );

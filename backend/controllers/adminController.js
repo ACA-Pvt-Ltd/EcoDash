@@ -16,6 +16,7 @@ const { notifyStatusChange } = require('../services/accountNotifications');
 const { DEFAULT_FAQ_ITEMS, DEFAULT_SUPPORT_CONTACT } = require('../config/contentDefaults');
 const { CONTENT_CONFIG_KEYS } = require('../config/adminPermissions');
 const { can } = require('../services/adminAccess');
+const { deleteAccount } = require('../services/accountDeletion');
 
 // Edit routes only need '<x>.edit', but switching isActive through them also
 // needs '<x>.deactivate'. Sends the 403 and returns true when the change is denied.
@@ -27,6 +28,24 @@ const denyStatusChange = async (req, res, existing, isActive, permission) => {
     message: "You don't have permission to deactivate or activate this account"
   });
   return true;
+};
+
+// Shared DELETE handler for users, collectors and vendors (see services/accountDeletion.js)
+const deleteAccountHandler = (role, label) => async (req, res) => {
+  try {
+    const result = await deleteAccount({ role, id: req.params.id, reason: req.body?.reason });
+    if (result.status === 404) {
+      return res.status(404).json({ success: false, message: `${label} not found` });
+    }
+    res.status(200).json({
+      success: true,
+      message: `${label} deleted`,
+      data: { name: result.name, email: result.email },
+      emailSent: result.emailSent
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 // @desc    Get admin dashboard overview
@@ -161,7 +180,7 @@ exports.getDashboard = async (req, res) => {
 exports.getUsers = async (req, res) => {
   try {
     const { search, status } = req.query;
-    const query = {};
+    const query = { deletedAt: null }; // deleted accounts are hidden from the portal
 
     if (search) {
       query.$or = [
@@ -253,6 +272,11 @@ exports.updateUser = async (req, res) => {
   }
 };
 
+// @desc    Delete a user: removes their personal data and emails them (can't be undone)
+// @route   DELETE /api/admin/users/:id
+// @access  Private (users.delete)
+exports.deleteUser = deleteAccountHandler('user', 'User');
+
 // ===== COLLECTOR MANAGEMENT =====
 
 // @desc    Create a new collector
@@ -317,7 +341,7 @@ exports.createCollector = async (req, res) => {
 exports.getCollectors = async (req, res) => {
   try {
     const { search, status, verified } = req.query;
-    const query = {};
+    const query = { deletedAt: null }; // deleted accounts are hidden from the portal
 
     if (search) {
       query.$or = [
@@ -389,37 +413,10 @@ exports.updateCollector = async (req, res) => {
   }
 };
 
-// @desc    Delete collector
+// @desc    Delete a collector: removes their personal data and emails them (can't be undone)
 // @route   DELETE /api/admin/collectors/:id
-// @access  Private (Admin)
-exports.deleteCollector = async (req, res) => {
-  try {
-    const collector = await Collector.findById(req.params.id);
-
-    if (!collector) {
-      return res.status(404).json({
-        success: false,
-        message: 'Collector not found'
-      });
-    }
-
-    // Soft delete - deactivate instead
-    const wasActive = collector.isActive;
-    collector.isActive = false;
-    await collector.save();
-    await notifyStatusChange(collector, 'collector', wasActive);
-
-    res.status(200).json({
-      success: true,
-      message: 'Collector deactivated successfully'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+// @access  Private (collectors.delete)
+exports.deleteCollector = deleteAccountHandler('collector', 'Collector');
 
 // ===== VENDOR MANAGEMENT =====
 
@@ -485,7 +482,7 @@ exports.createVendor = async (req, res) => {
 exports.getVendors = async (req, res) => {
   try {
     const { search, status, verified } = req.query;
-    const query = {};
+    const query = { deletedAt: null }; // deleted accounts are hidden from the portal
 
     if (search) {
       query.$or = [
@@ -557,37 +554,10 @@ exports.updateVendor = async (req, res) => {
   }
 };
 
-// @desc    Delete vendor
+// @desc    Delete a vendor: removes their personal data and emails them (can't be undone)
 // @route   DELETE /api/admin/vendors/:id
-// @access  Private (Admin)
-exports.deleteVendor = async (req, res) => {
-  try {
-    const vendor = await Vendor.findById(req.params.id);
-
-    if (!vendor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Vendor not found'
-      });
-    }
-
-    // Soft delete - deactivate instead
-    const wasActive = vendor.isActive;
-    vendor.isActive = false;
-    await vendor.save();
-    await notifyStatusChange(vendor, 'vendor', wasActive);
-
-    res.status(200).json({
-      success: true,
-      message: 'Vendor deactivated successfully'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+// @access  Private (vendors.delete)
+exports.deleteVendor = deleteAccountHandler('vendor', 'Vendor');
 
 // ===== CHALLENGE & BADGE MANAGEMENT =====
 

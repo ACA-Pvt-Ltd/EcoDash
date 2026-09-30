@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Check, AlertTriangle, CheckCircle2, X, Lock } from 'lucide-react';
+import { Check, AlertTriangle, CheckCircle2, X, Lock, Trash2 } from 'lucide-react';
 
 /**
  * Shared building blocks for the admin settings pages. Extracted from the
@@ -223,12 +223,131 @@ function DeactivateDialog({
   );
 }
 
-export type StatusNoticeData = { name: string; email: string; isActive: boolean; emailSent: boolean };
+/**
+ * Confirmation before permanently deleting a user, collector or vendor. The
+ * admin has to type the account's email, so the wrong row can't be deleted by
+ * a stray click. The optional reason goes into the email sent to the person.
+ */
+export function ConfirmDeleteModal({
+  target,
+  roleLabel,
+  loading,
+  onCancel,
+  onConfirm,
+}: {
+  target: { name: string; email: string } | null;
+  roleLabel: string;
+  loading: boolean;
+  onCancel: () => void;
+  onConfirm: (reason: string) => void;
+}) {
+  if (!target) return null;
+  // Keyed per account so the inputs start empty each time the dialog opens
+  return (
+    <DeleteDialog
+      key={target.email}
+      target={target} roleLabel={roleLabel} loading={loading} onCancel={onCancel} onConfirm={onConfirm}
+    />
+  );
+}
+
+function DeleteDialog({
+  target,
+  roleLabel,
+  loading,
+  onCancel,
+  onConfirm,
+}: {
+  target: { name: string; email: string };
+  roleLabel: string;
+  loading: boolean;
+  onCancel: () => void;
+  onConfirm: (reason: string) => void;
+}) {
+  const [reason, setReason]   = useState('');
+  const [typed, setTyped]     = useState('');
+  const matches = typed.trim().toLowerCase() === target.email.toLowerCase();
+  const role = roleLabel.toLowerCase();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !loading) onCancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [loading, onCancel]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+      onClick={() => { if (!loading) onCancel(); }}
+    >
+      <div
+        role="alertdialog" aria-modal="true" aria-labelledby="confirm-delete-title"
+        className="w-full max-w-md rounded-2xl bg-white shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-start gap-3 px-6 pt-6">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+            <Trash2 size={18} className="text-red-700" />
+          </div>
+          <div className="min-w-0">
+            <h2 id="confirm-delete-title" className="text-[15px] font-bold text-gray-900">
+              Delete {target.name}?
+            </h2>
+            <p className="mt-1 text-[13px] text-gray-500">This permanently closes the {role} account. It can&apos;t be undone.</p>
+          </div>
+        </div>
+
+        <ul className="mx-6 mt-4 space-y-1.5 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-[12px] leading-relaxed text-red-800">
+          <li>• They can no longer log in, and their personal details are removed.</li>
+          <li>• Their open offers and requests are cancelled.</li>
+          <li>• Past transactions stay, shown as &ldquo;Deleted {role}&rdquo;.</li>
+          <li>• We&apos;ll email <span className="font-semibold">{target.email}</span> to let them know.</li>
+        </ul>
+
+        <div className="space-y-3 px-6 pt-4">
+          <div>
+            <label className="block text-[12px] font-semibold text-gray-600 mb-1">
+              Reason <span className="font-normal text-gray-400">(optional · included in the email)</span>
+            </label>
+            <textarea
+              value={reason} onChange={e => setReason(e.target.value)} maxLength={500} rows={2}
+              placeholder="e.g. Duplicate account"
+              className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-800 placeholder-gray-400 focus:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-100"
+            />
+          </div>
+          <div>
+            <label htmlFor="confirm-delete-email" className="block text-[12px] font-semibold text-gray-600 mb-1">
+              Type <span className="select-all font-bold text-gray-800">{target.email}</span> to confirm
+            </label>
+            <input
+              id="confirm-delete-email" value={typed} onChange={e => setTyped(e.target.value)} autoFocus autoComplete="off" spellCheck={false}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-800 focus:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-100"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 px-6 pb-6 pt-4">
+          <button type="button" onClick={onCancel} disabled={loading}
+            className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60">
+            Cancel
+          </button>
+          <button type="button" onClick={() => onConfirm(reason.trim())} disabled={!matches || loading}
+            className="flex items-center gap-2 rounded-lg bg-red-700 px-5 py-2 text-[13px] font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-40">
+            {loading && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />}
+            {loading ? 'Deleting…' : `Delete ${role}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export type StatusNoticeData = { name: string; email: string; isActive: boolean; emailSent: boolean; deleted?: boolean };
 
 /** Banner confirming an activate/deactivate and whether the person was emailed. */
 export function StatusNotice({ notice, onDismiss }: { notice: StatusNoticeData | null; onDismiss: () => void }) {
   if (!notice) return null;
-  const action = notice.isActive ? 'reactivated' : 'deactivated';
+  const action = notice.deleted ? 'deleted' : notice.isActive ? 'reactivated' : 'deactivated';
   return (
     <div className={`flex items-start justify-between gap-3 rounded-xl border px-5 py-3 text-[13px] ${notice.emailSent ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
       <div className="flex items-start gap-2.5">

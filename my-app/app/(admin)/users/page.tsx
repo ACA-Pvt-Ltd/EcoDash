@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
-import { Search, Users, Pencil, X, RefreshCw } from 'lucide-react';
-import { ConfirmDeactivateModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
+import { Search, Users, Pencil, X, RefreshCw, Trash2 } from 'lucide-react';
+import { ConfirmDeactivateModal, ConfirmDeleteModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
 import { useAccess } from '@/lib/access';
 
 interface User {
@@ -65,6 +65,7 @@ export default function UsersPage() {
   const { can } = useAccess();
   const canEdit       = can('users.edit');
   const canDeactivate = can('users.deactivate');
+  const canDelete     = can('users.delete');
   const [users, setUsers]       = useState<User[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
@@ -80,6 +81,8 @@ export default function UsersPage() {
   const [confirmTarget, setConfirmTarget]   = useState<{ user: User; source: 'toggle' | 'edit' } | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [notice, setNotice]                 = useState<StatusNoticeData | null>(null);
+  const [deleteTarget, setDeleteTarget]   = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   function load() {
     setLoading(true);
@@ -125,6 +128,24 @@ export default function UsersPage() {
     else await setStatus(confirmTarget.user, false, reason);
     setConfirmLoading(false);
     setConfirmTarget(null);
+  }
+
+  async function confirmDelete(reason: string) {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    setDeleteLoading(true);
+    try {
+      const res = await apiFetch(`/admin/users/${target._id}`, { method: 'DELETE', body: JSON.stringify({ reason }) });
+      if (res.success) {
+        setUsers(prev => prev.filter(x => x._id !== target._id));
+        setNotice({ name: target.name, email: target.email, isActive: false, emailSent: !!res.emailSent, deleted: true });
+      } else {
+        window.alert(res.message || 'Delete failed');
+      }
+    } catch { window.alert('Network error — the account was not deleted.'); } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
+    }
   }
 
   function openEdit(u: User) {
@@ -236,6 +257,12 @@ export default function UsersPage() {
                           {toggling === user._id ? <RefreshCw size={11} className="animate-spin" /> : user.isActive ? 'Deactivate' : 'Activate'}
                         </button>
                       )}
+                      {canDelete && (
+                        <button onClick={() => setDeleteTarget(user)} aria-label={`Delete ${user.name}`}
+                          className="rounded-lg bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 hover:bg-red-100 transition-colors flex items-center gap-1">
+                          <Trash2 size={11} />Delete
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -281,6 +308,21 @@ export default function UsersPage() {
         loading={confirmLoading}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={confirmDeactivate}
+      />
+
+
+      <ConfirmDeleteModal
+
+        target={deleteTarget}
+
+        roleLabel="User"
+
+        loading={deleteLoading}
+
+        onCancel={() => setDeleteTarget(null)}
+
+        onConfirm={confirmDelete}
+
       />
     </div>
   );

@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
-import { Search, Truck, ShieldCheck, Plus, Pencil, X, RefreshCw, MapPin } from 'lucide-react';
+import { Search, Truck, ShieldCheck, Plus, Pencil, X, RefreshCw, MapPin, Trash2 } from 'lucide-react';
 import { GoogleMap, Marker, Autocomplete, useJsApiLoader } from '@react-google-maps/api';
-import { ConfirmDeactivateModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
+import { ConfirmDeactivateModal, ConfirmDeleteModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
 import { useAccess } from '@/lib/access';
 
 // Must be a stable reference outside the component to avoid re-loading the API
@@ -280,6 +280,7 @@ export default function CollectorsPage() {
   const canCreate     = can('collectors.create');
   const canEdit       = can('collectors.edit');
   const canDeactivate = can('collectors.deactivate');
+  const canDelete     = can('collectors.delete');
   const [collectors, setCollectors] = useState<Collector[]>([]);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
@@ -300,6 +301,8 @@ export default function CollectorsPage() {
   const [confirmTarget, setConfirmTarget]   = useState<{ collector: Collector; source: 'toggle' | 'edit' } | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [notice, setNotice]                 = useState<StatusNoticeData | null>(null);
+  const [deleteTarget, setDeleteTarget]   = useState<Collector | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const load = useCallback(() => {
     Promise.resolve().then(() => setLoading(true));
@@ -371,6 +374,24 @@ export default function CollectorsPage() {
       if (res.success) { setShowRegister(false); setRegForm({ ...EMPTY_FORM, operatingHours: { ...DEFAULT_HOURS } }); load(); }
       else setRegError(res.message || 'Registration failed');
     } catch { setRegError('Network error'); } finally { setRegLoading(false); }
+  }
+
+  async function confirmDelete(reason: string) {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    setDeleteLoading(true);
+    try {
+      const res = await apiFetch(`/admin/collectors/${target._id}`, { method: 'DELETE', body: JSON.stringify({ reason }) });
+      if (res.success) {
+        setCollectors(prev => prev.filter(x => x._id !== target._id));
+        setNotice({ name: target.name, email: target.email, isActive: false, emailSent: !!res.emailSent, deleted: true });
+      } else {
+        window.alert(res.message || 'Delete failed');
+      }
+    } catch { window.alert('Network error — the account was not deleted.'); } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
+    }
   }
 
   function openEdit(c: Collector) {
@@ -529,6 +550,12 @@ export default function CollectorsPage() {
                           {toggling === c._id ? <RefreshCw size={11} className="animate-spin" /> : c.isActive ? 'Deactivate' : 'Activate'}
                         </button>
                       )}
+                      {canDelete && (
+                        <button onClick={() => setDeleteTarget(c)} aria-label={`Delete ${c.name}`}
+                          className="rounded-lg bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 hover:bg-red-100 transition-colors flex items-center gap-1">
+                          <Trash2 size={11} />Delete
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -676,6 +703,21 @@ export default function CollectorsPage() {
         loading={confirmLoading}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={confirmDeactivate}
+      />
+
+
+      <ConfirmDeleteModal
+
+        target={deleteTarget}
+
+        roleLabel="Collector"
+
+        loading={deleteLoading}
+
+        onCancel={() => setDeleteTarget(null)}
+
+        onConfirm={confirmDelete}
+
       />
     </div>
   );

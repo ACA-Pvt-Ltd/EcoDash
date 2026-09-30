@@ -5,6 +5,7 @@ const {
   getUsers,
   updateUserStatus,
   updateUser,
+  deleteUser,
   createCollector,
   getCollectors,
   updateCollector,
@@ -50,18 +51,19 @@ router.get('/dashboard', can('dashboard.view'), getDashboard);
 router.get('/users', can('users.view'), getUsers);
 router.put('/users/:id/status', can('users.deactivate'), updateUserStatus);
 router.put('/users/:id', can('users.edit'), updateUser); // isActive changes also need users.deactivate
+router.delete('/users/:id', can('users.delete'), deleteUser);
 
 // Collector Management
 router.post('/collectors', can('collectors.create'), createCollector);
 router.get('/collectors', can('collectors.view'), getCollectors);
 router.put('/collectors/:id', can('collectors.edit'), updateCollector); // isActive changes also need collectors.deactivate
-router.delete('/collectors/:id', can('collectors.deactivate'), deleteCollector);
+router.delete('/collectors/:id', can('collectors.delete'), deleteCollector);
 
 // Vendor Management
 router.post('/vendors', can('vendors.create'), createVendor);
 router.get('/vendors', can('vendors.view'), getVendors);
 router.put('/vendors/:id', can('vendors.edit'), updateVendor); // isActive changes also need vendors.deactivate
-router.delete('/vendors/:id', can('vendors.deactivate'), deleteVendor);
+router.delete('/vendors/:id', can('vendors.delete'), deleteVendor);
 
 // Challenge Management
 router.post('/challenges', can('rewards.manage'), createChallenge);
