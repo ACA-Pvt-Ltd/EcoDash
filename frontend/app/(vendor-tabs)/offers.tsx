@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,14 @@ import api from '@/services/api';
 import { ENDPOINTS,  COLORS } from '@/constants/config';
 import { router } from 'expo-router';
 import { useAppConfig } from '@/context/AppConfigContext';
+import OfferFilters, { FilterCountBadge } from '@/components/OfferFilters';
+import {
+  EMPTY_OFFER_FILTERS,
+  activeFilterCount,
+  filterOffers,
+  type OfferFilterState,
+  type OfferGetters,
+} from '@/utils/offerFilters';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -25,7 +33,7 @@ const CARD_WIDTH = (width - 48) / 2;
 // ── Offer types ──────────────────────────────────────────────────────────────
 interface CollectorOffer {
   _id: string;
-  collector: { _id: string; name: string } | string;
+  collector: { _id: string; name: string; address?: { city?: string; state?: string } } | string;
   wasteType: string;
   quantity: { value: number; unit: string } | number;
   minPricePerKg: number;
@@ -35,6 +43,15 @@ interface CollectorOffer {
   video?: string;
   createdAt: string;
 }
+
+// Filters read the offering collector's city/province (offers have no location of their own).
+// Older offers store quantity as a bare number of kg.
+const OFFER_GETTERS: OfferGetters<CollectorOffer> = {
+  city: o => (typeof o.collector === 'object' ? o.collector?.address?.city : undefined),
+  state: o => (typeof o.collector === 'object' ? o.collector?.address?.state : undefined),
+  wasteType: o => o.wasteType,
+  quantity: o => (typeof o.quantity === 'number' ? { value: o.quantity, unit: 'kg' } : o.quantity),
+};
 
 // ── Purchase types ────────────────────────────────────────────────────────────
 interface Purchase {
@@ -74,6 +91,10 @@ export default function VendorOffersScreen() {
   const [offers, setOffers] = useState<CollectorOffer[]>([]);
   const [offersLoading, setOffersLoading] = useState(true);
   const [offersRefreshing, setOffersRefreshing] = useState(false);
+  const [filters, setFilters] = useState<OfferFilterState>(EMPTY_OFFER_FILTERS);
+  const [showFilters, setShowFilters] = useState(false);
+  const filteredOffers = useMemo(() => filterOffers(offers, filters, OFFER_GETTERS), [offers, filters]);
+  const filterCount = activeFilterCount(filters);
 
   // Purchases state
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -162,6 +183,12 @@ export default function VendorOffersScreen() {
             <Ionicons name="person-outline" size={11} color="#95A5A6" />
             <Text style={styles.cardCollectorText} numberOfLines={1}>{getCollectorName(offer.collector)}</Text>
           </View>
+          {!!OFFER_GETTERS.city(offer) && (
+            <View style={styles.cardCollectorRow}>
+              <Ionicons name="location-outline" size={11} color="#95A5A6" />
+              <Text style={styles.cardCollectorText} numberOfLines={1}>{OFFER_GETTERS.city(offer)?.trim()}</Text>
+            </View>
+          )}
         </View>
         <TouchableOpacity
           style={styles.viewBtn}
@@ -319,21 +346,46 @@ export default function VendorOffersScreen() {
             <Text style={styles.emptyText}>Pull down to refresh</Text>
           </View>
         ) : (
-          <FlatList
-            data={offers}
-            keyExtractor={(o, i) => o._id || String(i)}
-            numColumns={2}
-            columnWrapperStyle={styles.row}
-            contentContainerStyle={styles.listContent}
-            renderItem={renderOfferCard}
-            refreshControl={
-              <RefreshControl
-                refreshing={offersRefreshing}
-                onRefresh={() => { setOffersRefreshing(true); fetchOffers(); }}
-                colors={[COLORS.primary]}
+          <>
+            <View style={styles.resultsBar}>
+              <Text style={styles.resultsText}>
+                {filteredOffers.length} {filteredOffers.length === 1 ? 'offer' : 'offers'} available
+              </Text>
+              <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilters(v => !v)} accessibilityLabel="Filter offers">
+                <View>
+                  <Ionicons name={showFilters ? 'close' : 'filter'} size={16} color={COLORS.primary} />
+                  {!showFilters && <FilterCountBadge count={filterCount} />}
+                </View>
+                <Text style={styles.filterBtnText}>{showFilters ? 'Hide filters' : 'Filters'}</Text>
+              </TouchableOpacity>
+            </View>
+            {showFilters && (
+              <OfferFilters offers={offers} getters={OFFER_GETTERS} filters={filters} onChange={setFilters} />
+            )}
+            {filteredOffers.length === 0 ? (
+              <View style={styles.center}>
+                <Ionicons name="funnel-outline" size={64} color="#BDC3C7" />
+                <Text style={styles.emptyTitle}>No Matching Offers</Text>
+                <Text style={styles.emptyText}>Try adjusting your filters.</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredOffers}
+                keyExtractor={(o, i) => o._id || String(i)}
+                numColumns={2}
+                columnWrapperStyle={styles.row}
+                contentContainerStyle={styles.listContent}
+                renderItem={renderOfferCard}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={offersRefreshing}
+                    onRefresh={() => { setOffersRefreshing(true); fetchOffers(); }}
+                    colors={[COLORS.primary]}
+                  />
+                }
               />
-            }
-          />
+            )}
+          </>
         )
       )}
 
@@ -444,7 +496,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 13, fontWeight: '700', color: '#2C3E50', marginBottom: 2 },
   cardPrice: { fontSize: 14, fontWeight: '800', color: COLORS.primary, marginBottom: 2 },
   cardQty: { fontSize: 11, color: '#7F8C8D', marginBottom: 3 },
-  cardCollectorRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 8 },
+  cardCollectorRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 4 },
   cardCollectorText: { fontSize: 11, color: '#95A5A6', flex: 1 },
   viewBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
@@ -500,6 +552,19 @@ const styles = StyleSheet.create({
   pCancelBtnText: { fontSize: 13, fontWeight: '700', color: '#E74C3C' },
 
   // Shared
+  resultsBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
+  },
+  resultsText: { fontSize: 13, fontWeight: '600', color: '#7F8C8D' },
+  filterBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingHorizontal: 6 },
+  filterBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F6FA', paddingVertical: 60 },
   emptyTitle: { fontSize: 18, fontWeight: 'bold', color: '#2C3E50', marginTop: 12 },
   emptyText: { fontSize: 13, color: '#7F8C8D', marginTop: 6, textAlign: 'center' },
