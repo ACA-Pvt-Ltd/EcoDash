@@ -11,34 +11,22 @@ const Badge = require('../models/Badge');
 const AppConfig = require('../models/AppConfig');
 const CollectorPurchaseRequest = require('../models/CollectorPurchaseRequest');
 const { generateToken } = require('../config/jwt');
-const { sendWelcomeEmail, sendAccountStatusEmail } = require('../utils/email');
+const { sendWelcomeEmail } = require('../utils/email');
+const { notifyStatusChange } = require('../services/accountNotifications');
 const { DEFAULT_FAQ_ITEMS, DEFAULT_SUPPORT_CONTACT } = require('../config/contentDefaults');
+const { CONTENT_CONFIG_KEYS } = require('../config/adminPermissions');
+const { can } = require('../services/adminAccess');
 
-const MAX_STATUS_REASON_LENGTH = 500;
-
-// Support contact as edited on the admin Content page, falling back to the defaults
-const getSupportContact = async () => {
-  const doc = await AppConfig.findOne({ key: 'support_contact' });
-  return { ...DEFAULT_SUPPORT_CONTACT, ...(doc?.value || {}) };
-};
-
-// Emails the account holder when an admin flips isActive. Never throws: a mail
-// failure must not undo the status change. Returns whether an email went out.
-const notifyStatusChange = async (account, role, wasActive, reason) => {
-  if (!account || account.isActive === wasActive) return false;
-  try {
-    return await sendAccountStatusEmail({
-      to: account.email,
-      name: account.name,
-      role,
-      isActive: account.isActive,
-      reason: account.isActive ? '' : String(reason || '').trim().slice(0, MAX_STATUS_REASON_LENGTH),
-      supportContact: await getSupportContact(),
-    });
-  } catch (error) {
-    console.error(`Account status email to ${account.email} failed:`, error.message);
-    return false;
-  }
+// Edit routes only need '<x>.edit', but switching isActive through them also
+// needs '<x>.deactivate'. Sends the 403 and returns true when the change is denied.
+const denyStatusChange = async (req, res, existing, isActive, permission) => {
+  if (isActive === undefined || Boolean(isActive) === existing.isActive) return false;
+  if (await can(req, permission)) return false;
+  res.status(403).json({
+    success: false,
+    message: "You don't have permission to deactivate or activate this account"
+  });
+  return true;
 };
 
 // @desc    Get admin dashboard overview
@@ -250,6 +238,7 @@ exports.updateUser = async (req, res) => {
     if (!existing) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+    if (await denyStatusChange(req, res, existing, isActive, 'users.deactivate')) return;
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
@@ -377,6 +366,7 @@ exports.updateCollector = async (req, res) => {
         message: 'Collector not found'
       });
     }
+    if (await denyStatusChange(req, res, existing, updates.isActive, 'collectors.deactivate')) return;
 
     const collector = await Collector.findByIdAndUpdate(
       req.params.id,
@@ -544,6 +534,7 @@ exports.updateVendor = async (req, res) => {
         message: 'Vendor not found'
       });
     }
+    if (await denyStatusChange(req, res, existing, updates.isActive, 'vendors.deactivate')) return;
 
     const vendor = await Vendor.findByIdAndUpdate(
       req.params.id,
@@ -930,6 +921,15 @@ exports.updateAppConfig = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'key and value are required'
+      });
+    }
+
+    // Help Content settings and Configuration settings share this route
+    const isContent = CONTENT_CONFIG_KEYS.includes(key);
+    if (!(await can(req, isContent ? 'content.edit' : 'config.edit'))) {
+      return res.status(403).json({
+        success: false,
+        message: `You don't have permission to edit ${isContent ? 'help content' : 'configuration'}`
       });
     }
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Settings, Tag, Plus, Trash2 } from 'lucide-react';
 import { SectionCard, SaveBtn, NumField, Spinner } from '@/components/admin-ui';
+import { useAccess } from '@/lib/access';
 
 interface WasteCategory { label: string; value: string; icon: string; color: string; }
 
@@ -27,6 +28,8 @@ const DEFAULT_CATEGORIES: WasteCategory[] = [
 ];
 
 export default function ConfigPage() {
+  const { can } = useAccess();
+  const canEdit = can('config.edit');
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [radius,    setRadius]    = useState(10);
@@ -98,14 +101,20 @@ export default function ConfigPage() {
   const wasteTypes = categories.map(c => c.value);
 
   return (
-    <div className="space-y-5">
+    // Without edit permission the whole page is view-only: a disabled fieldset disables every control in it
+    <fieldset disabled={!canEdit} className="space-y-5 min-w-0 border-0 p-0 m-0">
+      {!canEdit && (
+        <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-3 text-[13px] text-gray-600">
+          View only — your role can see the configuration but not change it.
+        </div>
+      )}
 
       {/* Collection Settings */}
       <SectionCard title="Collection Settings" icon={<Settings size={15} />}>
         <NumField label="Collector Search Radius" desc="Max distance collectors appear in search" value={radius}    onChange={setRadius}    min={1}      unit="km"  />
         <NumField label="Max Offer Images"         desc="Images allowed per offer listing"        value={maxImages} onChange={setMaxImages} min={1} max={20} unit="img" />
         <NumField label="Max Video Duration"       desc="Max length for offer video attachments"  value={maxVideo}  onChange={setMaxVideo}  min={10}     unit="sec" />
-        <div className="pt-4 flex justify-end"><SaveBtn onClick={handleSaveSettings} saving={savingSettings} saved={savedSettings} /></div>
+        <div className="pt-4 flex justify-end">{canEdit && <SaveBtn onClick={handleSaveSettings} saving={savingSettings} saved={savedSettings} />}</div>
       </SectionCard>
 
       {/* Waste Categories */}
@@ -174,7 +183,7 @@ export default function ConfigPage() {
             <Plus size={12} /> Add Category
           </button>
         </div>
-        <div className="flex justify-end"><SaveBtn onClick={handleSaveCategories} saving={savingCats} saved={savedCats} /></div>
+        <div className="flex justify-end">{canEdit && <SaveBtn onClick={handleSaveCategories} saving={savingCats} saved={savedCats} />}</div>
       </SectionCard>
 
       {/* Points & Cash per KG */}
@@ -217,8 +226,8 @@ export default function ConfigPage() {
             </tbody>
           </table>
         </div>
-        <div className="flex justify-end"><SaveBtn onClick={handleSaveRates} saving={savingRates} saved={savedRates} /></div>
+        <div className="flex justify-end">{canEdit && <SaveBtn onClick={handleSaveRates} saving={savingRates} saved={savedRates} />}</div>
       </SectionCard>
-    </div>
+    </fieldset>
   );
 }

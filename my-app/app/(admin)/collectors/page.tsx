@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { Search, Truck, ShieldCheck, Plus, Pencil, X, RefreshCw, MapPin } from 'lucide-react';
 import { GoogleMap, Marker, Autocomplete, useJsApiLoader } from '@react-google-maps/api';
 import { ConfirmDeactivateModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
+import { useAccess } from '@/lib/access';
 
 // Must be a stable reference outside the component to avoid re-loading the API
 const MAPS_LIBRARIES: ('places')[] = ['places'];
@@ -275,6 +276,10 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 }
 
 export default function CollectorsPage() {
+  const { can } = useAccess();
+  const canCreate     = can('collectors.create');
+  const canEdit       = can('collectors.edit');
+  const canDeactivate = can('collectors.deactivate');
   const [collectors, setCollectors] = useState<Collector[]>([]);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
@@ -451,10 +456,12 @@ export default function CollectorsPage() {
             <input type="text" placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)}
               className="h-9 w-56 rounded-lg border border-gray-200 bg-white pl-8 pr-4 text-[13px] placeholder-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100" />
           </div>
-          <button onClick={() => { setShowRegister(true); setRegError(''); setRegForm({ ...EMPTY_FORM, operatingHours: { ...DEFAULT_HOURS } }); }}
-            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 transition-colors">
-            <Plus size={15} /> Register Collector
-          </button>
+          {canCreate && (
+            <button onClick={() => { setShowRegister(true); setRegError(''); setRegForm({ ...EMPTY_FORM, operatingHours: { ...DEFAULT_HOURS } }); }}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 transition-colors">
+              <Plus size={15} /> Register Collector
+            </button>
+          )}
         </div>
       </div>
 
@@ -511,13 +518,17 @@ export default function CollectorsPage() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(c)} className="rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-100 flex items-center gap-1">
-                        <Pencil size={11} />Edit
-                      </button>
-                      <button onClick={() => toggleStatus(c)} disabled={toggling === c._id}
-                        className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${c.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
-                        {toggling === c._id ? <RefreshCw size={11} className="animate-spin" /> : c.isActive ? 'Deactivate' : 'Activate'}
-                      </button>
+                      {canEdit && (
+                        <button onClick={() => openEdit(c)} className="rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                          <Pencil size={11} />Edit
+                        </button>
+                      )}
+                      {canDeactivate && (
+                        <button onClick={() => toggleStatus(c)} disabled={toggling === c._id}
+                          className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${c.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
+                          {toggling === c._id ? <RefreshCw size={11} className="animate-spin" /> : c.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -617,7 +628,7 @@ export default function CollectorsPage() {
                   <Field label="Street" value={editForm.street} onChange={v => setEditForm(f => ({ ...f, street: v }))} />
                 </div>
                 <div className="flex items-center gap-6 mt-3">
-                  <Toggle label="Active" checked={editForm.isActive} onChange={v => setEditForm(f => ({ ...f, isActive: v }))} />
+                  {canDeactivate && <Toggle label="Active" checked={editForm.isActive} onChange={v => setEditForm(f => ({ ...f, isActive: v }))} />}
                   <Toggle label="Verified" checked={editForm.isVerified} onChange={v => setEditForm(f => ({ ...f, isVerified: v }))} />
                 </div>
               </Section>

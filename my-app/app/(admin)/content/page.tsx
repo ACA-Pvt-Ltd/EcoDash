@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { HelpCircle, LifeBuoy, Plus, Trash2 } from 'lucide-react';
 import { SectionCard, SaveBtn, TextField, Spinner } from '@/components/admin-ui';
+import { useAccess } from '@/lib/access';
 
 type FaqRole = 'all' | 'user' | 'collector' | 'vendor';
 
@@ -41,6 +42,8 @@ const inputCls =
   'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-[13px] text-gray-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100';
 
 export default function ContentPage() {
+  const { can } = useAccess();
+  const canEdit = can('content.edit');
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
 
@@ -112,7 +115,13 @@ export default function ContentPage() {
   if (loading) return <Spinner />;
 
   return (
-    <div className="space-y-6">
+    // Without edit permission the whole page is view-only: a disabled fieldset disables every control in it
+    <fieldset disabled={!canEdit} className="space-y-6 min-w-0 border-0 p-0 m-0">
+      {!canEdit && (
+        <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-3 text-[13px] text-gray-600">
+          View only — your role can see the help content but not change it.
+        </div>
+      )}
       {error && (
         <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>
       )}
@@ -154,7 +163,7 @@ export default function ContentPage() {
         />
 
         <div className="mt-5 flex justify-end">
-          <SaveBtn onClick={handleSaveContact} saving={savingContact} saved={savedContact} />
+          {canEdit && <SaveBtn onClick={handleSaveContact} saving={savingContact} saved={savedContact} />}
         </div>
       </SectionCard>
 
@@ -219,9 +228,9 @@ export default function ContentPage() {
           >
             <Plus size={14} /> Add question
           </button>
-          <SaveBtn onClick={handleSaveFaqs} saving={savingFaqs} saved={savedFaqs} />
+          {canEdit && <SaveBtn onClick={handleSaveFaqs} saving={savingFaqs} saved={savedFaqs} />}
         </div>
       </SectionCard>
-    </div>
+    </fieldset>
   );
 }

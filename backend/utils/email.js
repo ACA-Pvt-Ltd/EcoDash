@@ -15,7 +15,7 @@ function createTransporter() {
 async function sendWelcomeEmail({ to, name, role, password }) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.warn('⚠️  EMAIL_USER / EMAIL_PASS not set — skipping welcome email');
-    return;
+    return false;
   }
 
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
@@ -64,6 +64,7 @@ async function sendWelcomeEmail({ to, name, role, password }) {
   });
 
   console.log(`✉️  Welcome email sent to ${to}`);
+  return true;
 }
 
 async function sendPasswordResetEmail({ to, name, code }) {

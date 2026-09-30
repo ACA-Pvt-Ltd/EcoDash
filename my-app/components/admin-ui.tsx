@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Check, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import Link from 'next/link';
+import { Check, AlertTriangle, CheckCircle2, X, Lock } from 'lucide-react';
 
 /**
  * Shared building blocks for the admin settings pages. Extracted from the
@@ -241,5 +242,48 @@ export function StatusNotice({ notice, onDismiss }: { notice: StatusNoticeData |
       </div>
       <button onClick={onDismiss} aria-label="Dismiss" className="opacity-60 hover:opacity-100"><X size={15} /></button>
     </div>
+  );
+}
+
+/** Shown instead of a page the signed-in admin's role doesn't allow. */
+export function NoAccessCard({ pageName, fallback }: { pageName: string; fallback: { label: string; href: string } | null }) {
+  return (
+    <div className="mx-auto mt-16 max-w-md rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-50">
+        <Lock size={20} className="text-gray-400" />
+      </div>
+      <h2 className="text-[16px] font-bold text-gray-900">You don&apos;t have access to {pageName}</h2>
+      <p className="mt-2 text-[13px] leading-relaxed text-gray-500">
+        Your role doesn&apos;t include this page. If you need it, ask an Executive to update your role.
+      </p>
+      {fallback && (
+        <Link href={fallback.href} className="mt-5 inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700">
+          Go to {fallback.label}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/** On/off switch. `locked` shows the state but can't be changed. */
+export function Switch({
+  checked,
+  onChange,
+  locked = false,
+  label,
+}: {
+  checked: boolean;
+  onChange?: (v: boolean) => void;
+  locked?: boolean;
+  label: string;
+}) {
+  return (
+    <button
+      type="button" role="switch" aria-checked={checked} aria-label={label} disabled={locked}
+      onClick={() => onChange?.(!checked)}
+      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed ${checked ? 'bg-emerald-500' : 'bg-gray-200'} ${locked ? 'opacity-60' : ''}`}
+    >
+      <span className={`absolute top-0.5 left-0 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+    </button>
   );
 }

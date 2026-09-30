@@ -7,6 +7,7 @@ const { generateUserQRCode } = require('../utils/helpers');
 const crypto = require('crypto');
 const { hashResetCode } = require('../models/plugins/passwordReset');
 const { sendPasswordResetEmail } = require('../utils/email');
+const { resolveAdminAccess } = require('../services/adminAccess');
 
 const MAX_RESET_ATTEMPTS = 5;
 
@@ -292,7 +293,9 @@ exports.login = async (req, res) => {
       userData.totalRedemptions = user.totalRedemptions;
       userData.isVerified = user.isVerified;
     } else if (role === 'admin') {
-      userData.permissions = user.permissions;
+      const access = await resolveAdminAccess(user);
+      userData.adminRole = access.role ? { _id: access.role._id, name: access.role.name, isExecutive: access.role.isExecutive } : null;
+      userData.permissions = access.permissions;
     }
 
     res.status(200).json({

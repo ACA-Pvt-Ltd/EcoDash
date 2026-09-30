@@ -38,6 +38,8 @@ export const config = {
     '/transactions/:path*',
     '/config/:path*',
     '/content/:path*',
+    '/admins/:path*',
+    '/roles/:path*',
     '/(admin)/:path*',
   ],
 };

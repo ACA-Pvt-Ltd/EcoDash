@@ -3,6 +3,8 @@ const User = require('../models/User');
 const Collector = require('../models/Collector');
 const Vendor = require('../models/Vendor');
 const Admin = require('../models/Admin');
+const { getRequestAccess } = require('../services/adminAccess');
+const { PERMISSIONS } = require('../config/adminPermissions');
 
 // Protect routes - general authentication
 exports.protect = async (req, res, next) => {
@@ -88,5 +90,23 @@ exports.authorize = (...roles) => {
       });
     }
     next();
+  };
+};
+
+// Admin portal: allow the request if the admin's role has ANY of the given permission keys
+exports.requirePermission = (...keys) => {
+  return async (req, res, next) => {
+    try {
+      const { permissions } = await getRequestAccess(req);
+      if (keys.some((key) => permissions.includes(key))) return next();
+
+      const label = PERMISSIONS.find((p) => p.key === keys[0])?.label.toLowerCase() || keys[0];
+      return res.status(403).json({
+        success: false,
+        message: `You don't have permission to ${label}`
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
   };
 };

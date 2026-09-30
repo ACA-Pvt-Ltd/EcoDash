@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Search, Building2, ShieldCheck, Plus, Pencil, X, RefreshCw } from 'lucide-react';
 import { ConfirmDeactivateModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
+import { useAccess } from '@/lib/access';
 
 interface Vendor {
   _id: string;
@@ -65,6 +66,10 @@ const EMPTY_FORM = { name: '', email: '', password: '', phone: '', businessType:
 const EMPTY_EDIT = { name: '', phone: '', businessType: 'Both', description: '', website: '', city: '', street: '', isActive: true, isVerified: true };
 
 export default function VendorsPage() {
+  const { can } = useAccess();
+  const canCreate     = can('vendors.create');
+  const canEdit       = can('vendors.edit');
+  const canDeactivate = can('vendors.deactivate');
   const [vendors, setVendors]     = useState<Vendor[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
@@ -214,10 +219,12 @@ export default function VendorsPage() {
             <input type="text" placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)}
               className="h-9 w-56 rounded-lg border border-gray-200 bg-white pl-8 pr-4 text-[13px] placeholder-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100" />
           </div>
-          <button onClick={() => { setShowRegister(true); setRegError(''); setRegForm({ ...EMPTY_FORM }); }}
-            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 transition-colors">
-            <Plus size={15} /> Register Vendor
-          </button>
+          {canCreate && (
+            <button onClick={() => { setShowRegister(true); setRegError(''); setRegForm({ ...EMPTY_FORM }); }}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 transition-colors">
+              <Plus size={15} /> Register Vendor
+            </button>
+          )}
         </div>
       </div>
 
@@ -259,13 +266,17 @@ export default function VendorsPage() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(v)} className="rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1">
-                        <Pencil size={11} />Edit
-                      </button>
-                      <button onClick={() => toggleStatus(v)} disabled={toggling === v._id}
-                        className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${v.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
-                        {toggling === v._id ? <RefreshCw size={11} className="animate-spin" /> : v.isActive ? 'Deactivate' : 'Activate'}
-                      </button>
+                      {canEdit && (
+                        <button onClick={() => openEdit(v)} className="rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1">
+                          <Pencil size={11} />Edit
+                        </button>
+                      )}
+                      {canDeactivate && (
+                        <button onClick={() => toggleStatus(v)} disabled={toggling === v._id}
+                          className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${v.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
+                          {toggling === v._id ? <RefreshCw size={11} className="animate-spin" /> : v.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -349,7 +360,7 @@ export default function VendorsPage() {
                 <textarea value={editForm.description} onChange={e => setEditForm(f => ({...f, description:e.target.value}))} rows={2} className={inputCls + ' resize-none'} placeholder="Short description…" />
               </div>
               <div className="flex items-center gap-6">
-                <Toggle label="Active" checked={editForm.isActive} onChange={v => setEditForm(f => ({...f, isActive:v}))} />
+                {canDeactivate && <Toggle label="Active" checked={editForm.isActive} onChange={v => setEditForm(f => ({...f, isActive:v}))} />}
                 <Toggle label="Verified" checked={editForm.isVerified} onChange={v => setEditForm(f => ({...f, isVerified:v}))} />
               </div>
               <div className="flex justify-end gap-3 pt-2">
