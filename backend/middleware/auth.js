@@ -59,6 +59,14 @@ exports.protect = async (req, res, next) => {
       });
     }
 
+    // Tokens issued before a password reset are no longer valid
+    if (user.passwordChangedAt && decoded.iat * 1000 < user.passwordChangedAt.getTime()) {
+      return res.status(401).json({
+        success: false,
+        message: 'Password changed, please log in again'
+      });
+    }
+
     req.user = user;
     req.userRole = decoded.role;
     next();

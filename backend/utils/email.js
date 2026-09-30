@@ -66,4 +66,54 @@ async function sendWelcomeEmail({ to, name, role, password }) {
   console.log(`✉️  Welcome email sent to ${to}`);
 }
 
-module.exports = { sendWelcomeEmail };
+async function sendPasswordResetEmail({ to, name, code }) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`⚠️  EMAIL_USER / EMAIL_PASS not set — password reset code for ${to}: ${code}`);
+      return;
+    }
+    throw new Error('Email is not configured (EMAIL_USER / EMAIL_PASS)');
+  }
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0">
+  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+    <div style="background:#2ECC71;padding:28px 32px">
+      <h1 style="color:#fff;margin:0;font-size:22px">Reset your password 🔐</h1>
+      <p style="color:rgba(255,255,255,.85);margin:6px 0 0;font-size:14px">EcoDash account recovery</p>
+    </div>
+    <div style="padding:28px 32px">
+      <p style="font-size:15px;color:#333">Hi <strong>${name}</strong>,</p>
+      <p style="font-size:14px;color:#555;line-height:1.6">
+        We received a request to reset your EcoDash password. Enter this code in the app to choose a new one:
+      </p>
+      <div style="background:#f8f8f8;border-radius:8px;padding:20px;margin:20px 0;text-align:center">
+        <p style="margin:0;font-size:32px;font-weight:700;color:#2ECC71;letter-spacing:8px">${code}</p>
+      </div>
+      <p style="font-size:13px;color:#888;line-height:1.6">
+        This code expires in 15 minutes. If you didn't ask to reset your password, you can ignore this email — your password won't change.
+      </p>
+    </div>
+    <div style="background:#f0fdf4;padding:16px 32px;border-top:1px solid #e0e0e0">
+      <p style="margin:0;font-size:12px;color:#999;text-align:center">
+        EcoDash Waste Management Platform
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || `"EcoDash" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: 'Your EcoDash password reset code',
+    html,
+  });
+
+  console.log(`✉️  Password reset email sent to ${to}`);
+}
+
+module.exports = { sendWelcomeEmail, sendPasswordResetEmail };

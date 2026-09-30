@@ -58,6 +58,10 @@ export default function PurchaseRequestsScreen() {
   const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
   const [responseMessage, setResponseMessage] = useState('');
   const [responding, setResponding] = useState(false);
+  // Whether the pending modal is confirming an accept or a reject. Must be held
+  // in state: the modal's Confirm cannot re-derive it from the request status,
+  // because both actions are only offered while the status is 'pending'.
+  const [isAccepting, setIsAccepting] = useState(true);
 
   // Rating state
   const [ratingRequest, setRatingRequest] = useState<PurchaseRequest | null>(null);
@@ -99,6 +103,7 @@ export default function PurchaseRequestsScreen() {
 
   const openResponseModal = (request: PurchaseRequest, isAccept: boolean) => {
     setSelectedRequest(request);
+    setIsAccepting(isAccept);
     setResponseMessage('');
     Alert.alert(
       isAccept ? 'Accept Request' : 'Reject Request',
@@ -437,7 +442,7 @@ export default function PurchaseRequestsScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalConfirmButton}
-                onPress={() => handleResponse(selectedRequest?.status === 'pending')}
+                onPress={() => handleResponse(isAccepting)}
                 disabled={responding}
               >
                 {responding ? (

@@ -17,10 +17,14 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout | null = null;
-  
+  // React Native's setTimeout returns a number, not a NodeJS.Timeout, so the
+  // handle is typed from setTimeout itself rather than assumed.
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+
   return (...args: Parameters<T>) => {
-    if (timeout) clearTimeout(timeout);
+    // Compared against null explicitly: a timer id of 0 is falsy but valid, and
+    // a truthiness check would skip clearing it.
+    if (timeout !== null) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
 };

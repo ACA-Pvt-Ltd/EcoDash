@@ -13,6 +13,8 @@ export const ENDPOINTS = {
   ME: '/auth/me',
   UPDATE_PROFILE: '/auth/update-profile',
   CHANGE_PASSWORD: '/auth/change-password',
+  FORGOT_PASSWORD: '/auth/forgot-password',
+  RESET_PASSWORD: '/auth/reset-password',
 
   // Users
   DASHBOARD: '/users/dashboard',

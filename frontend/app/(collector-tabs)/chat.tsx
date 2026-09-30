@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { ref, push, onValue, query, orderByChild } from 'firebase/database';
 import { db } from '@/services/firebase';
 import { COLORS } from '@/constants/config';
 import { useAuth } from '@/context/AuthContext';
+import { chatRoomId, chatRoomLabel } from '@/utils/chatRoom';
 
 interface ChatMessage {
   _id: string;
@@ -28,16 +29,31 @@ interface ChatMessage {
 }
 
 export default function CollectorChatScreen() {
-  const { userName, requestId } = useLocalSearchParams<{ userName: string; requestId: string }>();
+  // A collector talks to vendors (purchaseId) and to households (requestId).
+  // The prefix must follow the id's document type — see utils/chatRoom.ts.
+  const { userName, requestId, purchaseId } = useLocalSearchParams<{
+    userName: string;
+    requestId?: string;
+    purchaseId?: string;
+  }>();
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [connecting, setConnecting] = useState(true);
   const flatListRef = useRef<FlatList>(null);
 
-  const roomId = `req_${requestId}`;
+  const room = useMemo(
+    () => chatRoomId({ purchaseId, requestId }),
+    [purchaseId, requestId]
+  );
+  const roomId = room?.roomId;
 
   useEffect(() => {
+    if (!roomId) {
+      setConnecting(false);
+      return;
+    }
+
     const messagesRef = query(ref(db, `chats/${roomId}`), orderByChild('createdAt'));
 
     const unsubscribe = onValue(messagesRef, (snapshot) => {
@@ -63,7 +79,7 @@ export default function CollectorChatScreen() {
 
   const sendMessage = async () => {
     const text = input.trim();
-    if (!text || !user) return;
+    if (!text || !user || !roomId) return;
     setInput('');
     await push(ref(db, `chats/${roomId}`), {
       senderId: user._id,
@@ -106,12 +122,18 @@ export default function CollectorChatScreen() {
           </View>
           <View>
             <Text style={styles.headerName}>{userName || 'User'}</Text>
-            <Text style={styles.headerStatus}>{'Request · #' + (requestId?.slice(-6) || '')}</Text>
+            <Text style={styles.headerStatus}>{chatRoomLabel(room)}</Text>
           </View>
         </View>
         <View style={{ width: 26 }} />
       </View>
 
+      {!room ? (
+        <View style={styles.center}>
+          <Ionicons name="alert-circle-outline" size={48} color="#BDC3C7" />
+          <Text style={styles.connectingText}>This conversation could not be opened.</Text>
+        </View>
+      ) : (
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -161,6 +183,7 @@ export default function CollectorChatScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+      )}
     </SafeAreaView>
   );
 }

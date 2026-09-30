@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const passwordReset = require('./plugins/passwordReset');
 
 const adminSchema = new mongoose.Schema({
   name: {
@@ -36,6 +37,8 @@ const adminSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+adminSchema.plugin(passwordReset);
 
 // Hash password before saving
 adminSchema.pre('save', async function(next) {

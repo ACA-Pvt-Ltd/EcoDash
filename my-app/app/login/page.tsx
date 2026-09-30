@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { API_URL } from '@/lib/api';
 import { Leaf, Mail, Lock, AlertCircle } from 'lucide-react';
 
@@ -108,7 +109,12 @@ export default function LoginPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-[12px] font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Password</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[12px] font-semibold text-gray-600 uppercase tracking-wide">Password</label>
+                  <Link href="/forgot-password" className="text-[12px] font-semibold text-emerald-600 hover:text-emerald-700">
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required

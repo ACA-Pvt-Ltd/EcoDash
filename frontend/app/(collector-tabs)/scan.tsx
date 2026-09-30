@@ -118,7 +118,11 @@ export default function ScanQRScreen() {
   };
 
   const handleSubmitCollection = async () => {
-    if (!weight || parseFloat(weight) <= 0) {
+    // Number.isFinite also rejects NaN and Infinity. `parseFloat('abc') <= 0` is
+    // false, so text previously passed and recorded a null quantity while still
+    // awarding points.
+    const parsedWeight = parseFloat(weight);
+    if (!weight || !Number.isFinite(parsedWeight) || parsedWeight <= 0) {
       Alert.alert('Error', 'Please enter a valid weight');
       return;
     }
@@ -128,7 +132,7 @@ export default function ScanQRScreen() {
       return;
     }
 
-    const weightValue = parseFloat(weight);
+    const weightValue = parsedWeight;
     const cashAmount = calculateCash();
 
     setSubmitting(true);

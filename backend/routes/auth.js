@@ -7,7 +7,9 @@ const {
   login,
   getMe,
   updateProfile,
-  changePassword
+  changePassword,
+  forgotPassword,
+  resetPassword
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -23,6 +25,8 @@ const authLimiter = rateLimit({
 router.post('/register', authLimiter, register);
 router.post('/register/user', authLimiter, registerUser);
 router.post('/login', authLimiter, login);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 
 // Protected routes
 router.get('/me', protect, getMe);
