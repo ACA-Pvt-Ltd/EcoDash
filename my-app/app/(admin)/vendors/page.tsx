@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Search, Building2, ShieldCheck, Plus, Pencil, X, RefreshCw, Trash2 } from 'lucide-react';
-import { ConfirmDeactivateModal, ConfirmDeleteModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
+import { ConfirmDeactivateModal, ConfirmDeleteModal, StatusNotice, FilterSelect, cityKey, cityOptions, type StatusNoticeData } from '@/components/admin-ui';
 import { useAccess } from '@/lib/access';
 
 interface Vendor {
@@ -75,6 +75,10 @@ export default function VendorsPage() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
   const [search, setSearch]       = useState('');
+  const [cityFilter, setCityFilter]         = useState('all');
+  const [statusFilter, setStatusFilter]     = useState('all');
+  const [verifiedFilter, setVerifiedFilter] = useState('all');
+  const [typeFilter, setTypeFilter]         = useState('all');
   const [toggling, setToggling]   = useState<string | null>(null);
 
   const [showRegister, setShowRegister] = useState(false);
@@ -208,10 +212,19 @@ export default function VendorsPage() {
     } catch { setEditError('Network error'); } finally { setEditLoading(false); }
   }
 
-  const filtered = vendors.filter(v =>
-    v.name?.toLowerCase().includes(search.toLowerCase()) ||
-    v.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const cityChoices = useMemo(() => cityOptions(vendors.map(v => v.address?.city)), [vendors]);
+  const filtersActive = !!search || cityFilter !== 'all' || statusFilter !== 'all' || verifiedFilter !== 'all' || typeFilter !== 'all';
+  const filtered = useMemo(() => vendors.filter(v =>
+      (v.name?.toLowerCase().includes(search.toLowerCase()) || v.email?.toLowerCase().includes(search.toLowerCase())) &&
+      (cityFilter === 'all' || cityKey(v.address?.city) === cityFilter) &&
+      (statusFilter === 'all' || v.isActive === (statusFilter === 'active')) &&
+      (typeFilter === 'all' || v.businessType === typeFilter) &&
+      (verifiedFilter === 'all' || v.isVerified === (verifiedFilter === 'verified'))
+  ), [vendors, search, cityFilter, statusFilter, verifiedFilter, typeFilter]);
+
+  function clearFilters() {
+    setSearch(''); setCityFilter('all'); setStatusFilter('all'); setVerifiedFilter('all'); setTypeFilter('all');
+  }
 
   return (
     <div className="space-y-5">
@@ -249,6 +262,22 @@ export default function VendorsPage() {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <FilterSelect label="City" value={cityFilter} onChange={setCityFilter} options={cityChoices} />
+        <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter}
+          options={[{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+        <FilterSelect label="Verification" value={verifiedFilter} onChange={setVerifiedFilter}
+          options={[{ value: 'all', label: 'All' }, { value: 'verified', label: 'Verified' }, { value: 'unverified', label: 'Unverified' }]} />
+        <FilterSelect label="Business type" value={typeFilter} onChange={setTypeFilter}
+          options={[{ value: 'all', label: 'All types' }, ...BUSINESS_TYPES.map(t => ({ value: t, label: t }))]} />
+        {filtersActive && (
+          <button onClick={clearFilters} className="ml-auto text-[12px] font-semibold text-emerald-600 hover:text-emerald-700">
+            Clear filters
+          </button>
+        )}
+      </div>
+
       <StatusNotice notice={notice} onDismiss={() => setNotice(null)} />
 
       {loading ? <Spinner /> : error ? (
@@ -258,19 +287,20 @@ export default function VendorsPage() {
           <table className="min-w-full">
             <thead>
               <tr className="border-b border-gray-100">
-                {['Vendor','Email','Phone','Type','Status','Verification','Joined',''].map((h,i) => (
+                {['Vendor','Email','Phone','City','Type','Status','Verification','Joined',''].map((h,i) => (
                   <th key={i} className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={8} className="px-5 py-12 text-center text-[13px] text-gray-400">No vendors found.</td></tr>
+                <tr><td colSpan={9} className="px-5 py-12 text-center text-[13px] text-gray-400">{filtersActive ? `No vendors match these filters.` : `No vendors found.`}</td></tr>
               ) : filtered.map(v => (
                 <tr key={v._id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
                   <td className="px-5 py-3.5"><div className="flex items-center gap-2.5"><Avatar name={v.name} /><span className="text-[13px] font-semibold text-gray-800">{v.name}</span></div></td>
                   <td className="px-5 py-3.5 text-[13px] text-gray-500">{v.email}</td>
                   <td className="px-5 py-3.5 text-[13px] text-gray-500">{v.phone || '—'}</td>
+                  <td className="px-5 py-3.5 text-[13px] text-gray-600">{v.address?.city?.trim() || '—'}</td>
                   <td className="px-5 py-3.5"><span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-semibold text-purple-700">{v.businessType || '—'}</span></td>
                   <td className="px-5 py-3.5">
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${v.isActive ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-gray-100 text-gray-500 ring-gray-200'}`}>

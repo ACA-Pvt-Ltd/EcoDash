@@ -406,3 +406,64 @@ export function Switch({
     </button>
   );
 }
+
+/** Compact labelled dropdown for list filter bars. The first option should be "All". */
+export function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  const active = value !== options[0]?.value;
+  return (
+    <label className="flex items-center gap-2">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{label}</span>
+      <select
+        value={value} onChange={e => onChange(e.target.value)} aria-label={label}
+        className={`h-9 rounded-lg border bg-white px-2.5 text-[13px] focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 ${active ? 'border-emerald-300 font-semibold text-emerald-800' : 'border-gray-200 text-gray-700'}`}
+      >
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </label>
+  );
+}
+
+// City filter helpers: "Colombo ", "colombo" and "COLOMBO" count as one city
+export const NO_CITY = '__none__';
+export const cityKey = (city?: string | null) => city?.trim().toLowerCase() || NO_CITY;
+
+/** City dropdown options (A–Z, with counts, "No city" last), labelled with each city's most common spelling. */
+export function cityOptions(cities: (string | null | undefined)[]) {
+  const groups = new Map<string, { count: number; spellings: Map<string, number> }>();
+  for (const city of cities) {
+    const key = cityKey(city);
+    const group = groups.get(key) ?? { count: 0, spellings: new Map<string, number>() };
+    group.count++;
+    if (key !== NO_CITY) {
+      const spelling = city!.trim();
+      group.spellings.set(spelling, (group.spellings.get(spelling) ?? 0) + 1);
+    }
+    groups.set(key, group);
+  }
+  const named = [...groups.entries()]
+    .filter(([key]) => key !== NO_CITY)
+    .map(([key, g]) => {
+      // Most common spelling; on a tie prefer a capitalised one ("Colombo" over "colombo")
+      const capitalised = (x: string) => (x[0] === x[0].toUpperCase() ? 0 : 1);
+      const label = [...g.spellings.entries()]
+        .sort((a, b) => b[1] - a[1] || capitalised(a[0]) - capitalised(b[0]) || a[0].localeCompare(b[0]))[0][0];
+      return { value: key, label: `${label} (${g.count})` };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+  const none = groups.get(NO_CITY);
+  return [
+    { value: 'all', label: 'All cities' },
+    ...named,
+    ...(none ? [{ value: NO_CITY, label: `No city (${none.count})` }] : []),
+  ];
+}

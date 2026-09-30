@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Search, Truck, ShieldCheck, Plus, Pencil, X, RefreshCw, MapPin, Trash2 } from 'lucide-react';
 import { GoogleMap, Marker, Autocomplete, useJsApiLoader } from '@react-google-maps/api';
-import { ConfirmDeactivateModal, ConfirmDeleteModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
+import { ConfirmDeactivateModal, ConfirmDeleteModal, StatusNotice, FilterSelect, cityKey, cityOptions, type StatusNoticeData } from '@/components/admin-ui';
 import { useAccess } from '@/lib/access';
 
 // Must be a stable reference outside the component to avoid re-loading the API
@@ -285,6 +285,10 @@ export default function CollectorsPage() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
   const [search, setSearch]         = useState('');
+  const [cityFilter, setCityFilter]         = useState('all');
+  const [statusFilter, setStatusFilter]     = useState('all');
+  const [verifiedFilter, setVerifiedFilter] = useState('all');
+  const [wasteFilter, setWasteFilter]       = useState('all');
   const [toggling, setToggling]     = useState<string | null>(null);
 
   const [showRegister, setShowRegister] = useState(false);
@@ -445,10 +449,19 @@ export default function CollectorsPage() {
     set(types.includes(type) ? types.filter(t => t !== type) : [...types, type]);
   }
 
-  const filtered = collectors.filter(c =>
-    c.name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const cityChoices = useMemo(() => cityOptions(collectors.map(c => c.address?.city)), [collectors]);
+  const filtersActive = !!search || cityFilter !== 'all' || statusFilter !== 'all' || verifiedFilter !== 'all' || wasteFilter !== 'all';
+  const filtered = useMemo(() => collectors.filter(c =>
+      (c.name?.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase())) &&
+      (cityFilter === 'all' || cityKey(c.address?.city) === cityFilter) &&
+      (statusFilter === 'all' || c.isActive === (statusFilter === 'active')) &&
+      (wasteFilter === 'all' || !!c.acceptedWasteTypes?.includes(wasteFilter)) &&
+      (verifiedFilter === 'all' || c.isVerified === (verifiedFilter === 'verified'))
+  ), [collectors, search, cityFilter, statusFilter, verifiedFilter, wasteFilter]);
+
+  function clearFilters() {
+    setSearch(''); setCityFilter('all'); setStatusFilter('all'); setVerifiedFilter('all'); setWasteFilter('all');
+  }
 
   return (
     <div className="space-y-5">
@@ -486,34 +499,51 @@ export default function CollectorsPage() {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <FilterSelect label="City" value={cityFilter} onChange={setCityFilter} options={cityChoices} />
+        <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter}
+          options={[{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+        <FilterSelect label="Verification" value={verifiedFilter} onChange={setVerifiedFilter}
+          options={[{ value: 'all', label: 'All' }, { value: 'verified', label: 'Verified' }, { value: 'unverified', label: 'Unverified' }]} />
+        <FilterSelect label="Waste type" value={wasteFilter} onChange={setWasteFilter}
+          options={[{ value: 'all', label: 'All types' }, ...WASTE_TYPES.map(t => ({ value: t, label: t }))]} />
+        {filtersActive && (
+          <button onClick={clearFilters} className="ml-auto text-[12px] font-semibold text-emerald-600 hover:text-emerald-700">
+            Clear filters
+          </button>
+        )}
+      </div>
+
       {/* Table */}
       <StatusNotice notice={notice} onDismiss={() => setNotice(null)} />
 
       {loading ? <Spinner /> : error ? (
         <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>
       ) : (
-        <div className="rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
+        <div className="rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-x-auto">
           <table className="min-w-full">
             <thead>
               <tr className="border-b border-gray-100">
-                {['Collector', 'Email', 'Phone', 'Waste Types', 'Performance', 'Status', 'Verification', 'Joined', ''].map((h, i) => (
-                  <th key={i} className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
+                {['Collector', 'Email', 'Phone', 'City', 'Waste Types', 'Performance', 'Status', 'Verification', 'Joined', ''].map((h, i) => (
+                  <th key={i} className="px-3 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={9} className="px-5 py-12 text-center text-[13px] text-gray-400">No collectors found.</td></tr>
+                <tr><td colSpan={10} className="px-5 py-12 text-center text-[13px] text-gray-400">{filtersActive ? `No collectors match these filters.` : `No collectors found.`}</td></tr>
               ) : filtered.map(c => (
                 <tr key={c._id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
-                  <td className="px-5 py-3.5">
+                  <td className="px-3 py-3.5">
                     <div className="flex items-center gap-2.5"><Avatar name={c.name} />
-                      <span className="text-[13px] font-semibold text-gray-800">{c.name}</span>
+                      <span className="whitespace-nowrap text-[13px] font-semibold text-gray-800">{c.name}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-[13px] text-gray-500">{c.email}</td>
-                  <td className="px-5 py-3.5 text-[13px] text-gray-500">{c.phone || '—'}</td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-3 py-3.5 text-[13px] text-gray-500">{c.email}</td>
+                  <td className="px-3 py-3.5 text-[13px] text-gray-500">{c.phone || '—'}</td>
+                  <td className="px-3 py-3.5 text-[13px] text-gray-600">{c.address?.city?.trim() || '—'}</td>
+                  <td className="px-3 py-3.5">
                     <div className="flex flex-wrap gap-1">
                       {(c.acceptedWasteTypes || []).slice(0, 3).map(t => (
                         <span key={t} className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600">{t}</span>
@@ -521,23 +551,23 @@ export default function CollectorsPage() {
                       {(c.acceptedWasteTypes?.length || 0) > 3 && <span className="text-[10px] text-gray-400">+{(c.acceptedWasteTypes?.length || 0) - 3}</span>}
                     </div>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-3 py-3.5">
                     <PerformanceCell performance={c.performance} />
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-3 py-3.5">
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${c.isActive ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-gray-100 text-gray-500 ring-gray-200'}`}>
                       {c.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-3 py-3.5">
                     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${c.isVerified ? 'bg-blue-50 text-blue-700 ring-blue-100' : 'bg-gray-100 text-gray-400 ring-gray-200'}`}>
                       {c.isVerified && <ShieldCheck size={10} />}{c.isVerified ? 'Verified' : 'Pending'}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-[12px] text-gray-400">
+                  <td className="whitespace-nowrap px-3 py-3.5 text-[12px] text-gray-400">
                     {new Date(c.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-3 py-3.5">
                     <div className="flex items-center gap-2">
                       {canEdit && (
                         <button onClick={() => openEdit(c)} className="rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-100 flex items-center gap-1">
