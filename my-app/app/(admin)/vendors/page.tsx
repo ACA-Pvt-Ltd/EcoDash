@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Search, Building2, ShieldCheck, Plus, Pencil, X, RefreshCw } from 'lucide-react';
+import { ConfirmDeactivateModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
 
 interface Vendor {
   _id: string;
@@ -80,6 +81,11 @@ export default function VendorsPage() {
   const [editLoading, setEditLoading]   = useState(false);
   const [editError, setEditError]       = useState('');
 
+  // Deactivation always goes through the confirm dialog, from the row button or the edit form
+  const [confirmTarget, setConfirmTarget]   = useState<{ vendor: Vendor; source: 'toggle' | 'edit' } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [notice, setNotice]                 = useState<StatusNoticeData | null>(null);
+
   function load() {
     setLoading(true);
     apiFetch('/admin/vendors')
@@ -98,12 +104,29 @@ export default function VendorsPage() {
     newMonth: vendors.filter(v => new Date(v.createdAt) >= startOfMonth).length,
   }), [vendors, startOfMonth]);
 
-  async function toggleStatus(v: Vendor) {
+  function toggleStatus(v: Vendor) {
+    if (v.isActive) setConfirmTarget({ vendor: v, source: 'toggle' });
+    else setStatus(v, true);
+  }
+
+  async function setStatus(v: Vendor, isActive: boolean, reason?: string) {
     setToggling(v._id);
     try {
-      const res = await apiFetch(`/admin/vendors/${v._id}`, { method: 'PUT', body: JSON.stringify({ isActive: !v.isActive }) });
-      if (res.success) setVendors(prev => prev.map(x => x._id === v._id ? { ...x, isActive: !x.isActive } : x));
+      const res = await apiFetch(`/admin/vendors/${v._id}`, { method: 'PUT', body: JSON.stringify({ isActive, reason }) });
+      if (res.success) {
+        setVendors(prev => prev.map(x => x._id === v._id ? { ...x, isActive } : x));
+        setNotice({ name: v.name, email: v.email, isActive, emailSent: !!res.emailSent });
+      }
     } catch { /* silent */ } finally { setToggling(null); }
+  }
+
+  async function confirmDeactivate(reason: string) {
+    if (!confirmTarget) return;
+    setConfirmLoading(true);
+    if (confirmTarget.source === 'edit') await saveEdit(reason);
+    else await setStatus(confirmTarget.vendor, false, reason);
+    setConfirmLoading(false);
+    setConfirmTarget(null);
   }
 
   async function submitRegister(e: React.FormEvent) {
@@ -133,16 +156,28 @@ export default function VendorsPage() {
     setEditError('');
   }
 
-  async function submitEdit(e: React.FormEvent) {
+  function submitEdit(e: React.FormEvent) {
     e.preventDefault();
+    if (!editTarget) return;
+    if (editTarget.isActive && !editForm.isActive) setConfirmTarget({ vendor: editTarget, source: 'edit' });
+    else saveEdit();
+  }
+
+  async function saveEdit(reason?: string) {
     if (!editTarget) return;
     setEditLoading(true);
     try {
       const res = await apiFetch(`/admin/vendors/${editTarget._id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name: editForm.name, phone: editForm.phone, businessType: editForm.businessType, description: editForm.description, website: editForm.website, address: { city: editForm.city, street: editForm.street }, isActive: editForm.isActive, isVerified: editForm.isVerified }),
+        body: JSON.stringify({ name: editForm.name, phone: editForm.phone, businessType: editForm.businessType, description: editForm.description, website: editForm.website, address: { city: editForm.city, street: editForm.street }, isActive: editForm.isActive, isVerified: editForm.isVerified, reason }),
       });
-      if (res.success) { setEditTarget(null); load(); }
+      if (res.success) {
+        if (editTarget.isActive !== editForm.isActive) {
+          setNotice({ name: editForm.name, email: editTarget.email, isActive: editForm.isActive, emailSent: !!res.emailSent });
+        }
+        setEditTarget(null);
+        load();
+      }
       else setEditError(res.message || 'Update failed');
     } catch { setEditError('Network error'); } finally { setEditLoading(false); }
   }
@@ -185,6 +220,8 @@ export default function VendorsPage() {
           </button>
         </div>
       </div>
+
+      <StatusNotice notice={notice} onDismiss={() => setNotice(null)} />
 
       {loading ? <Spinner /> : error ? (
         <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>
@@ -325,6 +362,14 @@ export default function VendorsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDeactivateModal
+        target={confirmTarget?.vendor ?? null}
+        roleLabel="Vendor"
+        loading={confirmLoading}
+        onCancel={() => setConfirmTarget(null)}
+        onConfirm={confirmDeactivate}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Search, Users, Pencil, X, RefreshCw } from 'lucide-react';
+import { ConfirmDeactivateModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
 
 interface User {
   _id: string;
@@ -71,6 +72,11 @@ export default function UsersPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError]     = useState('');
 
+  // Deactivation always goes through the confirm dialog, from the row button or the edit form
+  const [confirmTarget, setConfirmTarget]   = useState<{ user: User; source: 'toggle' | 'edit' } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [notice, setNotice]                 = useState<StatusNoticeData | null>(null);
+
   function load() {
     setLoading(true);
     apiFetch('/admin/users')
@@ -92,12 +98,29 @@ export default function UsersPage() {
     };
   }, [users, startOfMonth]);
 
-  async function toggleStatus(user: User) {
+  function toggleStatus(user: User) {
+    if (user.isActive) setConfirmTarget({ user, source: 'toggle' });
+    else setStatus(user, true);
+  }
+
+  async function setStatus(user: User, isActive: boolean, reason?: string) {
     setToggling(user._id);
     try {
-      const res = await apiFetch(`/admin/users/${user._id}/status`, { method: 'PUT', body: JSON.stringify({ isActive: !user.isActive }) });
-      if (res.success) setUsers(prev => prev.map(u => u._id === user._id ? { ...u, isActive: !u.isActive } : u));
+      const res = await apiFetch(`/admin/users/${user._id}/status`, { method: 'PUT', body: JSON.stringify({ isActive, reason }) });
+      if (res.success) {
+        setUsers(prev => prev.map(u => u._id === user._id ? { ...u, isActive } : u));
+        setNotice({ name: user.name, email: user.email, isActive, emailSent: !!res.emailSent });
+      }
     } catch { /* silent */ } finally { setToggling(null); }
+  }
+
+  async function confirmDeactivate(reason: string) {
+    if (!confirmTarget) return;
+    setConfirmLoading(true);
+    if (confirmTarget.source === 'edit') await saveEdit(reason);
+    else await setStatus(confirmTarget.user, false, reason);
+    setConfirmLoading(false);
+    setConfirmTarget(null);
   }
 
   function openEdit(u: User) {
@@ -106,16 +129,28 @@ export default function UsersPage() {
     setEditError('');
   }
 
-  async function submitEdit(e: React.FormEvent) {
+  function submitEdit(e: React.FormEvent) {
     e.preventDefault();
+    if (!editTarget) return;
+    if (editTarget.isActive && !editForm.isActive) setConfirmTarget({ user: editTarget, source: 'edit' });
+    else saveEdit();
+  }
+
+  async function saveEdit(reason?: string) {
     if (!editTarget) return;
     setEditLoading(true);
     try {
       const res = await apiFetch(`/admin/users/${editTarget._id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name: editForm.name, phone: editForm.phone, isActive: editForm.isActive }),
+        body: JSON.stringify({ name: editForm.name, phone: editForm.phone, isActive: editForm.isActive, reason }),
       });
-      if (res.success) { setEditTarget(null); load(); }
+      if (res.success) {
+        if (editTarget.isActive !== editForm.isActive) {
+          setNotice({ name: editForm.name, email: editTarget.email, isActive: editForm.isActive, emailSent: !!res.emailSent });
+        }
+        setEditTarget(null);
+        load();
+      }
       else setEditError(res.message || 'Update failed');
     } catch { setEditError('Network error'); } finally { setEditLoading(false); }
   }
@@ -152,6 +187,8 @@ export default function UsersPage() {
             className="h-9 w-64 rounded-lg border border-gray-200 bg-white pl-8 pr-4 text-[13px] placeholder-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100" />
         </div>
       </div>
+
+      <StatusNotice notice={notice} onDismiss={() => setNotice(null)} />
 
       {loading ? <Spinner /> : error ? (
         <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>
@@ -229,6 +266,14 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDeactivateModal
+        target={confirmTarget?.user ?? null}
+        roleLabel="User"
+        loading={confirmLoading}
+        onCancel={() => setConfirmTarget(null)}
+        onConfirm={confirmDeactivate}
+      />
     </div>
   );
 }
