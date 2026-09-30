@@ -75,6 +75,11 @@ const vendorSchema = new mongoose.Schema({
     enum: ['vendor'],
     default: 'vendor'
   },
+  // Set when an admin deletes the account; personal data is removed at the same time
+  deletedAt: {
+    type: Date,
+    default: null
+  },
   isActive: {
     type: Boolean,
     default: true

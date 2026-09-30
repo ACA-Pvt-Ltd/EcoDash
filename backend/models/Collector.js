@@ -78,6 +78,11 @@ const collectorSchema = new mongoose.Schema({
     enum: ['collector'],
     default: 'collector'
   },
+  // Set when an admin deletes the account; personal data is removed at the same time
+  deletedAt: {
+    type: Date,
+    default: null
+  },
   isActive: {
     type: Boolean,
     default: true

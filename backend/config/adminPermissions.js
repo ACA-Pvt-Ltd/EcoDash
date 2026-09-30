@@ -7,7 +7,9 @@
  *   2. Guard its route with requirePermission('<key>') (routes/admin.js).
  *   3. Give its portal nav item / buttons the same key.
  * The Roles & Access page renders this list, so the new switch appears there
- * automatically. Executive gets it immediately; every other role starts off.
+ * automatically. Executive gets it immediately. Listing it in a DEFAULT_ROLES
+ * entry below grants it to that built-in role once (see ensureDefaultRoles);
+ * every other role starts with it off.
  */
 const PERMISSIONS = [
   { key: 'dashboard.view',        group: 'Dashboard',     label: 'View dashboard',              description: 'See platform stats and charts' },
@@ -15,16 +17,19 @@ const PERMISSIONS = [
   { key: 'users.view',            group: 'Users',         label: 'View users',                  description: 'See the users list' },
   { key: 'users.edit',            group: 'Users',         label: 'Edit users',                  description: 'Change user names and phone numbers' },
   { key: 'users.deactivate',      group: 'Users',         label: 'Deactivate / activate users', description: 'Switch user accounts off and on' },
+  { key: 'users.delete',          group: 'Users',         label: 'Delete users',                description: 'Permanently close user accounts and remove their personal data' },
 
   { key: 'collectors.view',       group: 'Collectors',    label: 'View collectors',             description: 'See the collectors list' },
   { key: 'collectors.create',     group: 'Collectors',    label: 'Register collectors',         description: 'Create new collector accounts' },
   { key: 'collectors.edit',       group: 'Collectors',    label: 'Edit collectors',             description: 'Change collector details, waste types and hours' },
   { key: 'collectors.deactivate', group: 'Collectors',    label: 'Deactivate / activate collectors', description: 'Switch collector accounts off and on' },
+  { key: 'collectors.delete',     group: 'Collectors',    label: 'Delete collectors',           description: 'Permanently close collector accounts and remove their personal data' },
 
   { key: 'vendors.view',          group: 'Vendors',       label: 'View vendors',                description: 'See the vendors list' },
   { key: 'vendors.create',        group: 'Vendors',       label: 'Register vendors',            description: 'Create new vendor accounts' },
   { key: 'vendors.edit',          group: 'Vendors',       label: 'Edit vendors',                description: 'Change vendor business details' },
   { key: 'vendors.deactivate',    group: 'Vendors',       label: 'Deactivate / activate vendors', description: 'Switch vendor accounts off and on' },
+  { key: 'vendors.delete',        group: 'Vendors',       label: 'Delete vendors',              description: 'Permanently close vendor accounts and remove their personal data' },
 
   { key: 'transactions.view',     group: 'Transactions',  label: 'View transactions',           description: 'See the transaction history' },
 
@@ -61,14 +66,14 @@ const DEFAULT_ROLES = [
   {
     key: 'manager',
     name: 'Manager',
-    description: 'Runs day-to-day operations and can deactivate accounts.',
+    description: 'Runs day-to-day operations and can deactivate and delete accounts.',
     isSystem: true,
     isExecutive: false,
     permissions: [
       ...VIEW_KEYS,
-      'users.edit', 'users.deactivate',
-      'collectors.create', 'collectors.edit', 'collectors.deactivate',
-      'vendors.create', 'vendors.edit', 'vendors.deactivate',
+      'users.edit', 'users.deactivate', 'users.delete',
+      'collectors.create', 'collectors.edit', 'collectors.deactivate', 'collectors.delete',
+      'vendors.create', 'vendors.edit', 'vendors.deactivate', 'vendors.delete',
       'config.edit', 'content.edit',
       'rewards.manage',
     ],
