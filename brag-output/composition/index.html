@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>EcoDash Brag</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #0b3d22; }
+      body { font-family: system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+      .clip { position: absolute; inset: 0; }
+      .scene { position: absolute; inset: 0; overflow: hidden; }
+      .dark { background: #0b3d22; }
+      .grad { background: linear-gradient(135deg, #1e9e55 0%, #16874a 50%, #0e5f33 100%); }
+      .mint { background: #e8f5e9; }
+
+      /* ---------- Scene 1: hook ---------- */
+      .hook { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+      .hook h1 { color: #ffffff; font-size: 150px; font-weight: 800; letter-spacing: -5px; line-height: 1.05; }
+      .hook h1.b { color: #2dd36f; }
+
+      /* ---------- Rings + logo (welcome screen) ---------- */
+      .ring-outer { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.08); border: 3px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; }
+      .ring-inner { border-radius: 50%; background: rgba(255,255,255,0.12); border: 3px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; }
+      .ring-core { border-radius: 50%; background: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 16px 40px rgba(0,0,0,0.25); overflow: hidden; }
+      .ring-core img { width: 95%; height: 95%; object-fit: contain; }
+
+      /* ---------- Scene 2: welcome ---------- */
+      .welcome-text { position: absolute; left: 180px; top: 300px; width: 900px; }
+      .welcome-kicker { color: #e9fff1; font-size: 34px; font-weight: 600; letter-spacing: 9px; }
+      .wordmark { color: #ffffff; font-size: 210px; font-weight: 800; letter-spacing: -8px; line-height: 1; margin-top: 18px; text-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+      .tagline-row { display: flex; align-items: center; gap: 28px; margin-top: 34px; }
+      .divider { display: block; width: 90px; height: 3px; background: rgba(255,255,255,0.6); }
+      .tagline { color: #ffffff; font-size: 44px; font-weight: 400; letter-spacing: 2px; }
+      #s2-rings { left: 1150px; top: 240px; width: 600px; height: 600px; }
+      #s2-rings .ring-inner { width: 492px; height: 492px; }
+      #s2-rings .ring-core { width: 390px; height: 390px; }
+
+      /* ---------- App scenes: caption + phone ---------- */
+      .caption { position: absolute; left: 160px; top: 330px; width: 860px; }
+      .step { display: inline-flex; align-items: center; justify-content: center; width: 84px; height: 84px; border-radius: 42px; background: #16874a; color: #ffffff; font-size: 44px; font-weight: 800; }
+      .caption h2 { text-wrap: balance; color: #0b3d22; font-size: 104px; font-weight: 800; letter-spacing: -4px; line-height: 1.02; margin-top: 30px; }
+      .caption p { color: #2e5e45; font-size: 40px; font-weight: 500; line-height: 1.3; margin-top: 26px; max-width: 800px; }
+      .phone { position: absolute; left: 1200px; top: 70px; width: 460px; height: 940px; border-radius: 64px; background: #11181c; padding: 14px; box-shadow: 0 40px 90px rgba(11,61,34,0.35); }
+      .screen { position: relative; width: 100%; height: 100%; border-radius: 52px; background: #f5f6fa; overflow: hidden; }
+      .app-head { background: #16874a; padding: 70px 28px 26px; color: #ffffff; font-size: 30px; font-weight: 700; }
+      .app-body { padding: 24px; }
+      .label { color: #4a565e; font-size: 18px; font-weight: 600; margin: 6px 0 12px; }
+      .card { position: relative; background: #ffffff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 18px; }
+
+      /* chips */
+      .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+      .chip { position: relative; display: block; padding: 11px 16px; border-radius: 16px; background: #ffffff; border: 2px solid #e1e5ea; color: #11181c; font-size: 19px; font-weight: 600; }
+      .chip-sel { position: absolute; inset: -2px; border-radius: 16px; background: #16874a; color: #ffffff; padding: 11px 16px; font-size: 19px; font-weight: 600; opacity: 0; }
+
+      /* weight field */
+      .field { position: relative; display: flex; align-items: center; height: 64px; border-radius: 16px; background: #ffffff; border: 2px solid #e1e5ea; padding: 0 20px; font-size: 28px; font-weight: 700; color: #11181c; }
+      .field-focus { position: absolute; inset: -2px; border-radius: 16px; border: 3px solid #16874a; opacity: 0; }
+      .typed { display: inline-block; opacity: 0; }
+      .unit { margin-left: 10px; color: #4a565e; font-size: 22px; font-weight: 600; }
+      .estimate { margin-top: 18px; border-radius: 16px; background: #f0fff4; border: 2px solid #b7e4c7; padding: 16px 20px; }
+      .estimate small { display: block; color: #2e5e45; font-size: 17px; font-weight: 600; }
+      .estimate strong { display: block; color: #0e5f33; font-size: 30px; font-weight: 800; margin-top: 4px; }
+      .btn { position: relative; display: flex; align-items: center; justify-content: center; height: 70px; border-radius: 35px; background: #16874a; color: #ffffff; font-size: 24px; font-weight: 700; margin-top: 24px; }
+      .tap { position: absolute; left: 50%; top: 50%; width: 76px; height: 76px; margin-left: -38px; margin-top: -38px; border-radius: 50%; background: rgba(17,24,28,0.18); border: 4px solid rgba(17,24,28,0.35); opacity: 0; }
+      .toast { position: absolute; left: 24px; right: 24px; bottom: 40px; height: 76px; border-radius: 20px; background: #0e5f33; color: #ffffff; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 24px; font-weight: 700; box-shadow: 0 12px 30px rgba(0,0,0,0.25); opacity: 0; }
+
+      /* QR scan */
+      .qr-wrap { position: relative; width: 300px; height: 300px; margin: 6px auto 0; background: #ffffff; border-radius: 24px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); overflow: hidden; }
+      #qr { display: grid; grid-template-columns: repeat(21, 1fr); width: 252px; height: 252px; }
+      #qr i { display: block; }
+      .scanline { position: absolute; left: 14px; right: 14px; top: 20px; height: 6px; border-radius: 3px; background: #2dd36f; box-shadow: 0 0 18px 4px rgba(45,211,111,0.55); }
+      .verified { position: absolute; inset: 0; border-radius: 35px; background: #0e5f33; display: flex; align-items: center; justify-content: center; opacity: 0; }
+      .row { display: flex; justify-content: space-between; align-items: baseline; font-size: 21px; color: #4a565e; font-weight: 600; padding: 6px 0; }
+      .row b { color: #0e5f33; font-size: 30px; font-weight: 800; }
+      .row .plain { color: #11181c; font-size: 22px; font-weight: 700; }
+
+      /* vendor */
+      .stat { display: flex; align-items: center; gap: 18px; }
+      .stat-ic { display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 18px; background: #e8f5e9; font-size: 32px; }
+      .stat small { display: block; color: #4a565e; font-size: 18px; font-weight: 600; }
+      .stat strong { display: block; color: #11181c; font-size: 36px; font-weight: 800; margin-top: 2px; }
+      .quick { color: #4a565e; font-size: 18px; font-weight: 600; margin-top: 8px; }
+
+      /* ---------- Scene 6: outro ---------- */
+      .chain { position: absolute; left: 0; right: 0; top: 170px; display: flex; justify-content: center; align-items: center; gap: 26px; }
+      .pill { display: block; padding: 20px 40px; border-radius: 44px; background: #ffffff; color: #0e5f33; font-size: 44px; font-weight: 800; }
+      .arrow { display: block; color: #ffffff; font-size: 52px; font-weight: 800; }
+      .lockup { position: absolute; left: 0; right: 0; top: 400px; display: flex; justify-content: center; align-items: center; gap: 70px; }
+      #s6-rings { position: relative; width: 420px; height: 420px; }
+      #s6-rings .ring-inner { width: 344px; height: 344px; }
+      #s6-rings .ring-core { width: 272px; height: 272px; }
+      .lockup-text .wordmark { font-size: 190px; margin-top: 0; }
+      .lockup-text .tagline-row { margin-top: 26px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="21.5" data-width="1920" data-height="1080">
+
+      <!-- Scene 1: Hook -->
+      <section id="s1" class="clip" data-start="0" data-duration="2.80" data-track-index="0">
+        <div class="scene dark">
+          <div class="hook">
+            <h1 id="h1a">Your waste</h1>
+            <h1 id="h1b" class="b">has a price.</h1>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 2: Welcome reveal (recreates app/(auth)/welcome.tsx) -->
+      <section id="s2" class="clip" data-start="2.45" data-duration="4.04" data-track-index="1">
+        <div id="s2-scene" class="scene grad">
+          <div class="welcome-text">
+            <div id="s2-kicker" class="welcome-kicker">WELCOME TO</div>
+            <div id="s2-word" class="wordmark">EcoDash</div>
+            <div class="tagline-row">
+              <span id="s2-dl" class="divider"></span>
+              <span id="s2-tag" class="tagline">Turn Waste into Worth</span>
+              <span id="s2-dr" class="divider"></span>
+            </div>
+          </div>
+          <div id="s2-rings" class="ring-outer">
+            <div id="s2-inner" class="ring-inner">
+              <div id="s2-core" class="ring-core"><img id="s2-logo" src="assets/img/logo.png" alt="EcoDash logo" /></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 3: User lists waste (app/(tabs)/create-offer.tsx) -->
+      <section id="s3" class="clip" data-start="6.14" data-duration="4.55" data-track-index="0">
+        <div id="s3-scene" class="scene mint">
+          <div class="caption">
+            <div id="s3-step" class="step">1</div>
+            <h2 id="s3-h">You list it</h2>
+            <p id="s3-p">Pick a waste type, add the weight, post the offer.</p>
+          </div>
+          <div id="s3-phone" class="phone">
+            <div class="screen">
+              <div class="app-head">Create Waste Offer</div>
+              <div class="app-body">
+                <div class="label">Waste Type</div>
+                <div class="chips">
+                  <span class="chip">📱 E-waste</span>
+                  <span id="chip-plastic" class="chip">♻️ Plastic<span id="chip-sel" class="chip-sel">♻️ Plastic</span><span id="tap1" class="tap"></span></span>
+                  <span class="chip">🛍️ Polythene</span>
+                  <span class="chip">🍾 Glass</span>
+                  <span class="chip">📄 Paper</span>
+                  <span class="chip">🔩 Metal</span>
+                </div>
+                <div class="label" style="margin-top: 24px">Weight (kg)</div>
+                <div class="field">
+                  <span id="k1" class="typed">1</span><span id="k2" class="typed">2</span><span class="unit">kg</span>
+                  <span id="field-focus" class="field-focus"></span>
+                </div>
+                <div id="estimate" class="estimate">
+                  <small>Estimated reward</small>
+                  <strong>120 pts · LKR 60</strong>
+                </div>
+                <div id="btn-create" class="btn">Create Offer<span id="tap2" class="tap"></span></div>
+              </div>
+              <div id="toast" class="toast">✓ Offer posted</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 4: Collector scans (app/(collector-tabs)/scan.tsx) -->
+      <section id="s4" class="clip" data-start="10.34" data-duration="4.57" data-track-index="1">
+        <div id="s4-scene" class="scene mint">
+          <div class="caption">
+            <div id="s4-step" class="step">2</div>
+            <h2 id="s4-h">A collector picks it up</h2>
+            <p id="s4-p">Scan the user's QR, verify, award points or cash.</p>
+          </div>
+          <div id="s4-phone" class="phone">
+            <div class="screen">
+              <div class="app-head">Scan User QR Code</div>
+              <div class="app-body">
+                <div class="qr-wrap">
+                  <div id="qr"></div>
+                  <div id="scanline" class="scanline"></div>
+                </div>
+                <div id="btn-verify" class="btn">Verify User<span id="verified" class="verified">✓ Verified</span><span id="tap3" class="tap"></span></div>
+                <div id="collect" class="card" style="margin-top: 22px">
+                  <div class="label" style="margin-top: 0">Add Waste Collection</div>
+                  <div class="row"><span>Plastic</span><span class="plain">12 kg</span></div>
+                  <div class="row"><span>Points to Award:</span><b id="pts">0</b></div>
+                  <div class="row"><span>Cash to Award:</span><b id="cash">LKR 0</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 5: Vendor dashboard (app/(vendor-tabs)/index.tsx) -->
+      <section id="s5" class="clip" data-start="14.56" data-duration="3.50" data-track-index="0">
+        <div id="s5-scene" class="scene mint">
+          <div class="caption">
+            <div id="s5-step" class="step">3</div>
+            <h2 id="s5-h">A vendor buys it</h2>
+            <p id="s5-p">Sorted waste, bought straight from collectors.</p>
+          </div>
+          <div id="s5-phone" class="phone">
+            <div class="screen">
+              <div class="app-head">Vendor Dashboard</div>
+              <div class="app-body">
+                <div class="label">Statistics</div>
+                <div id="st1" class="card stat"><span class="stat-ic">⚖️</span><div><small>Today Weight</small><strong>340 kg</strong></div></div>
+                <div id="st2" class="card stat"><span class="stat-ic">🛒</span><div><small>Today Purchases</small><strong>8</strong></div></div>
+                <div id="st3" class="card stat"><span class="stat-ic">💰</span><div><small>Total Spent</small><strong>LKR 4,200</strong></div></div>
+                <div class="label" style="margin-top: 14px">Quick Actions</div>
+                <div class="card"><div class="quick">Browse Waste Offers</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 6: Outro -->
+      <section id="s6" class="clip" data-start="17.71" data-duration="3.79" data-track-index="1">
+        <div id="s6-scene" class="scene grad">
+          <div class="chain">
+            <span id="c1" class="pill">You</span>
+            <span id="a1" class="arrow">→</span>
+            <span id="c2" class="pill">Collector</span>
+            <span id="a2" class="arrow">→</span>
+            <span id="c3" class="pill">Vendor</span>
+          </div>
+          <div class="lockup">
+            <div id="s6-rings" class="ring-outer">
+              <div class="ring-inner">
+                <div class="ring-core"><img src="assets/img/logo-outro.png" alt="EcoDash logo" /></div>
+              </div>
+            </div>
+            <div class="lockup-text">
+              <div id="s6-word" class="wordmark">EcoDash</div>
+              <div class="tagline-row">
+                <span id="s6-dl" class="divider"></span>
+                <span id="s6-tag" class="tagline">Turn Waste into Worth</span>
+                <span id="s6-dr" class="divider"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Audio: music bed + SFX (Kenney CC0) -->
+      <audio id="music" src="assets/music/happy-beats-business-moves-vol-9-by-ende-dot-app.mp3" data-start="0" data-duration="21.5" data-track-index="10" data-volume="0.5" data-fade-in="0.3" data-fade-out="1.5"></audio>
+      <audio id="sfx-hook" src="assets/sfx/impactSoft_medium_001.ogg" data-start="1.07" data-duration="0.18" data-track-index="11" data-volume="0.7"></audio>
+      <audio id="sfx-logo" src="assets/sfx/impactBell_heavy_000.ogg" data-start="3.70" data-duration="1.48" data-track-index="11" data-volume="0.35"></audio>
+      <audio id="sfx-chip" src="assets/sfx/click2.ogg" data-start="7.40" data-duration="0.05" data-track-index="11" data-volume="0.6"></audio>
+      <audio id="sfx-k1" src="assets/sfx/keypress-001.wav" data-start="7.92" data-duration="0.25" data-track-index="11" data-volume="0.35"></audio>
+      <audio id="sfx-k2" src="assets/sfx/keypress-002.wav" data-start="8.18" data-duration="0.25" data-track-index="11" data-volume="0.35"></audio>
+      <audio id="sfx-btn" src="assets/sfx/click2.ogg" data-start="9.50" data-duration="0.05" data-track-index="11" data-volume="0.6"></audio>
+      <audio id="sfx-toast" src="assets/sfx/bong_001.ogg" data-start="9.62" data-duration="0.12" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="sfx-verify-tap" src="assets/sfx/click2.ogg" data-start="12.00" data-duration="0.05" data-track-index="11" data-volume="0.6"></audio>
+      <audio id="sfx-verify" src="assets/sfx/bong_001.ogg" data-start="12.12" data-duration="0.12" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="sfx-card1" src="assets/sfx/card-slide-1.ogg" data-start="15.28" data-duration="0.5" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="sfx-card2" src="assets/sfx/card-slide-1.ogg" data-start="15.81" data-duration="0.5" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="sfx-card3" src="assets/sfx/card-slide-1.ogg" data-start="16.34" data-duration="0.6" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="sfx-chain" src="assets/sfx/impactSoft_medium_004.ogg" data-start="17.91" data-duration="0.15" data-track-index="11" data-volume="0.6"></audio>
+      <audio id="sfx-outro" src="assets/sfx/impactBell_heavy_003.ogg" data-start="18.96" data-duration="0.65" data-track-index="11" data-volume="0.35"></audio>
+    </div>
+
+    <script>
+      // Deterministic QR-style pattern (seeded PRNG, no Math.random)
+      (function buildQr() {
+        let s = 20260926;
+        const rand = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+        const N = 21, qr = document.getElementById("qr");
+        const finder = (r, c) => {
+          for (const [fr, fc] of [[0, 0], [0, 14], [14, 0]]) {
+            const y = r - fr, x = c - fc;
+            if (y >= 0 && y < 7 && x >= 0 && x < 7) {
+              return y === 0 || y === 6 || x === 0 || x === 6 || (y >= 2 && y <= 4 && x >= 2 && x <= 4) ? 1 : 0;
+            }
+            if (y >= -1 && y <= 7 && x >= -1 && x <= 7) return 0;
+          }
+          return null;
+        };
+        for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+          const f = finder(r, c);
+          const on = f === null ? rand() < 0.48 : f === 1;
+          const i = document.createElement("i");
+          i.style.background = on ? "#11181c" : "transparent";
+          qr.appendChild(i);
+        }
+      })();
+
+      const tl = gsap.timeline({ paused: true });
+      const E = "power3.out";
+      const fadeIn = (sel, t) => tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: "power1.inOut" }, t);
+      const rise = (sel, t, d = 0.5) => tl.fromTo(sel, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: d, ease: E }, t);
+      const tap = (sel, t) => tl.fromTo(sel, { opacity: 1, scale: 0.5 }, { opacity: 0, scale: 1.5, duration: 0.45, ease: "power2.out" }, t);
+
+      // Scene 1 — hook
+      rise("#h1a", 0.15, 0.55);
+      tl.fromTo("#h1b", { opacity: 0, scale: 1.35 }, { opacity: 1, scale: 1, duration: 0.22, ease: "power4.out" }, 0.9); // beat-locked: 1.07s
+
+      // Scene 2 — welcome reveal
+      fadeIn("#s2-scene", 2.45);
+      tl.fromTo("#s2-rings", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.8, ease: "back.out(1.4)" }, 2.7);
+      tl.fromTo("#s2-inner", { scale: 0.7 }, { scale: 1, duration: 0.7, ease: E }, 2.85);
+      tl.fromTo("#s2-core", { scale: 0.5 }, { scale: 1, duration: 0.7, ease: "back.out(1.6)" }, 3.0);
+      tl.to("#s2-rings", { rotation: 6, duration: 3.2, ease: "none" }, 3.1);
+      rise("#s2-kicker", 2.8, 0.5);
+      tl.fromTo("#s2-word", { opacity: 0, y: 70, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 3.5); // beat-locked: 3.70s
+      tl.fromTo(["#s2-dl", "#s2-dr"], { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: E }, 4.2);
+      tl.fromTo("#s2-tag", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 4.23);
+
+      // Scene 3 — user creates an offer
+      fadeIn("#s3-scene", 6.14); // cut lands on beat 6.34
+      tl.fromTo("#s3-phone", { opacity: 0, y: 90 }, { opacity: 1, y: 0, duration: 0.6, ease: E }, 6.25);
+      tl.fromTo("#s3-step", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 6.4);
+      rise("#s3-h", 6.5);
+      rise("#s3-p", 6.72);
+      tap("#tap1", 7.36);
+      tl.fromTo("#chip-sel", { opacity: 0 }, { opacity: 1, duration: 0.12 }, 7.40);
+      tl.fromTo("#field-focus", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 7.75);
+      tl.fromTo("#k1", { opacity: 0 }, { opacity: 1, duration: 0.05 }, 7.92);
+      tl.fromTo("#k2", { opacity: 0 }, { opacity: 1, duration: 0.05 }, 8.18);
+      tl.fromTo("#estimate", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.35, ease: E }, 8.96); // beat-grid: 8.96s
+      tap("#tap2", 9.46);
+      tl.fromTo("#btn-create", { scale: 1 }, { scale: 0.95, duration: 0.08, yoyo: true, repeat: 1 }, 9.48);
+      tl.fromTo("#toast", { opacity: 0, y: 90 }, { opacity: 1, y: 0, duration: 0.35, ease: "back.out(1.6)" }, 9.62);
+
+      // Scene 4 — collector scans and awards
+      fadeIn("#s4-scene", 10.34); // cut lands on beat 10.54
+      tl.fromTo("#s4-phone", { opacity: 0, y: 90 }, { opacity: 1, y: 0, duration: 0.6, ease: E }, 10.45);
+      tl.fromTo("#s4-step", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 10.6);
+      rise("#s4-h", 10.68);
+      rise("#s4-p", 10.9);
+      tl.fromTo("#scanline", { y: 0 }, { y: 252, duration: 0.55, ease: "sine.inOut", yoyo: true, repeat: 1 }, 10.85);
+      tl.to("#scanline", { opacity: 0, duration: 0.2 }, 11.95);
+      tap("#tap3", 11.96);
+      tl.fromTo("#verified", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 12.12);
+      tl.fromTo("#collect", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.3, ease: E }, 12.2);
+      const counter = { v: 0 };
+      tl.fromTo(counter, { v: 0 }, {
+        v: 1, duration: 0.45, ease: "power2.out",
+        onUpdate: () => {
+          document.getElementById("pts").textContent = Math.round(counter.v * 120);
+          document.getElementById("cash").textContent = "LKR " + Math.round(counter.v * 60);
+        },
+      }, 12.2); // beat-locked: count lands 12.65s
+
+      // Scene 5 — vendor dashboard
+      fadeIn("#s5-scene", 14.56);
+      tl.fromTo("#s5-phone", { opacity: 0, y: 90 }, { opacity: 1, y: 0, duration: 0.6, ease: E }, 14.6);
+      tl.fromTo("#s5-step", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 14.8);
+      rise("#s5-h", 14.85);
+      rise("#s5-p", 15.05);
+      // beat-grid: card 1 at 15.28s, card 2 at 15.81s, card 3 at 16.34s — then the set holds
+      [["#st1", 15.28], ["#st2", 15.81], ["#st3", 16.34]].forEach(([s, t]) =>
+        tl.fromTo(s, { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.35, ease: E }, t));
+
+      // Scene 6 — outro
+      fadeIn("#s6-scene", 17.71);
+      tl.fromTo("#c1", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.3, ease: E }, 17.91); // beat-locked: 17.91s
+      tl.fromTo("#a1", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.25, ease: E }, 18.1);
+      tl.fromTo("#c2", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.3, ease: E }, 18.2);
+      tl.fromTo("#a2", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.25, ease: E }, 18.39);
+      tl.fromTo("#c3", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.3, ease: E }, 18.48);
+      tl.fromTo("#s6-rings", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.5)" }, 18.85);
+      tl.fromTo("#s6-word", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.3, ease: "power4.out" }, 18.8); // beat-locked: 18.96s
+      tl.fromTo(["#s6-dl", "#s6-dr"], { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: E }, 19.3);
+      tl.fromTo("#s6-tag", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 19.35);
+      tl.to("#s6-rings", { rotation: 5, duration: 2.1, ease: "none" }, 19.4);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

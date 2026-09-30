@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const passwordReset = require('./plugins/passwordReset');
 
 const vendorSchema = new mongoose.Schema({
   name: {
@@ -94,6 +95,8 @@ const vendorSchema = new mongoose.Schema({
 
 // Create geospatial index (if physical location exists)
 vendorSchema.index({ location: '2dsphere' });
+
+vendorSchema.plugin(passwordReset);
 
 // Hash password before saving
 vendorSchema.pre('save', async function(next) {

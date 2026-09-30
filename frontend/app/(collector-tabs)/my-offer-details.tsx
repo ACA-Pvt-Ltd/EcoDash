@@ -160,10 +160,15 @@ export default function MyOfferDetailsScreen() {
     ]);
   };
 
-  const handleChat = (requestId: string, vendorName: string) => {
+  // `req._id` here is a WastePurchase id (the same id sent to
+  // COLLECTOR_RATE_VENDOR as `purchaseId`), so it must travel as `purchaseId`.
+  // Passing it as `requestId` put the collector in a `req_` room while the
+  // vendor sat in the `pur_` room for the same purchase, and neither saw the
+  // other's messages.
+  const handleChat = (purchaseId: string, vendorName: string) => {
     router.push({
       pathname: '/(collector-tabs)/chat',
-      params: { requestId, userName: vendorName },
+      params: { purchaseId, userName: vendorName },
     } as any);
   };
 

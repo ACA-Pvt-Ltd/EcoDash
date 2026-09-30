@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { ref, push, onValue, query, orderByChild } from 'firebase/database';
 import { db } from '@/services/firebase';
 import { COLORS } from '@/constants/config';
 import { useAuth } from '@/context/AuthContext';
+import { chatRoomId, chatRoomLabel } from '@/utils/chatRoom';
 
 interface ChatMessage {
   _id: string;
@@ -28,16 +29,30 @@ interface ChatMessage {
 }
 
 export default function VendorChatScreen() {
-  const { collectorName, purchaseId } = useLocalSearchParams<{ collectorName: string; purchaseId: string }>();
+  // A vendor only ever talks to a collector about a WastePurchase.
+  const { collectorName, purchaseId, requestId } = useLocalSearchParams<{
+    collectorName: string;
+    purchaseId?: string;
+    requestId?: string;
+  }>();
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [connecting, setConnecting] = useState(true);
   const flatListRef = useRef<FlatList>(null);
 
-  const roomId = `pur_${purchaseId}`;
+  const room = useMemo(
+    () => chatRoomId({ purchaseId, requestId }),
+    [purchaseId, requestId]
+  );
+  const roomId = room?.roomId;
 
   useEffect(() => {
+    if (!roomId) {
+      setConnecting(false);
+      return;
+    }
+
     const messagesRef = query(ref(db, `chats/${roomId}`), orderByChild('createdAt'));
 
     const unsubscribe = onValue(messagesRef, (snapshot) => {
@@ -63,7 +78,7 @@ export default function VendorChatScreen() {
 
   const sendMessage = async () => {
     const text = input.trim();
-    if (!text || !user) return;
+    if (!text || !user || !roomId) return;
     setInput('');
     await push(ref(db, `chats/${roomId}`), {
       senderId: user._id,
@@ -106,12 +121,18 @@ export default function VendorChatScreen() {
           </View>
           <View>
             <Text style={styles.headerName}>{collectorName || 'Collector'}</Text>
-            <Text style={styles.headerStatus}>{'Purchase · #' + (purchaseId?.slice(-6) || '')}</Text>
+            <Text style={styles.headerStatus}>{chatRoomLabel(room)}</Text>
           </View>
         </View>
         <View style={{ width: 26 }} />
       </View>
 
+      {!room ? (
+        <View style={styles.center}>
+          <Ionicons name="alert-circle-outline" size={48} color="#BDC3C7" />
+          <Text style={styles.connectingText}>This conversation could not be opened.</Text>
+        </View>
+      ) : (
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -161,6 +182,7 @@ export default function VendorChatScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+      )}
     </SafeAreaView>
   );
 }

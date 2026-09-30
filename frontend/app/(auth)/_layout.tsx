@@ -32,6 +32,13 @@ export default function AuthLayout() {
         }} 
       />
       <Stack.Screen 
+        name="forgot-password" 
+        options={{ 
+          title: 'Forgot Password',
+          headerShown: false 
+        }} 
+      />
+      <Stack.Screen 
         name="select-role" 
         options={{ 
           title: 'Select Role',

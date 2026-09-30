@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const passwordReset = require("./plugins/passwordReset");
 
 const userSchema = new mongoose.Schema(
   {
@@ -75,6 +76,8 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.plugin(passwordReset);
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {

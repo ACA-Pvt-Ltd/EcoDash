@@ -653,6 +653,8 @@ All protected routes require: `Authorization: Bearer <JWT>`
 | GET | `/auth/me` | Yes | Current user profile |
 | PUT | `/auth/update-profile` | Yes | Update profile |
 | PUT | `/auth/change-password` | Yes | Change password |
+| POST | `/auth/forgot-password` | No | Email a 6-digit reset code (`{ email, role }`; always returns the same message) |
+| POST | `/auth/reset-password` | No | Reset password with the code (`{ email, role, code, newPassword }`); signs out existing sessions |
 
 ### Users
 | Method | Path | Description |

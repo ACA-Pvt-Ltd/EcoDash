@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const passwordReset = require('./plugins/passwordReset');
 
 const collectorSchema = new mongoose.Schema({
   name: {
@@ -106,6 +107,8 @@ const collectorSchema = new mongoose.Schema({
 
 // Create geospatial index
 collectorSchema.index({ location: '2dsphere' });
+
+collectorSchema.plugin(passwordReset);
 
 // Hash password before saving
 collectorSchema.pre('save', async function(next) {
