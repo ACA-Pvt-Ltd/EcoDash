@@ -21,6 +21,7 @@ const adminSchema = new mongoose.Schema({
     minlength: 6,
     select: false
   },
+  // Legacy fields: kept for existing documents, no longer read. Access comes from adminRole.
   role: {
     type: String,
     enum: ['admin', 'superadmin'],
@@ -30,6 +31,10 @@ const adminSchema = new mongoose.Schema({
     type: String,
     enum: ['manage_users', 'manage_collectors', 'manage_vendors', 'manage_rewards', 'view_analytics', 'manage_admins']
   }],
+  adminRole: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'AdminRole'
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -43,7 +48,7 @@ adminSchema.plugin(passwordReset);
 // Hash password before saving
 adminSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
-    next();
+    return next();
   }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);

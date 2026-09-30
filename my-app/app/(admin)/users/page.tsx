@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Search, Users, Pencil, X, RefreshCw } from 'lucide-react';
 import { ConfirmDeactivateModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
+import { useAccess } from '@/lib/access';
 
 interface User {
   _id: string;
@@ -61,6 +62,9 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-800 placeholder-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100';
 
 export default function UsersPage() {
+  const { can } = useAccess();
+  const canEdit       = can('users.edit');
+  const canDeactivate = can('users.deactivate');
   const [users, setUsers]       = useState<User[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
@@ -221,13 +225,17 @@ export default function UsersPage() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(user)} className="rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1">
-                        <Pencil size={11} />Edit
-                      </button>
-                      <button onClick={() => toggleStatus(user)} disabled={toggling === user._id}
-                        className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${user.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
-                        {toggling === user._id ? <RefreshCw size={11} className="animate-spin" /> : user.isActive ? 'Deactivate' : 'Activate'}
-                      </button>
+                      {canEdit && (
+                        <button onClick={() => openEdit(user)} className="rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1">
+                          <Pencil size={11} />Edit
+                        </button>
+                      )}
+                      {canDeactivate && (
+                        <button onClick={() => toggleStatus(user)} disabled={toggling === user._id}
+                          className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${user.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
+                          {toggling === user._id ? <RefreshCw size={11} className="animate-spin" /> : user.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -255,7 +263,7 @@ export default function UsersPage() {
                 <label className="block text-[12px] font-semibold text-gray-600 mb-1">Phone</label>
                 <input value={editForm.phone} onChange={e => setEditForm(f => ({...f, phone:e.target.value}))} className={inputCls} placeholder="Phone number" />
               </div>
-              <Toggle label="Active" checked={editForm.isActive} onChange={v => setEditForm(f => ({...f, isActive:v}))} />
+              {canDeactivate && <Toggle label="Active" checked={editForm.isActive} onChange={v => setEditForm(f => ({...f, isActive:v}))} />}
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setEditTarget(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
                 <button type="submit" disabled={editLoading} className="rounded-lg bg-emerald-600 px-5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">

@@ -42,7 +42,7 @@ There is no test suite in any of the three apps — no test runner is configured
 
 ### Roles are separate collections, not a field
 
-Four Mongoose models back the four roles: `User`, `Collector`, `Vendor`, `Admin` (`Admin.role` is `admin` or `superadmin`). A single `POST /api/auth/login` takes `{ email, password, role }` and picks the collection from `role`. The JWT payload is `{ id, role }`, and [backend/middleware/auth.js](backend/middleware/auth.js) `protect` re-does the same switch to load `req.user` and set `req.userRole`; `authorize(...roles)` gates by role.
+Four Mongoose models back the four roles: `User`, `Collector`, `Vendor`, `Admin` (what an admin may do comes from their `AdminRole`, not the legacy `Admin.role` field — see Admin portal below). A single `POST /api/auth/login` takes `{ email, password, role }` and picks the collection from `role`. The JWT payload is `{ id, role }`, and [backend/middleware/auth.js](backend/middleware/auth.js) `protect` re-does the same switch to load `req.user` and set `req.userRole`; `authorize(...roles)` gates by role.
 
 Consequence: touching roles means editing every switch on role — `protect`, [backend/socket/chatHandler.js](backend/socket/chatHandler.js) `resolveUser`, `authController`, and the mobile role→tab-group routing. A user record does *not* carry its role; the token does.
 
@@ -97,7 +97,9 @@ The backend's CORS allowlist is a literal array in [backend/server.js](backend/s
 
 ### Admin portal
 
-Login posts to the same `/api/auth/login` with `role: 'admin'` and stores the JWT in a JS-readable `ecodash_admin_token` cookie (24 h). [my-app/middleware.ts](my-app/middleware.ts) verifies it edge-side with `jose` using `JWT_SECRET` (which must match the backend's) and redirects to `/login` on failure. Pages are plain client components calling `apiFetch` from `lib/api.ts` against `/api/admin/*`; all those routes are `protect` + `authorize('admin','superadmin')`.
+Login posts to the same `/api/auth/login` with `role: 'admin'` and stores the JWT in a JS-readable `ecodash_admin_token` cookie (24 h). [my-app/middleware.ts](my-app/middleware.ts) verifies it edge-side with `jose` using `JWT_SECRET` (which must match the backend's) and redirects to `/login` on failure. Pages are plain client components calling `apiFetch` from `lib/api.ts` against `/api/admin/*`; all those routes are `protect` + `authorize('admin','superadmin')`, plus a per-route `requirePermission('<key>')`.
+
+**Admin roles & permissions.** Permission keys live in one catalog, [backend/config/adminPermissions.js](backend/config/adminPermissions.js), which also defines the built-in roles Executive / Manager / Admin. Roles are `AdminRole` documents; `Admin.adminRole` points at one. [backend/services/adminAccess.js](backend/services/adminAccess.js) resolves an admin's permissions: Executive always gets the whole catalog, and an admin with no role (legacy, or made by `create-admin.js`) is migrated to Executive on first request. Executives edit roles on the portal's Roles & Access page and assign them on Admin Accounts. In the portal, `useAccess().can(key)` from [my-app/lib/access.tsx](my-app/lib/access.tsx) hides nav items and buttons; the backend is what enforces it. To add a feature: add a catalog entry, guard its route with `requirePermission`, and give its nav item/buttons the same key — the switch appears on Roles & Access automatically, on for Executive and off for everyone else.
 
 ### Uploads
 
