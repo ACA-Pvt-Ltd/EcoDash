@@ -86,6 +86,8 @@ function RootLayoutNav() {
         <Stack.Screen name="help" />
         {/* First-run onboarding guide (hooks/useFirstRunGuide.ts); also replayed from Profile → App guide */}
         <Stack.Screen name="guide" options={{ headerShown: false, gestureEnabled: false }} />
+        {/* Shared by all roles — Profile → Change Password */}
+        <Stack.Screen name="change-password" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="dark" backgroundColor={COLORS.white} translucent={false} />

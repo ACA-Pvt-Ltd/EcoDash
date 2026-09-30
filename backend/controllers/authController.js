@@ -383,6 +383,20 @@ exports.changePassword = async (req, res) => {
       });
     }
 
+    if (String(newPassword).length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
+    if (newPassword === currentPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be different from your current password'
+      });
+    }
+
     let Model;
     switch (req.userRole) {
       case 'user':
@@ -404,7 +418,8 @@ exports.changePassword = async (req, res) => {
     // Check current password
     const isMatch = await user.matchPassword(currentPassword);
     if (!isMatch) {
-      return res.status(401).json({
+      // 400, not 401: the mobile app signs the user out on any 401
+      return res.status(400).json({
         success: false,
         message: 'Current password is incorrect'
       });
@@ -412,7 +427,9 @@ exports.changePassword = async (req, res) => {
 
     // Set new password
     user.password = newPassword;
-    await user.save();
+    // Skip full-document validation so older profiles with missing required
+    // fields can still change it; the only changed field is checked above
+    await user.save({ validateBeforeSave: false });
 
     res.status(200).json({
       success: true,
