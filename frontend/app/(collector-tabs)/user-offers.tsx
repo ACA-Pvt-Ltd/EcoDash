@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,9 @@ import {
   RefreshControl,
   Alert,
   ActivityIndicator,
-  TextInput,
   Image,
   Dimensions,
   StatusBar,
-  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,13 +18,21 @@ import { useAuth } from '@/context/AuthContext';
 import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
 import { router } from 'expo-router';
 import { useAppConfig } from '@/context/AppConfigContext';
+import OfferFilters, { FilterCountBadge } from '@/components/OfferFilters';
+import {
+  EMPTY_OFFER_FILTERS,
+  activeFilterCount,
+  filterOffers,
+  type OfferFilterState,
+  type OfferGetters,
+} from '@/utils/offerFilters';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
 interface UserWasteOffer {
   _id: string;
-  user: { _id: string; name: string; email: string; phone: string; address: string };
+  user: { _id: string; name: string; email: string; phone: string; address?: { city?: string; state?: string } };
   wasteType: string;
   quantity: { value: number; unit: string };
   description?: string;
@@ -41,19 +47,24 @@ interface UserWasteOffer {
   createdAt: string;
 }
 
+// Where the filters read an offer's city, the offering user's province, category and quantity
+const OFFER_GETTERS: OfferGetters<UserWasteOffer> = {
+  city: o => o.location?.city,
+  state: o => o.user?.address?.state,
+  wasteType: o => o.wasteType,
+  quantity: o => o.quantity,
+};
+
 export default function BrowseUserOffersScreen() {
   const { wasteCategories } = useAppConfig();
   const { token } = useAuth();
   const [offers, setOffers] = useState<UserWasteOffer[]>([]);
-  const [filteredOffers, setFilteredOffers] = useState<UserWasteOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedWasteType, setSelectedWasteType] = useState('');
-  const [citySearch, setCitySearch] = useState('');
+  const [filters, setFilters] = useState<OfferFilterState>(EMPTY_OFFER_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => { fetchOffers(); }, []);
-  useEffect(() => { applyFilters(); }, [offers, selectedWasteType, citySearch]);
 
   const fetchOffers = async () => {
     try {
@@ -71,12 +82,8 @@ export default function BrowseUserOffersScreen() {
     }
   };
 
-  const applyFilters = () => {
-    let f = [...offers];
-    if (selectedWasteType) f = f.filter(o => o.wasteType === selectedWasteType);
-    if (citySearch.trim()) f = f.filter(o => o.location.city.toLowerCase().includes(citySearch.toLowerCase()));
-    setFilteredOffers(f);
-  };
+  const filteredOffers = useMemo(() => filterOffers(offers, filters, OFFER_GETTERS), [offers, filters]);
+  const filterCount = activeFilterCount(filters);
 
   const getWasteType = (wt: string) => wasteCategories.find(t => t.value === wt);
 
@@ -155,49 +162,15 @@ export default function BrowseUserOffersScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Browse User Offers</Text>
-        <TouchableOpacity onPress={() => setShowFilters(v => !v)}>
+        <TouchableOpacity onPress={() => setShowFilters(v => !v)} accessibilityLabel="Filter offers">
           <Ionicons name={showFilters ? 'close-circle' : 'filter'} size={24} color="#fff" />
+          {!showFilters && <FilterCountBadge count={filterCount} />}
         </TouchableOpacity>
       </View>
 
       {/* Filters */}
       {showFilters && (
-        <View style={styles.filtersPanel}>
-          <View style={styles.searchRow}>
-            <Ionicons name="search" size={18} color="#7F8C8D" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by city..."
-              value={citySearch}
-              onChangeText={setCitySearch}
-            />
-            {citySearch !== '' && (
-              <TouchableOpacity onPress={() => setCitySearch('')}>
-                <Ionicons name="close-circle" size={18} color="#95A5A6" />
-              </TouchableOpacity>
-            )}
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
-            <TouchableOpacity
-              style={[styles.chip, !selectedWasteType && styles.chipActive]}
-              onPress={() => setSelectedWasteType('')}
-            >
-              <Text style={[styles.chipText, !selectedWasteType && styles.chipTextActive]}>All</Text>
-            </TouchableOpacity>
-            {wasteCategories.map(type => (
-              <TouchableOpacity
-                key={type.value}
-                style={[styles.chip, selectedWasteType === type.value && { backgroundColor: type.color + '25', borderColor: type.color }]}
-                onPress={() => setSelectedWasteType(type.value)}
-              >
-                <Text style={{ fontSize: 14 }}>{type.icon}</Text>
-                <Text style={[styles.chipText, selectedWasteType === type.value && { color: type.color, fontWeight: '700' }]}>
-                  {type.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        <OfferFilters offers={offers} getters={OFFER_GETTERS} filters={filters} onChange={setFilters} />
       )}
 
       {/* Results bar */}
@@ -219,7 +192,7 @@ export default function BrowseUserOffersScreen() {
           <Ionicons name="file-tray-outline" size={72} color="#BDC3C7" />
           <Text style={styles.emptyTitle}>No Offers Found</Text>
           <Text style={styles.emptyText}>
-            {selectedWasteType || citySearch ? 'Try adjusting your filters.' : 'No user waste offers are currently available.'}
+            {filterCount > 0 ? 'Try adjusting your filters.' : 'No user waste offers are currently available.'}
           </Text>
         </View>
       ) : (
@@ -228,6 +201,7 @@ export default function BrowseUserOffersScreen() {
           keyExtractor={o => o._id}
           numColumns={2}
           columnWrapperStyle={styles.row}
+          style={styles.list}
           contentContainerStyle={styles.listContent}
           renderItem={renderCard}
           refreshControl={
@@ -255,39 +229,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  filtersPanel: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EFEFEF',
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F6FA',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    gap: 6,
-  },
-  searchInput: { flex: 1, paddingVertical: 9, fontSize: 14, color: '#2C3E50' },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: '#F5F6FA',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-  },
-  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  chipText: { fontSize: 12, color: '#7F8C8D', fontWeight: '500' },
-  chipTextActive: { color: '#fff', fontWeight: '700' },
   resultsBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -299,6 +240,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EFEFEF',
   },
   resultsText: { fontSize: 13, fontWeight: '600', color: '#7F8C8D' },
+  // flex + background so the green page colour doesn't show below a short list
+  list: { flex: 1, backgroundColor: '#F5F6FA' },
   listContent: { padding: 16, backgroundColor: '#F5F6FA' },
   row: { justifyContent: 'space-between', marginBottom: 16 },
   card: {
