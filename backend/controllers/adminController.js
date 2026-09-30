@@ -17,6 +17,7 @@ const { DEFAULT_FAQ_ITEMS, DEFAULT_SUPPORT_CONTACT } = require('../config/conten
 const { CONTENT_CONFIG_KEYS } = require('../config/adminPermissions');
 const { can } = require('../services/adminAccess');
 const { deleteAccount } = require('../services/accountDeletion');
+const { listTransactions } = require('../services/adminTransactions');
 
 // Edit routes only need '<x>.edit', but switching isActive through them also
 // needs '<x>.deactivate'. Sends the 403 and returns true when the change is denied.
@@ -923,24 +924,17 @@ exports.updateAppConfig = async (req, res) => {
 
 // ===== TRANSACTIONS =====
 
-// @desc    Get all waste transactions
-// @route   GET /api/admin/transactions
-// @access  Private (Admin)
+// @desc    List transactions of one type — drop-offs and marketplace sales between
+//          users and collectors, purchases between collectors and vendors, and
+//          reward redemptions — paged, with a summary over all matching records
+// @route   GET /api/admin/transactions?type=dropoff|user-sale|vendor-sale|redemption&status=&page=&limit=
+// @access  Private (transactions.view)
 exports.getTransactions = async (req, res) => {
   try {
-    const transactions = await WasteTransaction.find()
-      .populate('user', 'name email')
-      .populate('collector', 'name email')
-      .sort('-createdAt')
-      .limit(200);
-
-    res.status(200).json({
-      success: true,
-      count: transactions.length,
-      data: transactions
-    });
+    const result = await listTransactions(req.query);
+    res.status(200).json({ success: true, count: result.data.length, ...result });
   } catch (error) {
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: error.message
     });
