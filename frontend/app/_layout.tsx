@@ -84,6 +84,8 @@ function RootLayoutNav() {
         />
         {/* Shared across all roles — reached from each profile's Help & Support row */}
         <Stack.Screen name="help" />
+        {/* First-run onboarding guide (hooks/useFirstRunGuide.ts); also replayed from Profile → App guide */}
+        <Stack.Screen name="guide" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="dark" backgroundColor={COLORS.white} translucent={false} />

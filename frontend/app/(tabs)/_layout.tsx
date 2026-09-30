@@ -3,6 +3,7 @@ import React from "react";
 import { Platform, View, Text, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/config";
+import { useFirstRunGuide } from "@/hooks/useFirstRunGuide";
 import { StatusBar } from "expo-status-bar";
 
 // Custom Tab Button Component - Memoized for performance
@@ -38,6 +39,8 @@ const CustomTabButton = React.memo(({
 CustomTabButton.displayName = 'CustomTabButton';
 
 export default function TabLayout() {
+  useFirstRunGuide(); // shows the onboarding guide once per account
+
   return (
     <>
       <StatusBar style="light" backgroundColor={COLORS.primary} />

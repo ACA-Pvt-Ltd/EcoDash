@@ -2,8 +2,11 @@ import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/config';
+import { useFirstRunGuide } from '@/hooks/useFirstRunGuide';
 
 export default function CollectorTabLayout() {
+  useFirstRunGuide(); // shows the onboarding guide once per account
+
   return (
     <Tabs
       screenOptions={{
