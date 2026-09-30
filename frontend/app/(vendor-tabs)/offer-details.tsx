@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
 import { ENDPOINTS,  COLORS } from '@/constants/config';
+import { callPhone } from '@/utils/phone';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAppConfig } from '@/context/AppConfigContext';
 
@@ -145,16 +146,31 @@ export default function VendorOfferDetailsScreen() {
     }
   };
 
+  // Chat and Call both unlock once the vendor has made a purchase request
+  const promptPurchaseFirst = (action: 'chat' | 'call') => {
+    Alert.alert(
+      'Purchase Required',
+      `You need to make a purchase request before you can ${action === 'call' ? 'call' : 'chat with'} this collector.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Purchase', onPress: handlePurchase },
+      ]
+    );
+  };
+
+  const collectorInfo = typeof offer?.collector === 'object' ? offer.collector : undefined;
+
+  const handleCall = () => {
+    if (!myPurchase) {
+      promptPurchaseFirst('call');
+      return;
+    }
+    callPhone(collectorInfo?.phone, collectorInfo?.name);
+  };
+
   const handleChat = () => {
     if (!myPurchase) {
-      Alert.alert(
-        'Purchase Required',
-        'You need to make a purchase request before you can chat with this collector.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Purchase', onPress: handlePurchase },
-        ]
-      );
+      promptPurchaseFirst('chat');
       return;
     }
     router.push({
@@ -281,10 +297,26 @@ export default function VendorOfferDetailsScreen() {
 
       {/* Bottom action bar */}
       <View style={styles.bottomBar}>
+        {/* Call button — locked until the same point Chat unlocks */}
+        <TouchableOpacity
+          style={[styles.chatBtn, !hasPurchase && styles.chatBtnDisabled]}
+          onPress={handleCall}
+          accessibilityLabel={hasPurchase ? `Call ${collectorInfo?.name || 'collector'}` : 'Call (locked)'}
+        >
+          <Ionicons name="call-outline" size={20} color={hasPurchase ? COLORS.primary : '#BDC3C7'} />
+          <Text style={[styles.chatBtnText, !hasPurchase && styles.chatBtnTextDisabled]}>Call</Text>
+          {!hasPurchase && (
+            <View style={styles.lockIcon}>
+              <Ionicons name="lock-closed" size={10} color="#BDC3C7" />
+            </View>
+          )}
+        </TouchableOpacity>
+
         {/* Chat button */}
         <TouchableOpacity
           style={[styles.chatBtn, !hasPurchase && styles.chatBtnDisabled]}
           onPress={handleChat}
+          accessibilityLabel={hasPurchase ? `Chat with ${collectorInfo?.name || 'collector'}` : 'Chat (locked)'}
         >
           <Ionicons name="chatbubble-outline" size={20} color={hasPurchase ? COLORS.primary : '#BDC3C7'} />
           <Text style={[styles.chatBtnText, !hasPurchase && styles.chatBtnTextDisabled]}>Chat</Text>
@@ -424,7 +456,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F0F0F0',
     shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 10,
   },
-  chatBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 2, borderColor: COLORS.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20, position: 'relative' },
+  chatBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 2, borderColor: COLORS.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 14, position: 'relative' }, // narrow so Call + Chat + Purchase fit on one row
   chatBtnDisabled: { borderColor: '#E0E0E0' },
   chatBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.primary },
   chatBtnTextDisabled: { color: '#BDC3C7' },

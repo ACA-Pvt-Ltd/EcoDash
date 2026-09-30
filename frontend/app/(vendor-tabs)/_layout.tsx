@@ -2,9 +2,12 @@ import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { COLORS } from '@/constants/config';
+import { useFirstRunGuide } from '@/hooks/useFirstRunGuide';
 import { StatusBar } from 'expo-status-bar';
 
 export default function VendorTabLayout() {
+  useFirstRunGuide(); // shows the onboarding guide once per account
+
   return (
     <>
       <StatusBar style="light" backgroundColor={COLORS.primary} />

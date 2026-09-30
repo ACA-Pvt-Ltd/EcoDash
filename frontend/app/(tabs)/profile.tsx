@@ -209,6 +209,14 @@ export default function ProfileScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItem}
+          onPress={() => router.push({ pathname: '/guide', params: { replay: '1' } } as any)}
+        >
+          <Text style={styles.menuIcon}>📘</Text>
+          <Text style={styles.menuText}>App guide</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
           onPress={() => router.push('/help' as any)}
         >
           <Text style={styles.menuIcon}>❓</Text>
