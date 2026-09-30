@@ -11,8 +11,35 @@ const Badge = require('../models/Badge');
 const AppConfig = require('../models/AppConfig');
 const CollectorPurchaseRequest = require('../models/CollectorPurchaseRequest');
 const { generateToken } = require('../config/jwt');
-const { sendWelcomeEmail } = require('../utils/email');
+const { sendWelcomeEmail, sendAccountStatusEmail } = require('../utils/email');
 const { DEFAULT_FAQ_ITEMS, DEFAULT_SUPPORT_CONTACT } = require('../config/contentDefaults');
+
+const MAX_STATUS_REASON_LENGTH = 500;
+
+// Support contact as edited on the admin Content page, falling back to the defaults
+const getSupportContact = async () => {
+  const doc = await AppConfig.findOne({ key: 'support_contact' });
+  return { ...DEFAULT_SUPPORT_CONTACT, ...(doc?.value || {}) };
+};
+
+// Emails the account holder when an admin flips isActive. Never throws: a mail
+// failure must not undo the status change. Returns whether an email went out.
+const notifyStatusChange = async (account, role, wasActive, reason) => {
+  if (!account || account.isActive === wasActive) return false;
+  try {
+    return await sendAccountStatusEmail({
+      to: account.email,
+      name: account.name,
+      role,
+      isActive: account.isActive,
+      reason: account.isActive ? '' : String(reason || '').trim().slice(0, MAX_STATUS_REASON_LENGTH),
+      supportContact: await getSupportContact(),
+    });
+  } catch (error) {
+    console.error(`Account status email to ${account.email} failed:`, error.message);
+    return false;
+  }
+};
 
 // @desc    Get admin dashboard overview
 // @route   GET /api/admin/dashboard
@@ -182,24 +209,28 @@ exports.getUsers = async (req, res) => {
 // @access  Private (Admin)
 exports.updateUserStatus = async (req, res) => {
   try {
-    const { isActive } = req.body;
-    
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { isActive },
-      { new: true }
-    ).select('-password');
+    const { isActive, reason } = req.body;
 
-    if (!user) {
+    const existing = await User.findById(req.params.id).select('isActive');
+    if (!existing) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
 
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { isActive },
+      { new: true }
+    ).select('-password');
+
+    const emailSent = await notifyStatusChange(user, 'user', existing.isActive, reason);
+
     res.status(200).json({
       success: true,
-      data: user
+      data: user,
+      emailSent
     });
   } catch (error) {
     res.status(500).json({
@@ -214,17 +245,20 @@ exports.updateUserStatus = async (req, res) => {
 // @access  Private (Admin)
 exports.updateUser = async (req, res) => {
   try {
-    const { name, phone, isActive } = req.body;
+    const { name, phone, isActive, reason } = req.body;
+    const existing = await User.findById(req.params.id).select('isActive');
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { name, phone, isActive },
       { new: true, runValidators: true }
     ).select('-password');
 
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    res.status(200).json({ success: true, data: user });
+    const emailSent = await notifyStatusChange(user, 'user', existing.isActive, reason);
+    res.status(200).json({ success: true, data: user, emailSent });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -333,22 +367,29 @@ exports.getCollectors = async (req, res) => {
 // @access  Private (Admin)
 exports.updateCollector = async (req, res) => {
   try {
-    const collector = await Collector.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    ).select('-password');
+    // `reason` only goes into the status email; it is never stored
+    const { reason, ...updates } = req.body;
 
-    if (!collector) {
+    const existing = await Collector.findById(req.params.id).select('isActive');
+    if (!existing) {
       return res.status(404).json({
         success: false,
         message: 'Collector not found'
       });
     }
 
+    const collector = await Collector.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    const emailSent = await notifyStatusChange(collector, 'collector', existing.isActive, reason);
+
     res.status(200).json({
       success: true,
-      data: collector
+      data: collector,
+      emailSent
     });
   } catch (error) {
     res.status(500).json({
@@ -373,8 +414,10 @@ exports.deleteCollector = async (req, res) => {
     }
 
     // Soft delete - deactivate instead
+    const wasActive = collector.isActive;
     collector.isActive = false;
     await collector.save();
+    await notifyStatusChange(collector, 'collector', wasActive);
 
     res.status(200).json({
       success: true,
@@ -491,22 +534,29 @@ exports.getVendors = async (req, res) => {
 // @access  Private (Admin)
 exports.updateVendor = async (req, res) => {
   try {
-    const vendor = await Vendor.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    ).select('-password');
+    // `reason` only goes into the status email; it is never stored
+    const { reason, ...updates } = req.body;
 
-    if (!vendor) {
+    const existing = await Vendor.findById(req.params.id).select('isActive');
+    if (!existing) {
       return res.status(404).json({
         success: false,
         message: 'Vendor not found'
       });
     }
 
+    const vendor = await Vendor.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    const emailSent = await notifyStatusChange(vendor, 'vendor', existing.isActive, reason);
+
     res.status(200).json({
       success: true,
-      data: vendor
+      data: vendor,
+      emailSent
     });
   } catch (error) {
     res.status(500).json({
@@ -531,8 +581,10 @@ exports.deleteVendor = async (req, res) => {
     }
 
     // Soft delete - deactivate instead
+    const wasActive = vendor.isActive;
     vendor.isActive = false;
     await vendor.save();
+    await notifyStatusChange(vendor, 'vendor', wasActive);
 
     res.status(200).json({
       success: true,

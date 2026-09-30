@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Search, Truck, ShieldCheck, Plus, Pencil, X, RefreshCw, MapPin } from 'lucide-react';
 import { GoogleMap, Marker, Autocomplete, useJsApiLoader } from '@react-google-maps/api';
+import { ConfirmDeactivateModal, StatusNotice, type StatusNoticeData } from '@/components/admin-ui';
 
 // Must be a stable reference outside the component to avoid re-loading the API
 const MAPS_LIBRARIES: ('places')[] = ['places'];
@@ -290,6 +291,11 @@ export default function CollectorsPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError]     = useState('');
 
+  // Deactivation always goes through the confirm dialog, from the row button or the edit form
+  const [confirmTarget, setConfirmTarget]   = useState<{ collector: Collector; source: 'toggle' | 'edit' } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [notice, setNotice]                 = useState<StatusNoticeData | null>(null);
+
   const load = useCallback(() => {
     Promise.resolve().then(() => setLoading(true));
     apiFetch('/admin/collectors')
@@ -311,12 +317,29 @@ export default function CollectorsPage() {
     newMonth: collectors.filter(c => new Date(c.createdAt) >= startOfMonth).length,
   }), [collectors, startOfMonth]);
 
-  async function toggleStatus(c: Collector) {
+  function toggleStatus(c: Collector) {
+    if (c.isActive) setConfirmTarget({ collector: c, source: 'toggle' });
+    else setStatus(c, true);
+  }
+
+  async function setStatus(c: Collector, isActive: boolean, reason?: string) {
     setToggling(c._id);
     try {
-      const res = await apiFetch(`/admin/collectors/${c._id}`, { method: 'PUT', body: JSON.stringify({ isActive: !c.isActive }) });
-      if (res.success) setCollectors(prev => prev.map(x => x._id === c._id ? { ...x, isActive: !x.isActive } : x));
+      const res = await apiFetch(`/admin/collectors/${c._id}`, { method: 'PUT', body: JSON.stringify({ isActive, reason }) });
+      if (res.success) {
+        setCollectors(prev => prev.map(x => x._id === c._id ? { ...x, isActive } : x));
+        setNotice({ name: c.name, email: c.email, isActive, emailSent: !!res.emailSent });
+      }
     } catch { /* silent */ } finally { setToggling(null); }
+  }
+
+  async function confirmDeactivate(reason: string) {
+    if (!confirmTarget) return;
+    setConfirmLoading(true);
+    if (confirmTarget.source === 'edit') await saveEdit(reason);
+    else await setStatus(confirmTarget.collector, false, reason);
+    setConfirmLoading(false);
+    setConfirmTarget(null);
   }
 
   async function submitRegister(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -358,8 +381,14 @@ export default function CollectorsPage() {
     setEditError('');
   }
 
-  async function submitEdit(e: React.SyntheticEvent<HTMLFormElement>) {
+  function submitEdit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!editTarget) return;
+    if (editTarget.isActive && !editForm.isActive) setConfirmTarget({ collector: editTarget, source: 'edit' });
+    else saveEdit();
+  }
+
+  async function saveEdit(reason?: string) {
     if (!editTarget) return;
     setEditLoading(true);
     try {
@@ -369,12 +398,19 @@ export default function CollectorsPage() {
         acceptedWasteTypes: editForm.acceptedWasteTypes,
         isActive: editForm.isActive, isVerified: editForm.isVerified,
         operatingHours: hoursToPayload(editForm.operatingHours),
+        reason,
       };
       if (editForm.location) {
         body.location = { type: 'Point', coordinates: [editForm.location.lng, editForm.location.lat] };
       }
       const res = await apiFetch(`/admin/collectors/${editTarget._id}`, { method: 'PUT', body: JSON.stringify(body) });
-      if (res.success) { setEditTarget(null); load(); }
+      if (res.success) {
+        if (editTarget.isActive !== editForm.isActive) {
+          setNotice({ name: editForm.name, email: editTarget.email, isActive: editForm.isActive, emailSent: !!res.emailSent });
+        }
+        setEditTarget(null);
+        load();
+      }
       else setEditError(res.message || 'Update failed');
     } catch { setEditError('Network error'); } finally { setEditLoading(false); }
   }
@@ -423,6 +459,8 @@ export default function CollectorsPage() {
       </div>
 
       {/* Table */}
+      <StatusNotice notice={notice} onDismiss={() => setNotice(null)} />
+
       {loading ? <Spinner /> : error ? (
         <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>
       ) : (
@@ -620,6 +658,14 @@ export default function CollectorsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDeactivateModal
+        target={confirmTarget?.collector ?? null}
+        roleLabel="Collector"
+        loading={confirmLoading}
+        onCancel={() => setConfirmTarget(null)}
+        onConfirm={confirmDeactivate}
+      />
     </div>
   );
 }
