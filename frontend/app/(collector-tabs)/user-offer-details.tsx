@@ -18,6 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAppConfig } from '@/context/AppConfigContext';
+import { callPhone } from '@/utils/phone';
 
 const { width } = Dimensions.get('window');
 const CAROUSEL_HEIGHT = 280;
@@ -118,22 +119,35 @@ export default function UserOfferDetailsScreen() {
     } as any);
   };
 
+  // Chat and Call both unlock once a purchase request has been sent
+  const promptRequestFirst = (action: 'chat' | 'call') => {
+    Alert.alert(
+      'Request Required',
+      `You need to send a purchase request before you can ${action === 'call' ? 'call' : 'chat with'} this user.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send Request',
+          onPress: () => router.push({
+            pathname: '/(collector-tabs)/create-purchase-request',
+            params: { offerId },
+          } as any),
+        },
+      ]
+    );
+  };
+
+  const handleCall = () => {
+    if (!myRequest) {
+      promptRequestFirst('call');
+      return;
+    }
+    callPhone(offer?.user?.phone, offer?.user?.name);
+  };
+
   const handleChat = () => {
     if (!myRequest) {
-      Alert.alert(
-        'Request Required',
-        'You need to send a purchase request before you can chat with this user.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Send Request',
-            onPress: () => router.push({
-              pathname: '/(collector-tabs)/create-purchase-request',
-              params: { offerId },
-            } as any),
-          },
-        ]
-      );
+      promptRequestFirst('chat');
       return;
     }
     // Navigate to chat (pass requestId and user info)
@@ -263,10 +277,26 @@ export default function UserOfferDetailsScreen() {
 
       {/* Bottom action bar */}
       <View style={styles.bottomBar}>
+        {/* Call button — locked until the same point Chat unlocks */}
+        <TouchableOpacity
+          style={[styles.chatBtn, !hasRequest && styles.chatBtnDisabled]}
+          onPress={handleCall}
+          accessibilityLabel={hasRequest ? `Call ${offer.user?.name || 'user'}` : 'Call (locked)'}
+        >
+          <Ionicons name="call-outline" size={20} color={hasRequest ? COLORS.primary : '#BDC3C7'} />
+          <Text style={[styles.chatBtnText, !hasRequest && styles.chatBtnTextDisabled]}>Call</Text>
+          {!hasRequest && (
+            <View style={styles.lockIcon}>
+              <Ionicons name="lock-closed" size={10} color="#BDC3C7" />
+            </View>
+          )}
+        </TouchableOpacity>
+
         {/* Chat button */}
         <TouchableOpacity
           style={[styles.chatBtn, !hasRequest && styles.chatBtnDisabled]}
           onPress={handleChat}
+          accessibilityLabel={hasRequest ? `Chat with ${offer.user?.name || 'user'}` : 'Chat (locked)'}
         >
           <Ionicons name="chatbubble-outline" size={20} color={hasRequest ? COLORS.primary : '#BDC3C7'} />
           <Text style={[styles.chatBtnText, !hasRequest && styles.chatBtnTextDisabled]}>Chat</Text>
@@ -415,7 +445,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     borderRadius: 12,
     paddingVertical: 14,
-    paddingHorizontal: 20,
+    paddingHorizontal: 14, // narrower so Call + Chat + the request button fit on one row
     position: 'relative',
   },
   chatBtnDisabled: { borderColor: '#E0E0E0' },
