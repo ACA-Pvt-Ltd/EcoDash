@@ -21,6 +21,7 @@ import api from '@/services/api';
 import { ENDPOINTS, COLORS } from '@/constants/config';
 import { useAppConfig } from '@/context/AppConfigContext';
 import { router } from 'expo-router';
+import { useTranslation } from '@/context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -41,6 +42,7 @@ interface MediaAsset {
 }
 
 export default function CollectorOffersScreen() {
+  const { t } = useTranslation();
   const { wasteCategories, maxOfferImages } = useAppConfig();
   const [myOffers, setMyOffers] = useState<any[]>([]);
   const [purchaseRequests, setPurchaseRequests] = useState<any[]>([]);
@@ -390,7 +392,7 @@ export default function CollectorOffersScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>My Offers</Text>
+          <Text style={styles.title}>{t('screens.myOffers')}</Text>
           <Text style={styles.headerSub}>Manage your waste offers</Text>
         </View>
         <TouchableOpacity

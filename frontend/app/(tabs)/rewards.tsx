@@ -12,8 +12,10 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS } from '@/constants/config';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function RewardsScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [rewards, setRewards] = useState<any[]>([]);
   const [redemptions, setRedemptions] = useState<any[]>([]);
@@ -107,7 +109,7 @@ export default function RewardsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Rewards</Text>
+        <Text style={styles.headerTitle}>{t('screens.rewards')}</Text>
         <View style={styles.pointsDisplay}>
           <Text style={styles.pointsLabel}>Your Points</Text>
           <Text style={styles.pointsValue}>{user?.points || 0}</Text>

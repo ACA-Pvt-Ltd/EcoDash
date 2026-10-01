@@ -13,8 +13,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS } from '@/constants/config';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function VendorDashboard() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const [stats, setStats] = useState<any>(null);
@@ -82,7 +84,7 @@ export default function VendorDashboard() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, {user?.name}! 🏭</Text>
+        <Text style={styles.greeting}>{t('screens.hello', { name: user?.name ?? '' })}! 🏭</Text>
         <Text style={styles.subtitle}>Vendor Dashboard</Text>
       </View>
 

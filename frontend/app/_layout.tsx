@@ -10,6 +10,7 @@ import React from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AppConfigProvider } from '@/context/AppConfigContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import { COLORS } from '@/constants/config';
 
 Sentry.init({
@@ -98,11 +99,13 @@ function RootLayoutNav() {
 function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <AppConfigProvider>
-          <RootLayoutNav />
-        </AppConfigProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppConfigProvider>
+            <RootLayoutNav />
+          </AppConfigProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }

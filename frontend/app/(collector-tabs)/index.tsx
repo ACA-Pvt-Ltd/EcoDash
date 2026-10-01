@@ -13,8 +13,10 @@ import { useRouter, Redirect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS } from '@/constants/config';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function CollectorDashboard() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const [stats, setStats] = useState<any>(null);
@@ -84,7 +86,7 @@ export default function CollectorDashboard() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.greeting}>Hello, {user?.name}! 🚛</Text>
+            <Text style={styles.greeting}>{t('screens.hello', { name: user?.name ?? '' })}! 🚛</Text>
             <Text style={styles.subtitle}>Collector Dashboard</Text>
           </View>
           <TouchableOpacity

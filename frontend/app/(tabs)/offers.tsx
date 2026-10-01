@@ -18,6 +18,7 @@ import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
 import { router } from 'expo-router';
 import { useAppConfig } from '@/context/AppConfigContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from '@/context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -56,6 +57,7 @@ const STATUS_SORT: Record<string, number> = {
 const FILTER_TABS = ['all', 'available', 'pending', 'sold'] as const;
 
 export default function OffersScreen() {
+  const { t } = useTranslation();
   const { wasteCategories } = useAppConfig();
   const { token } = useAuth();
   const [offers, setOffers] = useState<UserWasteOffer[]>([]);
@@ -170,7 +172,7 @@ export default function OffersScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Offers</Text>
+        <Text style={styles.headerTitle}>{t('screens.myOffers')}</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/(tabs)/create-offer')}>
           <Ionicons name="add" size={22} color="#fff" />
           <Text style={styles.addBtnText}>Sell</Text>

@@ -1,0 +1,97 @@
+{
+  "_meta": {
+    "language": "English",
+    "note": "Source language. Every key here must also exist in si.json and ta.json (checked by __tests__/utils/locales.test.ts)."
+  },
+  "common": {
+    "language": "Language",
+    "chooseLanguage": "Choose language",
+    "logout": "Logout",
+    "cancel": "Cancel",
+    "ok": "OK"
+  },
+  "tabs": {
+    "user": {
+      "home": "Home",
+      "map": "Map",
+      "rewards": "Rewards",
+      "offers": "Offers",
+      "profile": "Profile"
+    },
+    "collector": {
+      "dashboard": "Dashboard",
+      "scanQr": "Scan QR",
+      "myOffers": "My Offers",
+      "userOffers": "User Offers",
+      "myRequests": "My Requests"
+    },
+    "vendor": {
+      "dashboard": "Dashboard",
+      "offers": "Offers",
+      "inventory": "Inventory",
+      "pricing": "Pricing",
+      "profile": "Profile"
+    }
+  },
+  "welcome": {
+    "welcomeTo": "WELCOME TO",
+    "tagline": "Turn Waste into Worth",
+    "getStarted": "Get Started",
+    "inCollaboration": "In collaboration"
+  },
+  "roles": {
+    "user": "User",
+    "collector": "Collector",
+    "vendor": "Vendor",
+    "userDescription": "I want to dispose waste and earn rewards",
+    "collectorDescription": "I collect waste from users",
+    "vendorDescription": "I buy waste for recycling"
+  },
+  "selectRole": {
+    "title": "Join Our Platform",
+    "subtitle": "Choose your role to get started",
+    "selected": "✓ Selected",
+    "haveAccount": "Already have an account?",
+    "login": "Login"
+  },
+  "login": {
+    "welcomeBack": "Welcome Back!",
+    "slogan": "Make Earth Green Again",
+    "loginAs": "Login as",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "submit": "Login",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign Up"
+  },
+  "profile": {
+    "account": "Account",
+    "showQr": "Show My QR Code",
+    "editProfile": "Edit Profile",
+    "changePassword": "Change Password",
+    "notifications": "Notifications",
+    "myStatistics": "My Statistics",
+    "appGuide": "App guide",
+    "helpSupport": "Help & Support",
+    "about": "About",
+    "language": "Language",
+    "badgesEarned": "Badges Earned 🏅",
+    "leaderboard": "Leaderboard 👑",
+    "myPerformance": "My Performance",
+    "logout": "Logout"
+  },
+  "screens": {
+    "hello": "Hello, {{name}}",
+    "collectionPoints": "Collection Points",
+    "rewards": "Rewards",
+    "myOffers": "My Offers",
+    "browseUserOffers": "Browse User Offers",
+    "myPurchaseRequests": "My Purchase Requests",
+    "scanCollect": "📷 Scan & Collect",
+    "inventory": "Inventory",
+    "pricingManagement": "Pricing Management"
+  }
+}

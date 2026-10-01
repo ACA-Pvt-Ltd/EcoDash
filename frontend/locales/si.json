@@ -1,0 +1,97 @@
+{
+  "_meta": {
+    "language": "සිංහල",
+    "note": "Draft translation — have a native Sinhala speaker review before release. Keep the same keys as en.json."
+  },
+  "common": {
+    "language": "භාෂාව",
+    "chooseLanguage": "භාෂාව තෝරන්න",
+    "logout": "ඉවත් වන්න",
+    "cancel": "අවලංගු කරන්න",
+    "ok": "හරි"
+  },
+  "tabs": {
+    "user": {
+      "home": "මුල් පිටුව",
+      "map": "සිතියම",
+      "rewards": "ත්‍යාග",
+      "offers": "දීමනා",
+      "profile": "පැතිකඩ"
+    },
+    "collector": {
+      "dashboard": "ප්‍රධාන පුවරුව",
+      "scanQr": "QR ස්කෑන්",
+      "myOffers": "මගේ දීමනා",
+      "userOffers": "පරිශීලක දීමනා",
+      "myRequests": "මගේ ඉල්ලීම්"
+    },
+    "vendor": {
+      "dashboard": "ප්‍රධාන පුවරුව",
+      "offers": "දීමනා",
+      "inventory": "තොගය",
+      "pricing": "මිල ගණන්",
+      "profile": "පැතිකඩ"
+    }
+  },
+  "welcome": {
+    "welcomeTo": "සාදරයෙන් පිළිගනිමු",
+    "tagline": "අපද්‍රව්‍ය වටිනාකමක් බවට පත් කරන්න",
+    "getStarted": "ආරම්භ කරන්න",
+    "inCollaboration": "සහයෝගයෙන්"
+  },
+  "roles": {
+    "user": "පරිශීලක",
+    "collector": "එකතුකරන්නා",
+    "vendor": "වෙළෙන්දා",
+    "userDescription": "මට අපද්‍රව්‍ය බැහැර කර ත්‍යාග ලබා ගැනීමට අවශ්‍යයි",
+    "collectorDescription": "මම පරිශීලකයන්ගෙන් අපද්‍රව්‍ය එකතු කරමි",
+    "vendorDescription": "මම ප්‍රතිචක්‍රීකරණය සඳහා අපද්‍රව්‍ය මිලදී ගනිමි"
+  },
+  "selectRole": {
+    "title": "අපගේ වේදිකාවට එක්වන්න",
+    "subtitle": "ආරම්භ කිරීමට ඔබේ භූමිකාව තෝරන්න",
+    "selected": "✓ තෝරා ඇත",
+    "haveAccount": "දැනටමත් ගිණුමක් තිබේද?",
+    "login": "පිවිසෙන්න"
+  },
+  "login": {
+    "welcomeBack": "නැවත සාදරයෙන් පිළිගනිමු!",
+    "slogan": "පොළොව නැවත හරිත කරමු",
+    "loginAs": "ඔබ පිවිසෙන්නේ",
+    "email": "විද්‍යුත් තැපෑල",
+    "emailPlaceholder": "ඔබේ විද්‍යුත් තැපෑල ඇතුළත් කරන්න",
+    "password": "මුරපදය",
+    "passwordPlaceholder": "ඔබේ මුරපදය ඇතුළත් කරන්න",
+    "submit": "පිවිසෙන්න",
+    "forgotPassword": "මුරපදය අමතකද?",
+    "noAccount": "ගිණුමක් නැද්ද?",
+    "signUp": "ලියාපදිංචි වන්න"
+  },
+  "profile": {
+    "account": "ගිණුම",
+    "showQr": "මගේ QR කේතය පෙන්වන්න",
+    "editProfile": "පැතිකඩ සංස්කරණය",
+    "changePassword": "මුරපදය වෙනස් කරන්න",
+    "notifications": "දැනුම්දීම්",
+    "myStatistics": "මගේ සංඛ්‍යාලේඛන",
+    "appGuide": "යෙදුම් මාර්ගෝපදේශය",
+    "helpSupport": "උදව් සහ සහාය",
+    "about": "යෙදුම පිළිබඳව",
+    "language": "භාෂාව",
+    "badgesEarned": "ලැබූ ලාංඡන 🏅",
+    "leaderboard": "ප්‍රමුඛ ලැයිස්තුව 👑",
+    "myPerformance": "මගේ කාර්ය සාධනය",
+    "logout": "ඉවත් වන්න"
+  },
+  "screens": {
+    "hello": "ආයුබෝවන්, {{name}}",
+    "collectionPoints": "එකතු කිරීමේ ස්ථාන",
+    "rewards": "ත්‍යාග",
+    "myOffers": "මගේ දීමනා",
+    "browseUserOffers": "පරිශීලක දීමනා බලන්න",
+    "myPurchaseRequests": "මගේ මිලදී ගැනීමේ ඉල්ලීම්",
+    "scanCollect": "📷 ස්කෑන් කර එකතු කරන්න",
+    "inventory": "තොගය",
+    "pricingManagement": "මිල කළමනාකරණය"
+  }
+}

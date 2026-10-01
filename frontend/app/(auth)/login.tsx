@@ -16,13 +16,18 @@ import { useAuth } from '@/context/AuthContext';
 import { COLORS } from '@/constants/config';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SupportContactBlock from '@/components/SupportContactBlock';
+import { useTranslation } from '@/context/LanguageContext';
+import { LanguagePills } from '@/components/LanguageSwitcher';
 
 type Role = 'user' | 'collector' | 'vendor';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -80,19 +85,23 @@ export default function LoginScreen() {
       style={styles.container}
     >
       <StatusBar style="dark" backgroundColor="#ffffff" />
+      {/* Below the status bar / notch, and outside the scroll so it never slides under it */}
+      <View style={[styles.languageBar, { paddingTop: insets.top + 8 }]}>
+        <LanguagePills />
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.icon}>♻️</Text>
           <Text style={styles.title}>EcoDash</Text>
-          <Text style={styles.subtitle}>Make Earth Green Again</Text>
+          <Text style={styles.subtitle}>{t('login.slogan')}</Text>
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.welcomeText}>Welcome Back!</Text>
+          <Text style={styles.welcomeText}>{t('login.welcomeBack')}</Text>
 
           {/* Role Selection */}
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Login as</Text>
+            <Text style={styles.label}>{t('login.loginAs')}</Text>
             <View style={styles.roleSelector}>
               {roles.map((r) => (
                 <TouchableOpacity
@@ -113,7 +122,7 @@ export default function LoginScreen() {
                       role === r.value && styles.roleButtonTextActive,
                     ]}
                   >
-                    {r.label}
+                    {t(`roles.${r.value}`)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -121,10 +130,10 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t('login.email')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your email"
+              placeholder={t('login.emailPlaceholder')}
               placeholderTextColor="#9CA3AF"
               value={email}
               onChangeText={setEmail}
@@ -135,11 +144,11 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{t('login.password')}</Text>
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Enter your password"
+                placeholder={t('login.passwordPlaceholder')}
                 placeholderTextColor="#9CA3AF"
                 value={password}
                 onChangeText={setPassword}
@@ -163,7 +172,7 @@ export default function LoginScreen() {
               }
             >
               <Text style={[styles.linkText, { color: roles.find(r => r.value === role)?.color }]}>
-                Forgot password?
+                {t('login.forgotPassword')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -180,15 +189,15 @@ export default function LoginScreen() {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.buttonText}>Login</Text>
+              <Text style={styles.buttonText}>{t('login.submit')}</Text>
             )}
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
+            <Text style={styles.footerText}>{t('login.noAccount')} </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/select-role')}>
               <Text style={[styles.linkText, { color: roles.find(r => r.value === role)?.color }]}>
-                Sign Up
+                {t('login.signUp')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -203,6 +212,10 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.white,
+  },
+  languageBar: {
+    paddingHorizontal: 20,
     backgroundColor: COLORS.white,
   },
   scrollContent: {

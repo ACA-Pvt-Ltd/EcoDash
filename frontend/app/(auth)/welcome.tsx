@@ -3,30 +3,39 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from "rea
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '@/context/LanguageContext';
+import { LanguagePills } from '@/components/LanguageSwitcher';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ICON_SIZE = Math.min(SCREEN_WIDTH * 0.42, 170);
 
 export default function WelcomeScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
 
     return (
         <>
             <StatusBar style="light" />
             <LinearGradient
                 colors={['#2DD36F', '#1FAF5B', '#16874A']}
-                style={styles.container}
+                // Keep the language switch clear of the status bar / Dynamic Island
+                style={[styles.container, { paddingTop: Math.max(50, insets.top + 8) }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
+                {/* Language — choose before signing in */}
+                <LanguagePills dark />
+
                 {/* Hero Section */}
                 <View style={styles.heroSection}>
                     <View style={styles.titleContainer}>
-                        <Text style={styles.welcomeText}>WELCOME TO</Text>
+                        <Text style={styles.welcomeText}>{t('welcome.welcomeTo')}</Text>
                         <Text style={styles.appName}>EcoDash</Text>
                         <View style={styles.taglineContainer}>
                             <View style={styles.dividerLeft} />
-                            <Text style={styles.tagline}>Turn Waste into Worth</Text>
+                            <Text style={styles.tagline}>{t('welcome.tagline')}</Text>
                             <View style={styles.dividerRight} />
                         </View>
                     </View>
@@ -60,14 +69,14 @@ export default function WelcomeScreen() {
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                         >
-                            <Text style={styles.primaryButtonText}>Get Started</Text>
+                            <Text style={styles.primaryButtonText}>{t('welcome.getStarted')}</Text>
                             <Text style={styles.buttonArrow}>→</Text>
                         </LinearGradient>
                     </TouchableOpacity>
 
                     {/* Partners Section - Modern Layout */}
                     <View style={styles.partnersSection}>
-                      <Text style={styles.partnersTitle}>In collaboration</Text>
+                      <Text style={styles.partnersTitle}>{t('welcome.inCollaboration')}</Text>
                         
                         {/* Logo Grid */}
                         <View style={styles.logoGrid}>
