@@ -12,6 +12,8 @@ interface User {
   cashEarned?: number;
   qrCode?: string;
   role: string;
+  profileImage?: string | null; // Cloudinary URL (vendors' /me returns it as `logo`)
+  logo?: string | null;
   totalWasteDisposed?: number;
   totalWasteCollected?: number;
   totalTransactions?: number;

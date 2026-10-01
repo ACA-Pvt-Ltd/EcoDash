@@ -93,5 +93,21 @@
     "scanCollect": "📷 Scan & Collect",
     "inventory": "Inventory",
     "pricingManagement": "Pricing Management"
+  },
+  "profilePhoto": {
+    "change": "Change profile photo",
+    "takePhoto": "Take photo",
+    "chooseFromLibrary": "Choose from library",
+    "remove": "Remove photo",
+    "cancel": "Cancel",
+    "uploading": "Uploading…",
+    "updated": "Profile photo updated",
+    "removed": "Profile photo removed",
+    "cameraPermissionTitle": "Camera access needed",
+    "cameraPermission": "Allow camera access in your phone's settings to take a profile photo.",
+    "libraryPermissionTitle": "Photo access needed",
+    "libraryPermission": "Allow photo access in your phone's settings to choose a profile photo.",
+    "failedTitle": "Couldn't update photo",
+    "failed": "Something went wrong. Please check your connection and try again."
   }
 }

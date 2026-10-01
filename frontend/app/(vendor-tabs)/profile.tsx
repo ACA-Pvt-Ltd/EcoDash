@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import ProfilePhoto from '@/components/ProfilePhoto';
 import { useTranslation } from '@/context/LanguageContext';
 import { useLanguagePicker, useCurrentLanguageName } from '@/components/LanguageSwitcher';
 import api from '@/services/api';
@@ -73,9 +74,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>{user?.name?.charAt(0).toUpperCase()}</Text>
-        </View>
+        <ProfilePhoto style={{ marginBottom: 15 }} />
         <Text style={styles.userName}>{user?.name}</Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
         {userRank && (
@@ -235,20 +234,6 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 30,
     alignItems: 'center',
-  },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: COLORS.primary,
   },
   userName: {
     fontSize: 24,

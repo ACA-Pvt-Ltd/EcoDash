@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const { hashResetCode } = require('../models/plugins/passwordReset');
 const { sendPasswordResetEmail } = require('../utils/email');
 const { resolveAdminAccess } = require('../services/adminAccess');
+const { deleteProfilePhoto } = require('../middleware/upload');
 
 const MAX_RESET_ATTEMPTS = 5;
 
@@ -278,6 +279,11 @@ exports.login = async (req, res) => {
       email: user.email,
       role: role
     };
+
+    // Profile photo (vendors keep theirs in `logo`)
+    if (role !== 'admin') {
+      userData.profileImage = (role === 'vendor' ? user.logo : user.profileImage) || null;
+    }
 
     // Add role-specific data
     if (role === 'user') {
@@ -568,5 +574,53 @@ exports.resetPassword = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+// Vendors keep their picture in `logo`; users and collectors in `profileImage`
+const PHOTO_FIELD = { user: 'profileImage', collector: 'profileImage', vendor: 'logo' };
+
+// @desc    Upload or replace the signed-in account's profile photo (Cloudinary)
+// @route   PUT /api/auth/profile-photo   (multipart, field "photo")
+// @access  Private (user, collector, vendor)
+exports.setProfilePhoto = async (req, res) => {
+  try {
+    const field = PHOTO_FIELD[req.userRole];
+    if (!field) {
+      if (req.file) await deleteProfilePhoto(req.file.path);
+      return res.status(400).json({ success: false, message: 'Profile photos are only available in the mobile app' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please choose a photo to upload' });
+    }
+
+    const Model = getModelForRole(req.userRole);
+    const previous = req.user[field];
+    // updateOne skips full validation, so older profiles with missing details can still update
+    await Model.updateOne({ _id: req.user._id }, { $set: { [field]: req.file.path } });
+    if (previous && previous !== req.file.path) await deleteProfilePhoto(previous);
+
+    res.status(200).json({ success: true, data: { profileImage: req.file.path }, message: 'Profile photo updated' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Remove the signed-in account's profile photo
+// @route   DELETE /api/auth/profile-photo
+// @access  Private (user, collector, vendor)
+exports.removeProfilePhoto = async (req, res) => {
+  try {
+    const field = PHOTO_FIELD[req.userRole];
+    if (!field) {
+      return res.status(400).json({ success: false, message: 'Profile photos are only available in the mobile app' });
+    }
+    const previous = req.user[field];
+    await getModelForRole(req.userRole).updateOne({ _id: req.user._id }, { $set: { [field]: null } });
+    if (previous) await deleteProfilePhoto(previous);
+
+    res.status(200).json({ success: true, data: { profileImage: null }, message: 'Profile photo removed' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
