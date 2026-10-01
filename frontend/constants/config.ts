@@ -15,6 +15,7 @@ export const ENDPOINTS = {
   CHANGE_PASSWORD: '/auth/change-password',
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
+  PROFILE_PHOTO: '/auth/profile-photo', // PUT multipart "photo" / DELETE
 
   // Users
   DASHBOARD: '/users/dashboard',

@@ -78,6 +78,8 @@ jest.mock('expo-location', () => ({
 jest.mock('expo-image-picker', () => ({
   requestMediaLibraryPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
   launchImageLibraryAsync: jest.fn(async () => ({ canceled: true, assets: [] })),
+  requestCameraPermissionsAsync: jest.fn(async () => ({ status: 'granted', granted: true })),
+  launchCameraAsync: jest.fn(async () => ({ canceled: true, assets: [] })),
   MediaTypeOptions: { Images: 'Images', Videos: 'Videos' },
   MediaType: { Images: 'images', Videos: 'videos' },
 }));

@@ -84,4 +84,65 @@ const offerMediaUpload = (req, res, next) => {
   upload(req, res, next);
 };
 
-module.exports = { offerMediaUpload };
+const PROFILE_FOLDER = 'ecodash/profiles';
+const PROFILE_MAX_BYTES = 5 * 1024 * 1024;
+
+// One profile photo, squared around the face so it fits the round avatar
+const profilePhotoStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: PROFILE_FOLDER,
+    resource_type: 'image',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'heic'],
+    transformation: [
+      { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+      { quality: 'auto', fetch_format: 'auto' },
+    ],
+  },
+});
+
+const profilePhotoMulter = multer({
+  storage: profilePhotoStorage,
+  limits: { fileSize: PROFILE_MAX_BYTES, files: 1 },
+  fileFilter: (req, file, cb) => {
+    if (file.fieldname === 'photo' && file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(Object.assign(new Error('Please choose an image file (JPG, PNG, WebP or HEIC)'), { status: 400 }));
+  },
+}).single('photo');
+
+// Upload problems are the caller's to fix, so they come back as 400 with a clear
+// message — never 500, and never 401 (the mobile app signs out on any 401)
+const profilePhotoUpload = (req, res, next) => {
+  profilePhotoMulter(req, res, (error) => {
+    if (!error) return next();
+    const tooLarge = error.code === 'LIMIT_FILE_SIZE';
+    const callerError = tooLarge || error.status === 400 || String(error.code || '').startsWith('LIMIT_');
+    res.status(callerError ? 400 : 502).json({
+      success: false,
+      message: tooLarge
+        ? 'That photo is too large. Please choose one under 5 MB.'
+        : callerError ? error.message : `Could not upload the photo: ${error.message}`,
+    });
+  });
+};
+
+/** Cloudinary public id of one of our profile photos, or null for anything else (e.g. an external URL). */
+const profilePhotoPublicId = (url) => {
+  const match = /\/upload\/(?:[^/]+\/)*?(?:v\d+\/)?(ecodash\/profiles\/[^.\/]+)(?:\.\w+)?$/.exec(url || '');
+  return match ? match[1] : null;
+};
+
+/** Best-effort removal of an old profile photo; never throws. */
+const deleteProfilePhoto = async (url) => {
+  const publicId = profilePhotoPublicId(url);
+  if (!publicId) return false;
+  try {
+    const result = await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
+    return result?.result === 'ok';
+  } catch (error) {
+    console.error('Could not delete old profile photo', publicId, error.message);
+    return false;
+  }
+};
+
+module.exports = { offerMediaUpload, profilePhotoUpload, deleteProfilePhoto, profilePhotoPublicId };

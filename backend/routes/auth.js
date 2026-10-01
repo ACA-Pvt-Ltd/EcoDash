@@ -9,9 +9,12 @@ const {
   updateProfile,
   changePassword,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  setProfilePhoto,
+  removeProfilePhoto
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+const { profilePhotoUpload } = require('../middleware/upload');
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -32,5 +35,7 @@ router.post('/reset-password', authLimiter, resetPassword);
 router.get('/me', protect, getMe);
 router.put('/update-profile', protect, updateProfile);
 router.put('/change-password', protect, changePassword);
+router.put('/profile-photo', protect, profilePhotoUpload, setProfilePhoto);
+router.delete('/profile-photo', protect, removeProfilePhoto);
 
 module.exports = router;

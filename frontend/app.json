@@ -51,7 +51,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes"
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes and take profile photos"
         }
       ],
       [
