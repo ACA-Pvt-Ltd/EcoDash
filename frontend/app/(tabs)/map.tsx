@@ -14,6 +14,7 @@ import api from '@/services/api';
 import { ENDPOINTS, COLORS } from '@/constants/config';
 import { haversineKm, inRadiusBand } from '@/utils/distance';
 import PerformanceBadge from '@/components/PerformanceBadge';
+import { useTranslation } from '@/context/LanguageContext';
 
 type RadiusFilter = 'all' | '0-50' | '50-150' | '150-250';
 type SortBy = 'nearest' | 'az' | 'rating';
@@ -32,6 +33,7 @@ const SORT_OPTIONS: { label: string; value: SortBy }[] = [
 ];
 
 export default function MapScreen() {
+  const { t } = useTranslation();
   const [rawCollectors, setRawCollectors] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedType, setSelectedType] = useState<string>('all');
@@ -171,7 +173,7 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Collection Points</Text>
+        <Text style={styles.headerTitle}>{t('screens.collectionPoints')}</Text>
         <Text style={styles.headerSubtitle}>Find nearby waste collectors</Text>
       </View>
 

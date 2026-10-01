@@ -12,8 +12,10 @@ import {
 import { COLORS, ENDPOINTS } from '@/constants/config';
 import { useAppConfig } from '@/context/AppConfigContext';
 import api from '@/services/api';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function PricingScreen() {
+  const { t } = useTranslation();
   const { wasteCategories } = useAppConfig();
   const [pricing, setPricing] = useState<any>({});
   const [loading, setLoading] = useState(true);
@@ -119,7 +121,7 @@ export default function PricingScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Pricing Management</Text>
+        <Text style={styles.title}>{t('screens.pricingManagement')}</Text>
         <Text style={styles.subtitle}>Set purchase prices per kg</Text>
       </View>
 

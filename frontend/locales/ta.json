@@ -1,0 +1,97 @@
+{
+  "_meta": {
+    "language": "தமிழ்",
+    "note": "Draft translation — have a native Tamil speaker review before release. Keep the same keys as en.json."
+  },
+  "common": {
+    "language": "மொழி",
+    "chooseLanguage": "மொழியைத் தேர்ந்தெடுக்கவும்",
+    "logout": "வெளியேறு",
+    "cancel": "ரத்து செய்",
+    "ok": "சரி"
+  },
+  "tabs": {
+    "user": {
+      "home": "முகப்பு",
+      "map": "வரைபடம்",
+      "rewards": "வெகுமதிகள்",
+      "offers": "சலுகைகள்",
+      "profile": "சுயவிவரம்"
+    },
+    "collector": {
+      "dashboard": "முகப்புப் பலகை",
+      "scanQr": "QR ஸ்கேன்",
+      "myOffers": "எனது சலுகைகள்",
+      "userOffers": "பயனர் சலுகைகள்",
+      "myRequests": "எனது கோரிக்கைகள்"
+    },
+    "vendor": {
+      "dashboard": "முகப்புப் பலகை",
+      "offers": "சலுகைகள்",
+      "inventory": "இருப்பு",
+      "pricing": "விலை நிர்ணயம்",
+      "profile": "சுயவிவரம்"
+    }
+  },
+  "welcome": {
+    "welcomeTo": "வரவேற்கிறோம்",
+    "tagline": "கழிவை மதிப்பாக மாற்றுங்கள்",
+    "getStarted": "தொடங்குங்கள்",
+    "inCollaboration": "இணைந்து"
+  },
+  "roles": {
+    "user": "பயனர்",
+    "collector": "சேகரிப்பாளர்",
+    "vendor": "வணிகர்",
+    "userDescription": "கழிவுகளை அகற்றி வெகுமதிகளைப் பெற விரும்புகிறேன்",
+    "collectorDescription": "பயனர்களிடமிருந்து கழிவுகளைச் சேகரிக்கிறேன்",
+    "vendorDescription": "மறுசுழற்சிக்காகக் கழிவுகளை வாங்குகிறேன்"
+  },
+  "selectRole": {
+    "title": "எங்கள் தளத்தில் இணையுங்கள்",
+    "subtitle": "தொடங்க உங்கள் பங்கைத் தேர்ந்தெடுக்கவும்",
+    "selected": "✓ தேர்ந்தெடுக்கப்பட்டது",
+    "haveAccount": "ஏற்கனவே கணக்கு உள்ளதா?",
+    "login": "உள்நுழை"
+  },
+  "login": {
+    "welcomeBack": "மீண்டும் வருக!",
+    "slogan": "பூமியை மீண்டும் பசுமையாக்குவோம்",
+    "loginAs": "உள்நுழையும் வகை",
+    "email": "மின்னஞ்சல்",
+    "emailPlaceholder": "உங்கள் மின்னஞ்சலை உள்ளிடவும்",
+    "password": "கடவுச்சொல்",
+    "passwordPlaceholder": "உங்கள் கடவுச்சொல்லை உள்ளிடவும்",
+    "submit": "உள்நுழை",
+    "forgotPassword": "கடவுச்சொல் மறந்துவிட்டதா?",
+    "noAccount": "கணக்கு இல்லையா?",
+    "signUp": "பதிவு செய்"
+  },
+  "profile": {
+    "account": "கணக்கு",
+    "showQr": "எனது QR குறியீட்டைக் காட்டு",
+    "editProfile": "சுயவிவரத்தைத் திருத்து",
+    "changePassword": "கடவுச்சொல்லை மாற்று",
+    "notifications": "அறிவிப்புகள்",
+    "myStatistics": "எனது புள்ளிவிவரங்கள்",
+    "appGuide": "செயலி வழிகாட்டி",
+    "helpSupport": "உதவி மற்றும் ஆதரவு",
+    "about": "செயலியைப் பற்றி",
+    "language": "மொழி",
+    "badgesEarned": "பெற்ற பதக்கங்கள் 🏅",
+    "leaderboard": "முன்னணிப் பட்டியல் 👑",
+    "myPerformance": "எனது செயல்திறன்",
+    "logout": "வெளியேறு"
+  },
+  "screens": {
+    "hello": "வணக்கம், {{name}}",
+    "collectionPoints": "சேகரிப்பு மையங்கள்",
+    "rewards": "வெகுமதிகள்",
+    "myOffers": "எனது சலுகைகள்",
+    "browseUserOffers": "பயனர் சலுகைகளைப் பார்க்கவும்",
+    "myPurchaseRequests": "எனது கொள்முதல் கோரிக்கைகள்",
+    "scanCollect": "📷 ஸ்கேன் செய்து சேகரி",
+    "inventory": "இருப்பு",
+    "pricingManagement": "விலை மேலாண்மை"
+  }
+}

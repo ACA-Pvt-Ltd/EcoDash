@@ -18,6 +18,7 @@ import { router } from 'expo-router';
 import { useAppConfig } from '@/context/AppConfigContext';
 import { useAuth } from '@/context/AuthContext';
 import { API_URL, ENDPOINTS,  COLORS } from '@/constants/config';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface CollectorPurchaseRequest {
   _id: string;
@@ -52,6 +53,7 @@ interface CollectorPurchaseRequest {
 }
 
 export default function MyPurchaseRequestsScreen() {
+  const { t } = useTranslation();
   const { wasteCategories } = useAppConfig();
   const { token } = useAuth();
   const [requests, setRequests] = useState<CollectorPurchaseRequest[]>([]);
@@ -414,7 +416,7 @@ export default function MyPurchaseRequestsScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Purchase Requests</Text>
+          <Text style={styles.headerTitle}>{t('screens.myPurchaseRequests')}</Text>
           <TouchableOpacity onPress={onRefresh}>
             <Ionicons name="refresh" size={24} color="#ffffffff" />
           </TouchableOpacity>

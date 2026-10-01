@@ -26,6 +26,7 @@ import {
   type OfferFilterState,
   type OfferGetters,
 } from '@/utils/offerFilters';
+import { useTranslation } from '@/context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -56,6 +57,7 @@ const OFFER_GETTERS: OfferGetters<UserWasteOffer> = {
 };
 
 export default function BrowseUserOffersScreen() {
+  const { t } = useTranslation();
   const { wasteCategories } = useAppConfig();
   const { token } = useAuth();
   const [offers, setOffers] = useState<UserWasteOffer[]>([]);
@@ -161,7 +163,7 @@ export default function BrowseUserOffersScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Browse User Offers</Text>
+        <Text style={styles.headerTitle}>{t('screens.browseUserOffers')}</Text>
         <TouchableOpacity onPress={() => setShowFilters(v => !v)} accessibilityLabel="Filter offers">
           <Ionicons name={showFilters ? 'close-circle' : 'filter'} size={24} color="#fff" />
           {!showFilters && <FilterCountBadge count={filterCount} />}

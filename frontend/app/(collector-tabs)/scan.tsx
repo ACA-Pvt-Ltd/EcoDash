@@ -17,8 +17,10 @@ import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS } from '@/constants/config';
 import { useAppConfig } from '@/context/AppConfigContext';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function ScanQRScreen() {
+  const { t } = useTranslation();
   const { refreshUser } = useAuth();
   const { wasteCategories, pointsPerKg, cashPerKg } = useAppConfig();
   const [userQR, setUserQR] = useState('');
@@ -237,7 +239,7 @@ export default function ScanQRScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>📷 Scan & Collect</Text>
+          <Text style={styles.title}>{t('screens.scanCollect')}</Text>
           <Text style={styles.subtitle}>Scan user QR code to record waste collection</Text>
         </View>
 

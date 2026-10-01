@@ -11,8 +11,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, ENDPOINTS } from '@/constants/config';
 import { useAppConfig } from '@/context/AppConfigContext';
 import api from '@/services/api';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function VendorInventoryScreen() {
+  const { t } = useTranslation();
   const { wasteCategories } = useAppConfig();
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ export default function VendorInventoryScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Inventory</Text>
+        <Text style={styles.title}>{t('screens.inventory')}</Text>
         <Text style={styles.subtitle}>Collected waste ready to sell</Text>
       </View>
 

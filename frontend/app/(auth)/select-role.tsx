@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS } from '@/constants/config';
+import { useTranslation } from '@/context/LanguageContext';
 
 type Role = 'user' | 'collector' | 'vendor';
 
@@ -66,6 +67,7 @@ const roles: RoleOption[] = [
 export default function SelectRoleScreen() {
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const { t } = useTranslation();
 
   const handleContinue = () => {
     if (selectedRole) {
@@ -79,8 +81,8 @@ export default function SelectRoleScreen() {
       
       <View style={styles.header}>
         <Text style={styles.icon}>♻️</Text>
-        <Text style={styles.title}>Join Our Platform</Text>
-        <Text style={styles.subtitle}>Choose your role to get started</Text>
+        <Text style={styles.title}>{t('selectRole.title')}</Text>
+        <Text style={styles.subtitle}>{t('selectRole.subtitle')}</Text>
       </View>
 
       <View style={styles.rolesContainer}>
@@ -100,16 +102,16 @@ export default function SelectRoleScreen() {
             <View style={styles.roleHeader}>
               <Text style={styles.roleIcon}>{role.icon}</Text>
               <View style={styles.roleHeaderText}>
-                <Text style={styles.roleTitle}>{role.title}</Text>
+                <Text style={styles.roleTitle}>{t(`roles.${role.value}`)}</Text>
                 {selectedRole === role.value && (
                   <View style={[styles.selectedBadge, { backgroundColor: role.color }]}>
-                    <Text style={styles.selectedBadgeText}>✓ Selected</Text>
+                    <Text style={styles.selectedBadgeText}>{t('selectRole.selected')}</Text>
                   </View>
                 )}
               </View>
             </View>
             
-            {/* <Text style={styles.roleDescription}>{role.description}</Text>
+            {/* <Text style={styles.roleDescription}>{t(`roles.${role.value}Description`)}</Text>
             
             <View style={styles.featuresContainer}>
               {role.features.map((feature, index) => (
@@ -141,9 +143,9 @@ export default function SelectRoleScreen() {
         </TouchableOpacity>
 
         <View style={styles.loginPrompt}>
-          <Text style={styles.loginPromptText}>Already have an account? </Text>
+          <Text style={styles.loginPromptText}>{t('selectRole.haveAccount')} </Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.loginLink}>Login</Text>
+            <Text style={styles.loginLink}>{t('selectRole.login')}</Text>
           </TouchableOpacity>
         </View>
       </View>

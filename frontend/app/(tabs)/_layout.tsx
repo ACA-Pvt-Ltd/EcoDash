@@ -4,6 +4,7 @@ import { Platform, View, Text, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/config";
 import { useFirstRunGuide } from "@/hooks/useFirstRunGuide";
+import { useTranslation } from "@/context/LanguageContext";
 import { StatusBar } from "expo-status-bar";
 
 // Custom Tab Button Component - Memoized for performance
@@ -40,6 +41,7 @@ CustomTabButton.displayName = 'CustomTabButton';
 
 export default function TabLayout() {
   useFirstRunGuide(); // shows the onboarding guide once per account
+  const { t } = useTranslation();
 
   return (
     <>
@@ -75,11 +77,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t('tabs.user.home'),
           tabBarIcon: ({ color, focused }) => (
             <CustomTabButton
               iconName="home"
-              label="Home"
+              label={t('tabs.user.home')}
               color={color}
               focused={focused}
             />
@@ -90,11 +92,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="map"
         options={{
-          title: "Map",
+          title: t('tabs.user.map'),
           tabBarIcon: ({ color, focused }) => (
             <CustomTabButton
               iconName="map"
-              label="Map"
+              label={t('tabs.user.map')}
               color={color}
               focused={focused}
             />
@@ -105,11 +107,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="rewards"
         options={{
-          title: "Rewards",
+          title: t('tabs.user.rewards'),
           tabBarIcon: ({ color, focused }) => (
             <CustomTabButton
               iconName="card-giftcard"
-              label="Rewards"
+              label={t('tabs.user.rewards')}
               color={color}
               focused={focused}
             />
@@ -120,11 +122,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="offers"
         options={{
-          title: "Offers",
+          title: t('tabs.user.offers'),
           tabBarIcon: ({ color, focused }) => (
             <CustomTabButton
               iconName="local-offer"
-              label="Offers"
+              label={t('tabs.user.offers')}
               color={color}
               focused={focused}
             />
@@ -135,11 +137,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: t('tabs.user.profile'),
           tabBarIcon: ({ color, focused }) => (
             <CustomTabButton
               iconName="person"
-              label="Profile"
+              label={t('tabs.user.profile')}
               color={color}
               focused={focused}
             />

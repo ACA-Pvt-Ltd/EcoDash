@@ -14,6 +14,7 @@ import { useAppConfig } from '@/context/AppConfigContext';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS, WASTE_TYPES } from '@/constants/config';
+import { useTranslation } from '@/context/LanguageContext';
 
 // Memoized components to prevent unnecessary re-renders
 const StatBox = React.memo(({ icon, value, label }: { icon: string; value: number | string; label: string }) => (
@@ -39,6 +40,7 @@ const WasteItem = React.memo(({ type, amount }: { type: string; amount: number }
 WasteItem.displayName = 'WasteItem';
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const { wasteCategories } = useAppConfig();
   const router = useRouter();
   const { user, updateUser } = useAuth();
@@ -118,7 +120,7 @@ export default function HomeScreen() {
       removeClippedSubviews={true}
     >
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, {user?.name}! 👋</Text>
+        <Text style={styles.greeting}>{t('screens.hello', { name: user?.name ?? '' })}! 👋</Text>
         <Text style={styles.subtitle}>Let&apos;s make Earth green</Text>
       </View>
 

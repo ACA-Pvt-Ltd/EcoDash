@@ -15,6 +15,10 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
 
+// ---------------------------------------------------------------- safe area
+// Screens read the notch / status-bar insets; the library's own mock supplies them
+jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
+
 // ---------------------------------------------------------------- sentry
 // app/_layout.tsx calls Sentry.init() at module scope
 jest.mock('@sentry/react-native', () => ({

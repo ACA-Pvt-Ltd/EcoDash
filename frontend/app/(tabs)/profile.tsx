@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "@/context/LanguageContext";
+import { useLanguagePicker, useCurrentLanguageName } from "@/components/LanguageSwitcher";
 import api from "@/services/api";
 import { ENDPOINTS, COLORS } from "@/constants/config";
 import QRCode from "react-native-qrcode-svg";
@@ -19,6 +21,9 @@ import QRCode from "react-native-qrcode-svg";
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
+  const openLanguagePicker = useLanguagePicker();
+  const languageName = useCurrentLanguageName();
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -120,7 +125,7 @@ export default function ProfileScreen() {
 
       {user?.badges && user.badges.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Badges Earned 🏅</Text>
+          <Text style={styles.sectionTitle}>{t('profile.badgesEarned')}</Text>
           <View style={styles.badgesContainer}>
             {user.badges.map((badge: any, index: number) => (
               <View key={index} style={styles.badgeCard}>
@@ -133,7 +138,7 @@ export default function ProfileScreen() {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Leaderboard 👑</Text>
+        <Text style={styles.sectionTitle}>{t('profile.leaderboard')}</Text>
         <View style={styles.leaderboardCard}>
           {leaderboard && leaderboard.length > 0 ? (
             leaderboard.slice(0, 10).map((leader, index) => {
@@ -183,33 +188,33 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
+        <Text style={styles.sectionTitle}>{t('profile.account')}</Text>
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => setShowQRModal(true)}
         >
           <Text style={styles.menuIcon}>📱</Text>
-          <Text style={styles.menuText}>Show My QR Code</Text>
+          <Text style={styles.menuText}>{t('profile.showQr')}</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuIcon}>👤</Text>
-          <Text style={styles.menuText}>Edit Profile</Text>
+          <Text style={styles.menuText}>{t('profile.editProfile')}</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/change-password' as any)}>
           <Text style={styles.menuIcon}>🔒</Text>
-          <Text style={styles.menuText}>Change Password</Text>
+          <Text style={styles.menuText}>{t('profile.changePassword')}</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuIcon}>🔔</Text>
-          <Text style={styles.menuText}>Notifications</Text>
+          <Text style={styles.menuText}>{t('profile.notifications')}</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuIcon}>📊</Text>
-          <Text style={styles.menuText}>My Statistics</Text>
+          <Text style={styles.menuText}>{t('profile.myStatistics')}</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -217,26 +222,31 @@ export default function ProfileScreen() {
           onPress={() => router.push({ pathname: '/guide', params: { replay: '1' } } as any)}
         >
           <Text style={styles.menuIcon}>📘</Text>
-          <Text style={styles.menuText}>App guide</Text>
+          <Text style={styles.menuText}>{t('profile.appGuide')}</Text>
           <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={openLanguagePicker}>
+          <Text style={styles.menuIcon}>🌐</Text>
+          <Text style={styles.menuText}>{t('profile.language')}</Text>
+          <Text style={[styles.menuArrow, { fontSize: 14 }]}>{languageName} ›</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => router.push('/help' as any)}
         >
           <Text style={styles.menuIcon}>❓</Text>
-          <Text style={styles.menuText}>Help & Support</Text>
+          <Text style={styles.menuText}>{t('profile.helpSupport')}</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuIcon}>ℹ️</Text>
-          <Text style={styles.menuText}>About</Text>
+          <Text style={styles.menuText}>{t('profile.about')}</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Logout</Text>
+        <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
       </TouchableOpacity>
 
       <View style={styles.footer}>
