@@ -159,7 +159,7 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('profile.account')}</Text>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/edit-profile' as any)}>
           <Text style={styles.menuIcon}>👤</Text>
           <Text style={styles.menuText}>{t('profile.editProfile')}</Text>
           <Text style={styles.menuArrow}>›</Text>

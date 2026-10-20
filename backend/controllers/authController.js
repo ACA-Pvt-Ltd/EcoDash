@@ -9,6 +9,7 @@ const { hashResetCode } = require('../models/plugins/passwordReset');
 const { sendPasswordResetEmail } = require('../utils/email');
 const { resolveAdminAccess } = require('../services/adminAccess');
 const { deleteProfilePhoto } = require('../middleware/upload');
+const { updateProfileAndRespond } = require('../services/profileUpdate');
 
 const MAX_RESET_ATTEMPTS = 5;
 
@@ -338,41 +339,10 @@ exports.getMe = async (req, res) => {
 // @route   PUT /api/auth/update-profile
 // @access  Private
 exports.updateProfile = async (req, res) => {
-  try {
-    const { name, phone, address } = req.body;
-    
-    let Model;
-    switch (req.userRole) {
-      case 'user':
-        Model = User;
-        break;
-      case 'collector':
-        Model = Collector;
-        break;
-      case 'vendor':
-        Model = Vendor;
-        break;
-      case 'admin':
-        Model = Admin;
-        break;
-    }
-
-    const user = await Model.findByIdAndUpdate(
-      req.user._id,
-      { name, phone, address },
-      { new: true, runValidators: true }
-    );
-
-    res.status(200).json({
-      success: true,
-      data: user
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
+  const Model = getModelForRole(req.userRole === 'superadmin' ? 'admin' : req.userRole);
+  if (!Model) return res.status(400).json({ success: false, message: 'Invalid role' });
+  const fields = req.userRole === 'user' ? ['name', 'phone', 'address'] : ['name', 'phone'];
+  return updateProfileAndRespond(res, Model, req.user._id, req.body, fields);
 };
 
 // @desc    Change password

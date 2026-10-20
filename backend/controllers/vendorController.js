@@ -1,4 +1,5 @@
 const Vendor = require('../models/Vendor');
+const { updateProfileAndRespond } = require('../services/profileUpdate');
 const Reward = require('../models/Reward');
 const RewardRedemption = require('../models/RewardRedemption');
 const WastePurchase = require('../models/WastePurchase');
@@ -479,27 +480,9 @@ exports.getAnalytics = async (req, res) => {
 // @desc    Update vendor profile
 // @route   PUT /api/vendors/profile
 // @access  Private (Vendor)
-exports.updateProfile = async (req, res) => {
-  try {
-    const { name, phone, description, businessType, address, website } = req.body;
-
-    const vendor = await Vendor.findByIdAndUpdate(
-      req.user._id,
-      { name, phone, description, businessType, address, website },
-      { new: true, runValidators: true }
-    ).select('-password');
-
-    res.status(200).json({
-      success: true,
-      data: vendor
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+exports.updateProfile = async (req, res) =>
+  updateProfileAndRespond(res, Vendor, req.user._id, req.body,
+    ['name', 'phone', 'address', 'description', 'businessType', 'website']);
 
 // @desc    Get available waste offers from collectors (marketplace)
 // @route   GET /api/vendors/offers
