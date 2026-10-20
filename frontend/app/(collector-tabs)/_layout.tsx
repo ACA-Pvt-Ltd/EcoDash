@@ -16,7 +16,6 @@ export default function CollectorTabLayout() {
         tabBarInactiveTintColor: COLORS.gray,
         headerShown: false,
         lazy: true,
-        animation: 'shift',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,

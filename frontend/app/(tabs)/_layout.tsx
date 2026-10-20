@@ -52,7 +52,6 @@ export default function TabLayout() {
         tabBarInactiveTintColor: "#9E9E9E",
         headerShown: false,
         lazy: true,
-        animation: 'shift',
         tabBarStyle: {
           backgroundColor: "#FFFFFF",
           borderTopWidth: 0,
