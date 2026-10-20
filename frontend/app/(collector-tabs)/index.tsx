@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { ProfileAvatar } from '@/components/ProfilePhoto';
 import api from '@/services/api';
 import { ENDPOINTS, COLORS } from '@/constants/config';
 import { useTranslation } from '@/context/LanguageContext';
@@ -85,7 +86,7 @@ export default function CollectorDashboard() {
       >
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <View>
+          <View style={styles.headerText}>
             <Text style={styles.greeting}>{t('screens.hello', { name: user?.name ?? '' })}! 🚛</Text>
             <Text style={styles.subtitle}>Collector Dashboard</Text>
           </View>
@@ -93,11 +94,7 @@ export default function CollectorDashboard() {
             style={styles.profileButton}
             onPress={() => router.push('/(collector-tabs)/profile' as any)}
           >
-            <View style={styles.profileImageContainer}>
-              <Text style={styles.profileImagePlaceholder}>
-                {user?.name?.charAt(0).toUpperCase()}
-              </Text>
-            </View>
+            <ProfileAvatar size={48} style={styles.profileImageContainer} />
           </TouchableOpacity>
         </View>
       </View>
@@ -235,36 +232,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
+  // Lets a long name wrap instead of pushing the avatar off-screen
+  headerText: {
+    flex: 1,
+    marginRight: 12,
+  },
   profileButton: {
     padding: 4,
   },
-  profileIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  profileIcon: {
-    fontSize: 24,
-  },
   profileImageContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
-  },
-  profileImagePlaceholder: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.primary,
   },
   greeting: {
     fontSize: 28,

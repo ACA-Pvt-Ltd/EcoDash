@@ -6,6 +6,34 @@ import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/context/LanguageContext';
 import { API_URL, COLORS, ENDPOINTS } from '@/constants/config';
 
+/** The signed-in person's photo, or their initial when there isn't one. Display only. */
+export function ProfileAvatar({
+  size = 48,
+  style,
+  children,
+}: {
+  size?: number;
+  style?: StyleProp<ViewStyle>;
+  children?: React.ReactNode;
+}) {
+  const { user } = useAuth();
+  // Vendors' /auth/me returns the photo as `logo`
+  const photo = user?.profileImage ?? user?.logo ?? null;
+  const initial = (user?.name || '?').charAt(0).toUpperCase();
+  const radius = size / 2;
+
+  return (
+    <View style={[styles.circle, { width: size, height: size, borderRadius: radius }, style]}>
+      {photo ? (
+        <Image source={{ uri: photo }} style={{ width: size, height: size, borderRadius: radius }} testID="profile-photo-image" />
+      ) : (
+        <Text style={[styles.initial, { fontSize: size * 0.45 }]}>{initial}</Text>
+      )}
+      {children}
+    </View>
+  );
+}
+
 /**
  * Round profile photo for the Profile screens. Shows the person's photo (stored
  * on Cloudinary) or their initial; tapping it takes a new photo, picks one from
@@ -18,7 +46,6 @@ export default function ProfilePhoto({ size = 80, style }: { size?: number; styl
 
   // Vendors' /auth/me returns the photo as `logo`
   const photo = user?.profileImage ?? user?.logo ?? null;
-  const initial = (user?.name || '?').charAt(0).toUpperCase();
 
   const fail = (message?: string) => Alert.alert(t('profilePhoto.failedTitle'), message || t('profilePhoto.failed'));
 
@@ -105,18 +132,13 @@ export default function ProfilePhoto({ size = 80, style }: { size?: number; styl
       accessibilityLabel={t('profilePhoto.change')}
       style={[{ width: size, height: size }, style]}
     >
-      <View style={[styles.circle, { width: size, height: size, borderRadius: radius }]}>
-        {photo ? (
-          <Image source={{ uri: photo }} style={{ width: size, height: size, borderRadius: radius }} testID="profile-photo-image" />
-        ) : (
-          <Text style={[styles.initial, { fontSize: size * 0.45 }]}>{initial}</Text>
-        )}
+      <ProfileAvatar size={size}>
         {busy && (
           <View style={[styles.overlay, { borderRadius: radius }]}>
             <ActivityIndicator color="#FFFFFF" accessibilityLabel={t('profilePhoto.uploading')} />
           </View>
         )}
-      </View>
+      </ProfileAvatar>
       <View style={styles.badge}>
         <Ionicons name="camera" size={14} color="#FFFFFF" />
       </View>
