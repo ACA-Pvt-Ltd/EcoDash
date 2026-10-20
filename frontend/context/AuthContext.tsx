@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '@/services/api';
 import { ENDPOINTS, STORAGE_KEYS } from '@/constants/config';
 
-interface User {
+export interface User {
   _id: string;
   name: string;
   email: string;
@@ -18,6 +18,10 @@ interface User {
   totalWasteCollected?: number;
   totalTransactions?: number;
   acceptedWasteTypes?: string[];
+  address?: { street?: string; city?: string; state?: string; zipCode?: string };
+  description?: string;
+  businessType?: string;
+  website?: string;
   badges?: any[];
   averageRating?: number;
   ratingCount?: number;

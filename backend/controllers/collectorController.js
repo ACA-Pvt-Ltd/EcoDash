@@ -1,4 +1,5 @@
 const Collector = require('../models/Collector');
+const { updateProfileAndRespond } = require('../services/profileUpdate');
 const User = require('../models/User');
 const Vendor = require('../models/Vendor');
 const WasteTransaction = require('../models/WasteTransaction');
@@ -368,27 +369,9 @@ exports.getReports = async (req, res) => {
 // @desc    Update collector profile
 // @route   PUT /api/collectors/profile
 // @access  Private (Collector)
-exports.updateProfile = async (req, res) => {
-  try {
-    const { name, phone, address, operatingHours, description } = req.body;
-
-    const collector = await Collector.findByIdAndUpdate(
-      req.user._id,
-      { name, phone, address, operatingHours, description },
-      { new: true, runValidators: true }
-    ).select('-password');
-
-    res.status(200).json({
-      success: true,
-      data: collector
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+exports.updateProfile = async (req, res) =>
+  updateProfileAndRespond(res, Collector, req.user._id, req.body,
+    ['name', 'phone', 'address', 'description', 'acceptedWasteTypes', 'operatingHours']);
 
 // @desc    Get collector's inventory breakdown by waste type
 // @route   GET /api/collectors/inventory
