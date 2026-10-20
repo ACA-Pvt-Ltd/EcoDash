@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -18,7 +19,7 @@ import { ENDPOINTS, COLORS } from '@/constants/config';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const { t } = useTranslation();
   const openLanguagePicker = useLanguagePicker();
   const languageName = useCurrentLanguageName();
@@ -28,6 +29,15 @@ export default function ProfileScreen() {
   useEffect(() => {
     fetchLeaderboard();
   }, []);
+
+  // The saved sign-in data doesn't include every total (e.g. cash earned), and
+  // points change after drop-offs, so load the full account each time Profile opens
+  useFocusEffect(
+    useCallback(() => {
+      refreshUser();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+  );
 
   const fetchLeaderboard = async () => {
     try {
