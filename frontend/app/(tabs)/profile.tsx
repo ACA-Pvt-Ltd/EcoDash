@@ -122,7 +122,7 @@ export default function ProfileScreen() {
 
       {(user?.cashEarned ?? 0) > 0 && (
         <View style={styles.cashCard}>
-          <Text style={styles.cashIcon}>💵</Text>
+          {/* <Text style={styles.cashIcon}>💵</Text> */}
           <View style={styles.cashInfo}>
             <Text style={styles.cashLabel}>Total Cash Earned</Text>
             <Text style={styles.cashValue}>LKR {(user?.cashEarned ?? 0).toFixed(2)}</Text>
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderLeftWidth: 4,
-    borderLeftColor: '#FFB800',
+    borderLeftColor: '#FFF9E6',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
