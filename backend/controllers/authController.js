@@ -289,6 +289,7 @@ exports.login = async (req, res) => {
     // Add role-specific data
     if (role === 'user') {
       userData.points = user.points;
+      userData.cashEarned = user.cashEarned || 0;
       userData.qrCode = user.qrCode;
       userData.totalWasteDisposed = user.totalWasteDisposed;
     } else if (role === 'collector') {

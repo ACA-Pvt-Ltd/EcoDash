@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import ProfilePhoto from '@/components/ProfilePhoto';
+import ProfilePhoto, { ProfileAvatar } from '@/components/ProfilePhoto';
 import { fetchResponse } from '../setup/apiMock';
 import { lastAlert, pressAlertButton } from '../setup/alert';
 
@@ -112,5 +112,25 @@ describe('ProfilePhoto', () => {
     pressAlertButton('Remove photo');
     await waitFor(() => expect(mockUpdateUser).toHaveBeenCalledWith({ profileImage: null, logo: null }));
     expect((global.fetch as jest.Mock).mock.calls[0][1].method).toBe('DELETE');
+  });
+});
+
+describe('ProfileAvatar', () => {
+  it('shows the photo, including a vendor\'s `logo`', () => {
+    mockUser = { _id: 'v1', name: 'EcoMart', role: 'vendor', logo: PHOTO };
+    render(<ProfileAvatar size={48} />);
+    expect(screen.getByTestId('profile-photo-image').props.source).toEqual({ uri: PHOTO });
+  });
+
+  it('shows the initial when there is no photo', () => {
+    mockUser = { _id: 'c1', name: 'greenCycle', role: 'collector' };
+    render(<ProfileAvatar size={48} />);
+    expect(screen.getByText('G')).toBeTruthy();
+    expect(screen.queryByTestId('profile-photo-image')).toBeNull();
+  });
+
+  it('is display only, with no button to change the photo', () => {
+    render(<ProfileAvatar size={48} />);
+    expect(screen.queryByLabelText('Change profile photo')).toBeNull();
   });
 });

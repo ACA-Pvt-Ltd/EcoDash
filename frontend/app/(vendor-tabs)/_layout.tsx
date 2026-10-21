@@ -19,7 +19,6 @@ export default function VendorTabLayout() {
         tabBarInactiveTintColor: COLORS.gray,
         headerShown: false,
         lazy: true,
-        animation: 'shift',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,

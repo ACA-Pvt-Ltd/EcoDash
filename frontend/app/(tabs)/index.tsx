@@ -158,13 +158,13 @@ export default function HomeScreen() {
           </Text>
           <View style={styles.monthlyRow}>
             <Text style={styles.monthlySubText}>
-              🔍 {dashboard?.stats?.qrTransactions || 0} QR drop-offs · 📦 {dashboard?.stats?.marketplaceSales || 0} marketplace sales
+               {dashboard?.stats?.qrTransactions || 0} QR drop-offs ·  {dashboard?.stats?.marketplaceSales || 0} marketplace sales
             </Text>
           </View>
           {(dashboard?.user?.cashEarned || 0) > 0 && (
             <View style={styles.monthlyRow}>
               <Text style={styles.cashText}>
-                💰 LKR {(dashboard?.user?.cashEarned || 0).toFixed(0)} total earned from sales
+                 LKR {(dashboard?.user?.cashEarned || 0).toFixed(0)} total earned from sales
               </Text>
             </View>
           )}
