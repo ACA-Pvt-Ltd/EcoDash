@@ -96,7 +96,7 @@ export default function ConfigPage() {
   }
 
   if (loading) return <Spinner />;
-  if (error)   return <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>;
+  if (error)   return <div className="rounded-xl bg-red-500/10 border border-red-400/20 px-5 py-4 text-red-300 text-sm">{error}</div>;
 
   const wasteTypes = categories.map(c => c.value);
 
@@ -104,7 +104,7 @@ export default function ConfigPage() {
     // Without edit permission the whole page is view-only: a disabled fieldset disables every control in it
     <fieldset disabled={!canEdit} className="space-y-5 min-w-0 border-0 p-0 m-0">
       {!canEdit && (
-        <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-3 text-[13px] text-gray-600">
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-[13px] text-slate-300">
           View only — your role can see the configuration but not change it.
         </div>
       )}
@@ -119,24 +119,24 @@ export default function ConfigPage() {
 
       {/* Waste Categories */}
       <SectionCard title="Waste Categories" icon={<Tag size={15} />}>
-        <div className="mb-4 overflow-hidden rounded-lg border border-gray-100">
+        <div className="mb-4 overflow-hidden rounded-lg border border-white/[0.08]">
           <table className="min-w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
+              <tr className="bg-white/[0.04] border-b border-white/[0.08]">
                 {['Color', 'Icon', 'Label', 'Value Key', ''].map((h, i) => (
-                  <th key={i} className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
+                  <th key={i} className="px-4 py-2.5 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {categories.map((cat, i) => (
-                <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
-                  <td className="px-4 py-2.5"><div className="h-4 w-4 rounded-full border border-gray-200" style={{ backgroundColor: cat.color }} /></td>
+                <tr key={i} className="border-b border-white/[0.05] last:border-0 hover:bg-white/[0.04] transition-colors">
+                  <td className="px-4 py-2.5"><div className="h-4 w-4 rounded-full border border-white/10" style={{ backgroundColor: cat.color }} /></td>
                   <td className="px-4 py-2.5 text-base">{cat.icon}</td>
-                  <td className="px-4 py-2.5 text-[13px] font-medium text-gray-800">{cat.label}</td>
-                  <td className="px-4 py-2.5"><code className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">{cat.value}</code></td>
+                  <td className="px-4 py-2.5 text-[13px] font-medium text-slate-100">{cat.label}</td>
+                  <td className="px-4 py-2.5"><code className="rounded bg-white/[0.07] px-1.5 py-0.5 text-[11px] text-slate-300">{cat.value}</code></td>
                   <td className="px-4 py-2.5">
-                    <button onClick={() => setCategories(prev => prev.filter((_, j) => j !== i))} className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+                    <button onClick={() => setCategories(prev => prev.filter((_, j) => j !== i))} className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-red-500/10 hover:text-red-300 transition-colors">
                       <Trash2 size={13} />
                     </button>
                   </td>
@@ -146,8 +146,8 @@ export default function ConfigPage() {
           </table>
         </div>
 
-        <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 p-4 mb-4">
-          <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest mb-3">Add New Category</div>
+        <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.03] p-4 mb-4">
+          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Add New Category</div>
           <div className="grid grid-cols-4 gap-3">
             {[
               { label: 'Icon (emoji)', placeholder: '♻', key: 'icon' as const },
@@ -155,19 +155,19 @@ export default function ConfigPage() {
               { label: 'Value key',    placeholder: 'Cardboard', key: 'value' as const },
             ].map(({ label, placeholder, key }) => (
               <div key={key}>
-                <label className="block text-[11px] text-gray-500 mb-1">{label}</label>
+                <label className="block text-[11px] text-slate-400 mb-1">{label}</label>
                 <input type="text" placeholder={placeholder} value={newCat[key]}
                   onChange={e => setNewCat(p => ({ ...p, [key]: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[13px] text-gray-600 focus:border-emerald-400 focus:outline-none"
+                  className="glass-input w-full px-3 py-1.5 text-[13px]"
                 />
               </div>
             ))}
             <div>
-              <label className="block text-[11px] text-gray-500 mb-1">Color</label>
+              <label className="block text-[11px] text-slate-400 mb-1">Color</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={newCat.color} onChange={e => setNewCat(p => ({ ...p, color: e.target.value }))}
-                  className="h-8 w-8 cursor-pointer rounded-md border border-gray-200 bg-white p-0.5" />
-                <span className="text-[11px] font-mono text-gray-500">{newCat.color}</span>
+                  className="h-8 w-8 cursor-pointer rounded-md border border-white/10 bg-white/[0.06] p-0.5" />
+                <span className="text-[11px] font-mono text-slate-400">{newCat.color}</span>
               </div>
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function ConfigPage() {
               setNewCat({ label: '', value: '', icon: '', color: '#10b981' });
             }}
             disabled={!newCat.label || !newCat.value}
-            className="mt-3 flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[12px] font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="mt-3 flex items-center gap-1.5 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[12px] font-semibold text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Plus size={12} /> Add Category
           </button>
@@ -188,12 +188,12 @@ export default function ConfigPage() {
 
       {/* Points & Cash per KG */}
       <SectionCard title="Points & Cash Per KG" icon={<Settings size={15} />}>
-        <div className="mb-4 overflow-hidden rounded-lg border border-gray-100">
+        <div className="mb-4 overflow-hidden rounded-lg border border-white/[0.08]">
           <table className="min-w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
+              <tr className="bg-white/[0.04] border-b border-white/[0.08]">
                 {['Waste Type', 'Points / kg', 'Cash LKR / kg'].map((h, i) => (
-                  <th key={i} className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
+                  <th key={i} className="px-4 py-2.5 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -201,23 +201,23 @@ export default function ConfigPage() {
               {wasteTypes.map(type => {
                 const cat = categories.find(c => c.value === type);
                 return (
-                  <tr key={type} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                  <tr key={type} className="border-b border-white/[0.05] last:border-0 hover:bg-white/[0.04] transition-colors">
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
                         <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cat?.color ?? '#64748b' }} />
-                        <span className="text-[13px] font-medium text-gray-800">{cat?.icon && <span className="mr-1">{cat.icon}</span>}{type}</span>
+                        <span className="text-[13px] font-medium text-slate-100">{cat?.icon && <span className="mr-1">{cat.icon}</span>}{type}</span>
                       </div>
                     </td>
                     <td className="px-4 py-2.5">
                       <input type="number" min={0} value={pointsPerKg[type] ?? 0}
                         onChange={e => setPointsPerKg(prev => ({ ...prev, [type]: Number(e.target.value) }))}
-                        className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px] text-gray-600 text-right focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                        className="glass-input w-24 px-3 py-1.5 text-[13px] text-right"
                       />
                     </td>
                     <td className="px-4 py-2.5">
                       <input type="number" min={0} value={cashPerKg[type] ?? 0}
                         onChange={e => setCashPerKg(prev => ({ ...prev, [type]: Number(e.target.value) }))}
-                        className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px] text-gray-600 text-right focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                        className="glass-input w-24 px-3 py-1.5 text-[13px] text-right"
                       />
                     </td>
                   </tr>

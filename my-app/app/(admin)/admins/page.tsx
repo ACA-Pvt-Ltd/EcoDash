@@ -17,7 +17,7 @@ interface AdminRow {
 }
 interface Created { name: string; email: string; temporaryPassword: string; emailSent: boolean }
 
-const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-800 placeholder-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100';
+const inputCls = 'glass-input w-full px-3 py-2 text-[13px]';
 
 export default function AdminsPage() {
   const { me, reload: reloadMyAccess } = useAccess();
@@ -109,37 +109,37 @@ export default function AdminsPage() {
   }
 
   if (loading) return <Spinner />;
-  if (error) return <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>;
+  if (error) return <div className="rounded-xl bg-red-500/10 border border-red-400/20 px-5 py-4 text-red-300 text-sm">{error}</div>;
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50"><UserCog size={16} className="text-emerald-600" /></div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/10"><UserCog size={16} className="text-emerald-400" /></div>
           <div>
-            <div className="text-[13px] font-semibold text-gray-800">Admin Accounts</div>
-            <div className="text-[11px] text-gray-400">{admins.length} admin{admins.length === 1 ? '' : 's'} · roles decide what each one can do</div>
+            <div className="text-[13px] font-semibold text-slate-100">Admin Accounts</div>
+            <div className="text-[11px] text-slate-400">{admins.length} admin{admins.length === 1 ? '' : 's'} · roles decide what each one can do</div>
           </div>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700">
+        <button onClick={openAdd} className="btn-primary flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold">
           <Plus size={15} /> Add admin
         </button>
       </div>
 
       <StatusNotice notice={notice} onDismiss={() => setNotice(null)} />
       {rowError && (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-red-100 bg-red-50 px-5 py-3 text-[13px] text-red-600">
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-red-400/20 bg-red-500/10 px-5 py-3 text-[13px] text-red-300">
           <span className="flex items-start gap-2"><AlertTriangle size={15} className="mt-0.5 shrink-0" />{rowError}</span>
           <button onClick={() => setRowError('')} aria-label="Dismiss" className="opacity-60 hover:opacity-100"><X size={15} /></button>
         </div>
       )}
 
-      <div className="rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
+      <div className="glass overflow-hidden">
         <table className="min-w-full">
           <thead>
-            <tr className="border-b border-gray-100">
+            <tr className="border-b border-white/[0.08]">
               {['Admin', 'Email', 'Role', 'Status', 'Added', ''].map((h, i) => (
-                <th key={i} className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
+                <th key={i} className="px-5 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{h}</th>
               ))}
             </tr>
           </thead>
@@ -147,14 +147,14 @@ export default function AdminsPage() {
             {admins.map(a => {
               const lock = lockReason(a);
               return (
-                <tr key={a._id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                <tr key={a._id} className="border-b border-white/[0.05] hover:bg-white/[0.04]">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-semibold text-gray-800">{a.name}</span>
-                      {a._id === me?._id && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">You</span>}
+                      <span className="text-[13px] font-semibold text-slate-100">{a.name}</span>
+                      {a._id === me?._id && <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">You</span>}
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-[13px] text-gray-500">{a.email}</td>
+                  <td className="px-5 py-3.5 text-[13px] text-slate-400">{a.email}</td>
                   <td className="px-5 py-3.5">
                     <select
                       aria-label={`Role for ${a.name}`}
@@ -162,18 +162,18 @@ export default function AdminsPage() {
                       disabled={!!lock || busy === a._id}
                       title={lock}
                       onChange={e => update(a, { adminRoleId: e.target.value })}
-                      className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] font-semibold text-gray-700 focus:border-emerald-400 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
+                      className="glass-input px-2.5 py-1.5 text-[12px] font-semibold disabled:cursor-not-allowed disabled:bg-white/[0.03] disabled:text-slate-500"
                     >
                       {!a.adminRole && <option value="">No role</option>}
                       {roles.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
                     </select>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${a.isActive ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-gray-100 text-gray-500 ring-gray-200'}`}>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${a.isActive ? 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/25' : 'bg-white/[0.07] text-slate-400 ring-white/10'}`}>
                       {a.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-[12px] text-gray-400">
+                  <td className="px-5 py-3.5 text-[12px] text-slate-400">
                     {new Date(a.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-5 py-3.5">
@@ -181,7 +181,7 @@ export default function AdminsPage() {
                       <button
                         onClick={() => a.isActive ? setConfirmTarget(a) : update(a, { isActive: true })}
                         disabled={!!lock || busy === a._id}
-                        className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${a.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
+                        className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${a.isActive ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20' : 'bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20'}`}>
                         {busy === a._id ? <RefreshCw size={11} className="animate-spin" /> : a.isActive ? 'Deactivate' : 'Activate'}
                       </button>
                     </span>
@@ -195,52 +195,52 @@ export default function AdminsPage() {
 
       {/* Add admin */}
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <h2 className="text-[15px] font-bold text-gray-800">{created ? 'Admin added' : 'Add admin'}</h2>
-              <button onClick={() => setShowAdd(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-midnight-950/70 backdrop-blur-sm p-4">
+          <div className="glass-strong w-full max-w-md">
+            <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
+              <h2 className="text-[15px] font-bold text-slate-100">{created ? 'Admin added' : 'Add admin'}</h2>
+              <button onClick={() => setShowAdd(false)} className="text-slate-400 hover:text-slate-100"><X size={18} /></button>
             </div>
 
             {created ? (
               <div className="space-y-4 px-6 py-5">
-                <p className="text-[13px] leading-relaxed text-gray-600">
-                  <span className="font-semibold text-gray-800">{created.name}</span> can now sign in at the admin portal with{' '}
-                  <span className="font-semibold text-gray-800">{created.email}</span> and this temporary password.
+                <p className="text-[13px] leading-relaxed text-slate-300">
+                  <span className="font-semibold text-slate-100">{created.name}</span> can now sign in at the admin portal with{' '}
+                  <span className="font-semibold text-slate-100">{created.email}</span> and this temporary password.
                   {created.emailSent ? ' We also emailed it to them.' : ' The email could not be sent, so share it with them yourself.'}
                 </p>
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                  <code className="text-[16px] font-bold tracking-wider text-gray-900">{created.temporaryPassword}</code>
-                  <button onClick={copyPassword} className="flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold text-emerald-700 hover:bg-emerald-50">
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
+                  <code className="text-[16px] font-bold tracking-wider text-slate-50">{created.temporaryPassword}</code>
+                  <button onClick={copyPassword} className="flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold text-emerald-300 hover:bg-emerald-400/10">
                     {copied ? <><Check size={13} />Copied</> : <><Copy size={13} />Copy</>}
                   </button>
                 </div>
-                <p className="text-[12px] text-gray-400">This password is shown only once. Ask them to change it after signing in.</p>
+                <p className="text-[12px] text-slate-400">This password is shown only once. Ask them to change it after signing in.</p>
                 <div className="flex justify-end">
-                  <button onClick={() => setShowAdd(false)} className="rounded-lg bg-emerald-600 px-5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700">Done</button>
+                  <button onClick={() => setShowAdd(false)} className="btn-primary px-5 py-2 text-[13px] font-semibold">Done</button>
                 </div>
               </div>
             ) : (
               <form onSubmit={submitAdd} className="space-y-4 px-6 py-5">
-                {addError && <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-2.5 text-[13px] text-red-600">{addError}</div>}
+                {addError && <div className="rounded-lg bg-red-500/10 border border-red-400/20 px-4 py-2.5 text-[13px] text-red-300">{addError}</div>}
                 <div>
-                  <label className="block text-[12px] font-semibold text-gray-600 mb-1">Name</label>
+                  <label className="block text-[12px] font-semibold text-slate-300 mb-1">Name</label>
                   <input required value={addForm.name} onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))} className={inputCls} placeholder="Full name" />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-semibold text-gray-600 mb-1">Email</label>
+                  <label className="block text-[12px] font-semibold text-slate-300 mb-1">Email</label>
                   <input required type="email" value={addForm.email} onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))} className={inputCls} placeholder="name@example.com" />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-semibold text-gray-600 mb-1">Role</label>
+                  <label className="block text-[12px] font-semibold text-slate-300 mb-1">Role</label>
                   <select required value={addForm.adminRoleId} onChange={e => setAddForm(f => ({ ...f, adminRoleId: e.target.value }))} className={inputCls}>
                     {roles.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
                   </select>
-                  <p className="mt-1 text-[11px] text-gray-400">Change what each role can do on the Roles &amp; Access page.</p>
+                  <p className="mt-1 text-[11px] text-slate-400">Change what each role can do on the Roles &amp; Access page.</p>
                 </div>
                 <div className="flex justify-end gap-3 pt-2">
-                  <button type="button" onClick={() => setShowAdd(false)} className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
-                  <button type="submit" disabled={adding} className="rounded-lg bg-emerald-600 px-5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">
+                  <button type="button" onClick={() => setShowAdd(false)} className="rounded-lg border border-white/10 px-4 py-2 text-[13px] font-semibold text-slate-300 hover:bg-white/[0.05]">Cancel</button>
+                  <button type="submit" disabled={adding} className="btn-primary px-5 py-2 text-[13px] font-semibold disabled:opacity-60">
                     {adding ? 'Adding…' : 'Add admin'}
                   </button>
                 </div>

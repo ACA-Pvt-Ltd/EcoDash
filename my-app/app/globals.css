@@ -1,26 +1,310 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * EcoDash admin — midnight-blue "liquid glass" theme.
+ * Pages use the semantic classes below (glass, glass-input, btn-primary,
+ * chip-*, …) instead of repeating long colour strings.
+ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Not inline, so utilities read var(--color-midnight-*) and follow the theme */
+@theme {
+  --color-midnight-950: #050816;
+  --color-midnight-900: #0b1026;
+  --color-midnight-800: #111a3a;
+  --color-midnight-700: #1a2550;
+  --color-midnight-600: #24316a;
+}
+
+/*
+ * Theme switching. Pages are written with the dark palette (text-slate-100,
+ * bg-white/[0.06], text-emerald-300, …). Light mode keeps those class names
+ * and redefines the colour variables behind them: slate and the accent hues
+ * are mirrored (300↔700 etc.), "white" becomes navy so translucent white
+ * overlays turn into soft dark tints, and midnight becomes near-white.
+ * The toggle sets html[data-theme] (lib/theme.tsx, app/layout.tsx).
+ */
+:root {
+  color-scheme: dark;
+  --app-bg-glow-1: rgba(36, 49, 106, 0.55);
+  --app-bg-glow-2: rgba(17, 26, 58, 0.9);
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-inset: rgba(255, 255, 255, 0.08);
+  --glass-sheen: rgba(255, 255, 255, 0.07);
+  --glass-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.55);
+  --glass-strong-bg: rgba(17, 26, 58, 0.7);
+  --glass-strong-border: rgba(255, 255, 255, 0.12);
+  --glass-strong-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.7);
+  --scroll-thumb: rgba(255, 255, 255, 0.16);
+  --popover-bg: rgba(17, 26, 58, 0.92);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --app-bg-glow-1: rgba(167, 243, 208, 0.45);
+  --app-bg-glow-2: rgba(191, 219, 254, 0.6);
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-inset: rgba(255, 255, 255, 0.9);
+  --glass-sheen: rgba(255, 255, 255, 0.55);
+  --glass-shadow: 0 10px 30px -14px rgba(15, 23, 42, 0.18);
+  --glass-strong-bg: rgba(255, 255, 255, 0.78);
+  --glass-strong-border: rgba(15, 23, 42, 0.09);
+  --glass-strong-shadow: 0 20px 50px -18px rgba(15, 23, 42, 0.22);
+  --scroll-thumb: rgba(15, 23, 42, 0.18);
+  --popover-bg: rgba(255, 255, 255, 0.96);
+
+  --color-white: #0b1026;
+  --color-midnight-950: #f4f6fb;
+  --color-midnight-900: #eaeef8;
+  --color-midnight-800: #ffffff;
+  --color-midnight-700: #e3e8f4;
+  --color-midnight-600: #d6ddef;
+  --color-slate-50: oklch(12.9% 0.042 264.695);
+  --color-slate-950: oklch(98.4% 0.003 247.858);
+  --color-slate-100: oklch(20.8% 0.042 265.755);
+  --color-slate-900: oklch(96.8% 0.007 247.896);
+  --color-slate-200: oklch(27.9% 0.041 260.031);
+  --color-slate-800: oklch(92.9% 0.013 255.508);
+  --color-slate-300: oklch(37.2% 0.044 257.287);
+  --color-slate-700: oklch(86.9% 0.022 252.894);
+  --color-slate-400: oklch(44.6% 0.043 257.281);
+  --color-slate-600: oklch(70.4% 0.04 256.788);
+  --color-emerald-200: oklch(43.2% 0.095 166.913);
+  --color-emerald-800: oklch(90.5% 0.093 164.15);
+  --color-emerald-300: oklch(50.8% 0.118 165.612);
+  --color-emerald-700: oklch(84.5% 0.143 164.978);
+  --color-emerald-400: oklch(59.6% 0.145 163.225);
+  --color-emerald-600: oklch(76.5% 0.177 163.223);
+  --color-teal-200: oklch(43.7% 0.078 188.216);
+  --color-teal-800: oklch(91% 0.096 180.426);
+  --color-teal-300: oklch(51.1% 0.096 186.391);
+  --color-teal-700: oklch(85.5% 0.138 181.071);
+  --color-teal-400: oklch(60% 0.118 184.704);
+  --color-teal-600: oklch(77.7% 0.152 181.912);
+  --color-green-200: oklch(44.8% 0.119 151.328);
+  --color-green-800: oklch(92.5% 0.084 155.995);
+  --color-green-300: oklch(52.7% 0.154 150.069);
+  --color-green-700: oklch(87.1% 0.15 154.449);
+  --color-green-400: oklch(62.7% 0.194 149.214);
+  --color-green-600: oklch(79.2% 0.209 151.711);
+  --color-red-200: oklch(44.4% 0.177 26.899);
+  --color-red-800: oklch(88.5% 0.062 18.334);
+  --color-red-300: oklch(50.5% 0.213 27.518);
+  --color-red-700: oklch(80.8% 0.114 19.571);
+  --color-red-400: oklch(57.7% 0.245 27.325);
+  --color-red-600: oklch(70.4% 0.191 22.216);
+  --color-orange-200: oklch(47% 0.157 37.304);
+  --color-orange-800: oklch(90.1% 0.076 70.697);
+  --color-orange-300: oklch(55.3% 0.195 38.402);
+  --color-orange-700: oklch(83.7% 0.128 66.29);
+  --color-orange-400: oklch(64.6% 0.222 41.116);
+  --color-orange-600: oklch(75% 0.183 55.934);
+  --color-amber-200: oklch(47.3% 0.137 46.201);
+  --color-amber-800: oklch(92.4% 0.12 95.746);
+  --color-amber-300: oklch(55.5% 0.163 48.998);
+  --color-amber-700: oklch(87.9% 0.169 91.605);
+  --color-amber-400: oklch(66.6% 0.179 58.318);
+  --color-amber-600: oklch(82.8% 0.189 84.429);
+  --color-yellow-200: oklch(47.6% 0.114 61.907);
+  --color-yellow-800: oklch(94.5% 0.129 101.54);
+  --color-yellow-300: oklch(55.4% 0.135 66.442);
+  --color-yellow-700: oklch(90.5% 0.182 98.111);
+  --color-yellow-400: oklch(68.1% 0.162 75.834);
+  --color-yellow-600: oklch(85.2% 0.199 91.936);
+  --color-sky-200: oklch(44.3% 0.11 240.79);
+  --color-sky-800: oklch(90.1% 0.058 230.902);
+  --color-sky-300: oklch(50% 0.134 242.749);
+  --color-sky-700: oklch(82.8% 0.111 230.318);
+  --color-sky-400: oklch(58.8% 0.158 241.966);
+  --color-sky-600: oklch(74.6% 0.16 232.661);
+  --color-blue-200: oklch(42.4% 0.199 265.638);
+  --color-blue-800: oklch(88.2% 0.059 254.128);
+  --color-blue-300: oklch(48.8% 0.243 264.376);
+  --color-blue-700: oklch(80.9% 0.105 251.813);
+  --color-blue-400: oklch(54.6% 0.245 262.881);
+  --color-blue-600: oklch(70.7% 0.165 254.624);
+  --color-indigo-200: oklch(39.8% 0.195 277.366);
+  --color-indigo-800: oklch(87% 0.065 274.039);
+  --color-indigo-300: oklch(45.7% 0.24 277.023);
+  --color-indigo-700: oklch(78.5% 0.115 274.713);
+  --color-indigo-400: oklch(51.1% 0.262 276.966);
+  --color-indigo-600: oklch(67.3% 0.182 276.935);
+  --color-violet-200: oklch(43.2% 0.232 292.759);
+  --color-violet-800: oklch(89.4% 0.057 293.283);
+  --color-violet-300: oklch(49.1% 0.27 292.581);
+  --color-violet-700: oklch(81.1% 0.111 293.571);
+  --color-violet-400: oklch(54.1% 0.281 293.009);
+  --color-violet-600: oklch(70.2% 0.183 293.541);
+  --color-purple-200: oklch(43.8% 0.218 303.724);
+  --color-purple-800: oklch(90.2% 0.063 306.703);
+  --color-purple-300: oklch(49.6% 0.265 301.924);
+  --color-purple-700: oklch(82.7% 0.119 306.383);
+  --color-purple-400: oklch(55.8% 0.288 302.321);
+  --color-purple-600: oklch(71.4% 0.203 305.504);
+  --color-fuchsia-200: oklch(45.2% 0.211 324.591);
+  --color-fuchsia-800: oklch(90.3% 0.076 319.62);
+  --color-fuchsia-300: oklch(51.8% 0.253 323.949);
+  --color-fuchsia-700: oklch(83.3% 0.145 321.434);
+  --color-fuchsia-400: oklch(59.1% 0.293 322.896);
+  --color-fuchsia-600: oklch(74% 0.238 322.16);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-midnight-950);
+  background-image:
+    radial-gradient(1200px 800px at 10% -10%, var(--app-bg-glow-1), transparent 60%),
+    radial-gradient(900px 700px at 110% 20%, var(--app-bg-glow-2), transparent 60%),
+    linear-gradient(180deg, var(--color-midnight-900) 0%, var(--color-midnight-950) 100%);
+  background-attachment: fixed;
+  color: var(--color-slate-100);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
+
+::selection {
+  background: rgba(52, 211, 153, 0.35);
+  color: #fff;
+}
+
+/* Thin translucent scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 999px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* Native dropdown options can't be translucent; use the solid surface colour */
+option {
+  background-color: var(--color-midnight-800);
+  color: var(--color-slate-100);
+}
+
+@layer components {
+  /* ── Glass surfaces ─────────────────────────────────────────────── */
+  .glass {
+    @apply relative isolate rounded-2xl border backdrop-blur-2xl backdrop-saturate-150;
+    background-color: var(--glass-bg);
+    border-color: var(--glass-border);
+    box-shadow: inset 0 1px 0 var(--glass-inset), var(--glass-shadow);
+  }
+  /* Liquid highlight along the top edge */
+  .glass::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, var(--glass-sheen), transparent 38%);
+    z-index: -1;
+  }
+
+  .glass-strong {
+    @apply rounded-2xl border backdrop-blur-2xl backdrop-saturate-150;
+    background-color: var(--glass-strong-bg);
+    border-color: var(--glass-strong-border);
+    box-shadow: inset 0 1px 0 var(--glass-inset), var(--glass-strong-shadow);
+  }
+
+  .glass-modal-overlay {
+    @apply fixed inset-0 bg-midnight-950/70 backdrop-blur-sm;
+  }
+
+  /* ── Form fields ────────────────────────────────────────────────── */
+  .glass-input {
+    @apply rounded-xl border border-white/10 bg-white/[0.05] text-slate-100 placeholder-slate-500 transition-colors;
+    @apply focus:border-emerald-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-emerald-400/20;
+  }
+  .glass-input:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-[12px] font-semibold uppercase tracking-wide text-slate-400;
+  }
+
+  /* ── Buttons ────────────────────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 font-semibold text-midnight-950 transition-all;
+    @apply hover:from-emerald-300 hover:to-teal-300 disabled:cursor-not-allowed disabled:opacity-50;
+    box-shadow: 0 6px 24px -8px rgba(52, 211, 153, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] font-semibold text-slate-300 transition-colors;
+    @apply hover:bg-white/[0.09] hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/80 font-semibold text-[#fff] transition-colors;
+    @apply hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40;
+    box-shadow: 0 6px 24px -10px rgba(239, 68, 68, 0.7);
+  }
+  .btn-soft-red {
+    @apply inline-flex items-center gap-1 rounded-lg bg-red-500/10 font-semibold text-red-300 ring-1 ring-red-400/20 transition-colors hover:bg-red-500/20;
+  }
+  .btn-soft {
+    @apply inline-flex items-center gap-1 rounded-lg bg-white/[0.06] font-semibold text-slate-300 ring-1 ring-white/10 transition-colors hover:bg-white/[0.12] hover:text-slate-100;
+  }
+  .btn-soft-green {
+    @apply inline-flex items-center gap-1 rounded-lg bg-emerald-400/10 font-semibold text-emerald-300 ring-1 ring-emerald-400/25 transition-colors hover:bg-emerald-400/20;
+  }
+
+  /* ── Chips and tinted notices ───────────────────────────────────── */
+  .chip-green  { @apply bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/25; }
+  .chip-red    { @apply bg-red-500/15 text-red-300 ring-1 ring-red-400/25; }
+  .chip-amber  { @apply bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/25; }
+  .chip-blue   { @apply bg-sky-400/15 text-sky-300 ring-1 ring-sky-400/25; }
+  .chip-violet { @apply bg-violet-400/15 text-violet-300 ring-1 ring-violet-400/25; }
+  .chip-slate  { @apply bg-white/[0.07] text-slate-300 ring-1 ring-white/10; }
+
+  .notice-error   { @apply rounded-xl border border-red-400/20 bg-red-500/10 text-red-300; }
+  .notice-success { @apply rounded-xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300; }
+  .notice-warning { @apply rounded-xl border border-amber-400/20 bg-amber-400/10 text-amber-300; }
+
+  /* ── Tables ─────────────────────────────────────────────────────── */
+  .glass-th {
+    @apply px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-slate-400;
+  }
+  .glass-tr {
+    @apply border-b border-white/[0.06] transition-colors hover:bg-white/[0.04];
+  }
+
+  /* ── Misc ───────────────────────────────────────────────────────── */
+  .spinner {
+    @apply h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-400 border-t-transparent;
+  }
+  /* Toggle knobs stay white in both themes */
+  .switch-knob {
+    background-color: #fff;
+  }
+  .text-gradient-green {
+    @apply bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent;
+  }
+}
+
+/* Google Places autocomplete dropdown (collectors map) */
+.pac-container {
+  background: var(--popover-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-strong-border);
+  border-radius: 12px;
+  margin-top: 6px;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.7);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+.pac-item {
+  border-top: 1px solid var(--glass-border);
+  color: var(--color-slate-400);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.pac-item:hover, .pac-item-selected { background: var(--glass-bg); }
+.pac-item-query { color: var(--color-slate-100); }
+.pac-matched { color: var(--color-emerald-300); }
+.pac-icon { filter: invert(1) opacity(0.6); }
+:root[data-theme="light"] .pac-icon { filter: opacity(0.6); }

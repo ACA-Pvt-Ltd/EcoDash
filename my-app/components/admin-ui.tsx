@@ -19,10 +19,10 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-gray-100 px-6 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 text-gray-500">{icon}</div>
-        <h2 className="text-[14px] font-semibold text-gray-800">{title}</h2>
+    <div className="glass overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-white/[0.08] px-6 py-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.07] text-emerald-300 ring-1 ring-white/10">{icon}</div>
+        <h2 className="text-[14px] font-semibold text-slate-100">{title}</h2>
       </div>
       <div className="px-6 py-5">{children}</div>
     </div>
@@ -41,7 +41,7 @@ export function SaveBtn({
   return (
     <button
       onClick={onClick} disabled={saving}
-      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all disabled:opacity-60 ${saved ? 'bg-emerald-50 text-emerald-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+      className={`px-4 py-2 text-[13px] ${saved ? 'btn-soft-green rounded-xl' : 'btn-primary'}`}
     >
       {saving ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> : saved ? <Check size={13} /> : null}
       {saving ? 'Saving...' : saved ? 'Saved' : 'Save Changes'}
@@ -67,18 +67,18 @@ export function NumField({
   unit?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3 border-b border-gray-50 last:border-0">
+    <div className="flex items-center justify-between gap-4 py-3 border-b border-white/[0.06] last:border-0">
       <div>
-        <div className="text-[13px] font-medium text-gray-800">{label}</div>
-        {desc && <div className="text-[11px] text-gray-400 mt-0.5">{desc}</div>}
+        <div className="text-[13px] font-medium text-slate-100">{label}</div>
+        {desc && <div className="text-[11px] text-slate-400 mt-0.5">{desc}</div>}
       </div>
       <div className="flex items-center gap-2">
         <input
           type="number" min={min} max={max} value={value}
           onChange={e => onChange(Number(e.target.value))}
-          className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px]  text-gray-600 text-right focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          className="glass-input w-24 px-3 py-1.5 text-[13px] text-right"
         />
-        {unit && <span className="text-[12px] text-gray-400 w-8">{unit}</span>}
+        {unit && <span className="text-[12px] text-slate-400 w-8">{unit}</span>}
       </div>
     </div>
   );
@@ -100,22 +100,22 @@ export function TextField({
   type?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3 border-b border-gray-50 last:border-0">
+    <div className="flex items-center justify-between gap-4 py-3 border-b border-white/[0.06] last:border-0">
       <div>
-        <div className="text-[13px] font-medium text-gray-800">{label}</div>
-        {desc && <div className="text-[11px] text-gray-400 mt-0.5">{desc}</div>}
+        <div className="text-[13px] font-medium text-slate-100">{label}</div>
+        {desc && <div className="text-[11px] text-slate-400 mt-0.5">{desc}</div>}
       </div>
       <input
         type={type} value={value} placeholder={placeholder}
         onChange={e => onChange(e.target.value)}
-        className="w-72 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[13px] text-gray-600 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+        className="glass-input w-72 px-3 py-1.5 text-[13px]"
       />
     </div>
   );
 }
 
 export function Spinner() {
-  return <div className="flex justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-600 border-t-transparent" /></div>;
+  return <div className="flex justify-center py-24"><div className="spinner" /></div>;
 }
 
 /**
@@ -170,24 +170,24 @@ function DeactivateDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+      className="glass-modal-overlay z-[60] flex items-center justify-center p-4"
       onClick={() => { if (!loading) onCancel(); }}
     >
       <div
         role="alertdialog" aria-modal="true" aria-labelledby="confirm-deactivate-title"
-        className="w-full max-w-md rounded-2xl bg-white shadow-2xl"
+        className="glass-strong w-full max-w-md"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-start gap-3 px-6 pt-6">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50">
-            <AlertTriangle size={18} className="text-red-600" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/15 ring-1 ring-red-400/30">
+            <AlertTriangle size={18} className="text-red-300" />
           </div>
           <div className="min-w-0">
-            <h2 id="confirm-deactivate-title" className="text-[15px] font-bold text-gray-900">
+            <h2 id="confirm-deactivate-title" className="text-[15px] font-bold text-slate-100">
               Deactivate {target.name}?
             </h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-gray-500">
-              <span className="font-semibold text-gray-700">{target.email}</span>{' '}
+            <p className="mt-1 text-[13px] leading-relaxed text-slate-400">
+              <span className="font-semibold text-slate-200">{target.email}</span>{' '}
               won&apos;t be able to log in to EcoDash as a {roleLabel.toLowerCase()}{' '}
               until you reactivate the account. We&apos;ll email them to let them know and share the admin
               team&apos;s contact details.
@@ -196,24 +196,24 @@ function DeactivateDialog({
         </div>
 
         <div className="px-6 pt-4">
-          <label className="block text-[12px] font-semibold text-gray-600 mb-1">
-            Reason <span className="font-normal text-gray-400">(optional · included in the email)</span>
+          <label className="block text-[12px] font-semibold text-slate-300 mb-1">
+            Reason <span className="font-normal text-slate-500">(optional · included in the email)</span>
           </label>
           <textarea
             value={reason} onChange={e => setReason(e.target.value)} maxLength={500} rows={3} autoFocus
             placeholder="e.g. Repeated missed pickups"
-            className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-800 placeholder-gray-400 focus:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-100"
+            className="glass-input w-full resize-none px-3 py-2 text-[13px] focus:border-red-400/60 focus:ring-red-400/20"
           />
-          <div className="text-right text-[11px] text-gray-400">{reason.length}/500</div>
+          <div className="text-right text-[11px] text-slate-500">{reason.length}/500</div>
         </div>
 
         <div className="flex justify-end gap-3 px-6 pb-6 pt-3">
           <button type="button" onClick={onCancel} disabled={loading}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60">
+            className="btn-ghost px-4 py-2 text-[13px]">
             Cancel
           </button>
           <button type="button" onClick={() => onConfirm(reason.trim())} disabled={loading}
-            className="flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-[13px] font-semibold text-white hover:bg-red-700 disabled:opacity-60">
+            className="btn-danger px-5 py-2 text-[13px]">
             {loading && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />}
             {loading ? 'Deactivating…' : 'Deactivate'}
           </button>
@@ -277,27 +277,27 @@ function DeleteDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+      className="glass-modal-overlay z-[60] flex items-center justify-center p-4"
       onClick={() => { if (!loading) onCancel(); }}
     >
       <div
         role="alertdialog" aria-modal="true" aria-labelledby="confirm-delete-title"
-        className="w-full max-w-md rounded-2xl bg-white shadow-2xl"
+        className="glass-strong w-full max-w-md"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-start gap-3 px-6 pt-6">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
-            <Trash2 size={18} className="text-red-700" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/15 ring-1 ring-red-400/30">
+            <Trash2 size={18} className="text-red-300" />
           </div>
           <div className="min-w-0">
-            <h2 id="confirm-delete-title" className="text-[15px] font-bold text-gray-900">
+            <h2 id="confirm-delete-title" className="text-[15px] font-bold text-slate-100">
               Delete {target.name}?
             </h2>
-            <p className="mt-1 text-[13px] text-gray-500">This permanently closes the {role} account. It can&apos;t be undone.</p>
+            <p className="mt-1 text-[13px] text-slate-400">This permanently closes the {role} account. It can&apos;t be undone.</p>
           </div>
         </div>
 
-        <ul className="mx-6 mt-4 space-y-1.5 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-[12px] leading-relaxed text-red-800">
+        <ul className="notice-error mx-6 mt-4 space-y-1.5 px-4 py-3 text-[12px] leading-relaxed">
           <li>• They can no longer log in, and their personal details are removed.</li>
           <li>• Their open offers and requests are cancelled.</li>
           <li>• Past transactions stay, shown as &ldquo;Deleted {role}&rdquo;.</li>
@@ -306,33 +306,33 @@ function DeleteDialog({
 
         <div className="space-y-3 px-6 pt-4">
           <div>
-            <label className="block text-[12px] font-semibold text-gray-600 mb-1">
-              Reason <span className="font-normal text-gray-400">(optional · included in the email)</span>
+            <label className="block text-[12px] font-semibold text-slate-300 mb-1">
+              Reason <span className="font-normal text-slate-500">(optional · included in the email)</span>
             </label>
             <textarea
               value={reason} onChange={e => setReason(e.target.value)} maxLength={500} rows={2}
               placeholder="e.g. Duplicate account"
-              className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-800 placeholder-gray-400 focus:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-100"
+              className="glass-input w-full resize-none px-3 py-2 text-[13px] focus:border-red-400/60 focus:ring-red-400/20"
             />
           </div>
           <div>
-            <label htmlFor="confirm-delete-email" className="block text-[12px] font-semibold text-gray-600 mb-1">
-              Type <span className="select-all font-bold text-gray-800">{target.email}</span> to confirm
+            <label htmlFor="confirm-delete-email" className="block text-[12px] font-semibold text-slate-300 mb-1">
+              Type <span className="select-all font-bold text-slate-100">{target.email}</span> to confirm
             </label>
             <input
               id="confirm-delete-email" value={typed} onChange={e => setTyped(e.target.value)} autoFocus autoComplete="off" spellCheck={false}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-800 focus:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-100"
+              className="glass-input w-full px-3 py-2 text-[13px] focus:border-red-400/60 focus:ring-red-400/20"
             />
           </div>
         </div>
 
         <div className="flex justify-end gap-3 px-6 pb-6 pt-4">
           <button type="button" onClick={onCancel} disabled={loading}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60">
+            className="btn-ghost px-4 py-2 text-[13px]">
             Cancel
           </button>
           <button type="button" onClick={() => onConfirm(reason.trim())} disabled={!matches || loading}
-            className="flex items-center gap-2 rounded-lg bg-red-700 px-5 py-2 text-[13px] font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-40">
+            className="btn-danger px-5 py-2 text-[13px]">
             {loading && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />}
             {loading ? 'Deleting…' : `Delete ${role}`}
           </button>
@@ -349,7 +349,7 @@ export function StatusNotice({ notice, onDismiss }: { notice: StatusNoticeData |
   if (!notice) return null;
   const action = notice.deleted ? 'deleted' : notice.isActive ? 'reactivated' : 'deactivated';
   return (
-    <div className={`flex items-start justify-between gap-3 rounded-xl border px-5 py-3 text-[13px] ${notice.emailSent ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
+    <div className={`flex items-start justify-between gap-3 px-5 py-3 text-[13px] backdrop-blur-xl ${notice.emailSent ? 'notice-success' : 'notice-warning'}`}>
       <div className="flex items-start gap-2.5">
         {notice.emailSent ? <CheckCircle2 size={15} className="mt-0.5 shrink-0" /> : <AlertTriangle size={15} className="mt-0.5 shrink-0" />}
         <span>
@@ -367,16 +367,16 @@ export function StatusNotice({ notice, onDismiss }: { notice: StatusNoticeData |
 /** Shown instead of a page the signed-in admin's role doesn't allow. */
 export function NoAccessCard({ pageName, fallback }: { pageName: string; fallback: { label: string; href: string } | null }) {
   return (
-    <div className="mx-auto mt-16 max-w-md rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-50">
-        <Lock size={20} className="text-gray-400" />
+    <div className="glass mx-auto mt-16 max-w-md p-8 text-center">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.07] ring-1 ring-white/10">
+        <Lock size={20} className="text-slate-400" />
       </div>
-      <h2 className="text-[16px] font-bold text-gray-900">You don&apos;t have access to {pageName}</h2>
-      <p className="mt-2 text-[13px] leading-relaxed text-gray-500">
+      <h2 className="text-[16px] font-bold text-slate-100">You don&apos;t have access to {pageName}</h2>
+      <p className="mt-2 text-[13px] leading-relaxed text-slate-400">
         Your role doesn&apos;t include this page. If you need it, ask an Executive to update your role.
       </p>
       {fallback && (
-        <Link href={fallback.href} className="mt-5 inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700">
+        <Link href={fallback.href} className="btn-primary mt-5 px-4 py-2 text-[13px]">
           Go to {fallback.label}
         </Link>
       )}
@@ -400,9 +400,9 @@ export function Switch({
     <button
       type="button" role="switch" aria-checked={checked} aria-label={label} disabled={locked}
       onClick={() => onChange?.(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed ${checked ? 'bg-emerald-500' : 'bg-gray-200'} ${locked ? 'opacity-60' : ''}`}
+      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed ${checked ? 'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.55)]' : 'bg-white/15'} ${locked ? 'opacity-60' : ''}`}
     >
-      <span className={`absolute top-0.5 left-0 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+      <span className={`absolute top-0.5 left-0 h-4 w-4 rounded-full switch-knob shadow transition-transform ${checked ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
     </button>
   );
 }
@@ -422,10 +422,10 @@ export function FilterSelect({
   const active = value !== options[0]?.value;
   return (
     <label className="flex items-center gap-2">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{label}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</span>
       <select
         value={value} onChange={e => onChange(e.target.value)} aria-label={label}
-        className={`h-9 rounded-lg border bg-white px-2.5 text-[13px] focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 ${active ? 'border-emerald-300 font-semibold text-emerald-800' : 'border-gray-200 text-gray-700'}`}
+        className={`glass-input h-9 px-2.5 text-[13px] ${active ? 'border-emerald-400/50 font-semibold text-emerald-300' : ''}`}
       >
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>

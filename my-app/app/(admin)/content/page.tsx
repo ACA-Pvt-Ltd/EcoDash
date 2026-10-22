@@ -30,16 +30,16 @@ const ROLE_OPTIONS: { value: FaqRole; label: string }[] = [
 ];
 
 const ROLE_BADGE: Record<FaqRole, string> = {
-  all:       'bg-gray-100 text-gray-600',
-  user:      'bg-blue-50 text-blue-600',
-  collector: 'bg-emerald-50 text-emerald-700',
-  vendor:    'bg-purple-50 text-purple-600',
+  all:       'bg-white/[0.07] text-slate-300',
+  user:      'bg-sky-400/10 text-sky-300',
+  collector: 'bg-emerald-400/10 text-emerald-300',
+  vendor:    'bg-violet-400/10 text-violet-300',
 };
 
 const EMPTY_CONTACT: SupportContact = { email: '', phone: '', whatsapp: '', hours: '' };
 
 const inputCls =
-  'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-[13px] text-gray-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100';
+  'glass-input w-full px-3 py-2 text-[13px]';
 
 export default function ContentPage() {
   const { can } = useAccess();
@@ -118,16 +118,16 @@ export default function ContentPage() {
     // Without edit permission the whole page is view-only: a disabled fieldset disables every control in it
     <fieldset disabled={!canEdit} className="space-y-6 min-w-0 border-0 p-0 m-0">
       {!canEdit && (
-        <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-3 text-[13px] text-gray-600">
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-[13px] text-slate-300">
           View only — your role can see the help content but not change it.
         </div>
       )}
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>
+        <div className="rounded-xl bg-red-500/10 border border-red-400/20 px-5 py-4 text-red-300 text-sm">{error}</div>
       )}
 
       <SectionCard title="Support Contact" icon={<LifeBuoy size={16} />}>
-        <p className="text-[12px] text-gray-400 mb-2">
+        <p className="text-[12px] text-slate-400 mb-2">
           Shown on the app&apos;s Help screen and on the login and registration screens, so
           people who cannot sign in can still reach you.
         </p>
@@ -168,24 +168,24 @@ export default function ContentPage() {
       </SectionCard>
 
       <SectionCard title="Help & FAQ" icon={<HelpCircle size={16} />}>
-        <p className="text-[12px] text-gray-400 mb-4">
+        <p className="text-[12px] text-slate-400 mb-4">
           Questions appear on the app&apos;s Help screen. Choose who each one is shown to —
           &ldquo;Everyone&rdquo; appears for all roles. Changes reach the app the next time it starts.
         </p>
 
         {faqs.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-[13px] text-gray-400">
+          <div className="rounded-lg border border-dashed border-white/10 px-4 py-8 text-center text-[13px] text-slate-400">
             No questions yet. Add the first one below.
           </div>
         ) : (
           <div className="space-y-4">
             {faqs.map((faq, i) => (
-              <div key={faq.id} className="rounded-lg border border-gray-200 p-4">
+              <div key={faq.id} className="rounded-lg border border-white/10 p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <select
                     value={faq.role}
                     onChange={e => updateFaq(i, { role: e.target.value as FaqRole })}
-                    className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-[12px] text-gray-700 focus:border-emerald-400 focus:outline-none"
+                    className="glass-input px-2 py-1.5 text-[12px]"
                   >
                     {ROLE_OPTIONS.map(o => (
                       <option key={o.value} value={o.value}>{o.label}</option>
@@ -196,7 +196,7 @@ export default function ContentPage() {
                   </span>
                   <button
                     onClick={() => removeFaq(i)}
-                    className="ml-auto rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                    className="ml-auto rounded-lg p-1.5 text-slate-400 hover:bg-red-500/10 hover:text-red-300"
                     aria-label="Delete question"
                   >
                     <Trash2 size={14} />
@@ -224,7 +224,7 @@ export default function ContentPage() {
         <div className="mt-5 flex items-center justify-between">
           <button
             onClick={addFaq}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-[13px] font-medium text-gray-600 hover:bg-gray-50"
+            className="flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-[13px] font-medium text-slate-300 hover:bg-white/[0.05]"
           >
             <Plus size={14} /> Add question
           </button>
