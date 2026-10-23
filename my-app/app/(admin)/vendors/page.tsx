@@ -25,11 +25,11 @@ interface Vendor {
 const BUSINESS_TYPES = ['Physical Store', 'Online', 'Both'];
 
 const AVATAR_COLORS = [
-  { bg: '#f5f3ff', fg: '#7c3aed' },
-  { bg: '#ecfdf5', fg: '#059669' },
-  { bg: '#fff7ed', fg: '#ea580c' },
-  { bg: '#eff6ff', fg: '#2563eb' },
-  { bg: '#fef9c3', fg: '#ca8a04' },
+  { bg: 'rgba(167,139,250,0.15)', fg: 'var(--color-violet-400)' },
+  { bg: 'rgba(52,211,153,0.15)', fg: 'var(--color-emerald-400)' },
+  { bg: 'rgba(251,146,60,0.15)', fg: 'var(--color-orange-400)' },
+  { bg: 'rgba(96,165,250,0.15)', fg: 'var(--color-blue-400)' },
+  { bg: 'rgba(250,204,21,0.14)', fg: 'var(--color-yellow-400)' },
 ];
 
 function Avatar({ name }: { name: string }) {
@@ -43,15 +43,15 @@ function Avatar({ name }: { name: string }) {
 }
 
 function Spinner() {
-  return <div className="flex justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-600 border-t-transparent" /></div>;
+  return <div className="flex justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-400 border-t-transparent" /></div>;
 }
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color: string }) {
   return (
-    <div className="rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] p-4">
-      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">{label}</div>
+    <div className="glass p-4">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-1">{label}</div>
       <div className="text-2xl font-extrabold" style={{ color }}>{value}</div>
-      {sub && <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div>}
+      {sub && <div className="text-[11px] text-slate-400 mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -230,32 +230,32 @@ export default function VendorsPage() {
     <div className="space-y-5">
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard label="Total Vendors" value={stats.total}    sub="All time"        color="#7c3aed" />
-        <StatCard label="Active"        value={stats.active}   sub="Currently live"  color="#059669" />
-        <StatCard label="Verified"      value={stats.verified} sub="By admin"        color="#2563eb" />
-        <StatCard label="New This Month" value={stats.newMonth} sub="Joined recently" color="#ea580c" />
+        <StatCard label="Total Vendors" value={stats.total}    sub="All time"        color="var(--color-violet-400)" />
+        <StatCard label="Active"        value={stats.active}   sub="Currently live"  color="var(--color-emerald-400)" />
+        <StatCard label="Verified"      value={stats.verified} sub="By admin"        color="var(--color-blue-400)" />
+        <StatCard label="New This Month" value={stats.newMonth} sub="Joined recently" color="var(--color-orange-400)" />
       </div>
 
       {/* Header row */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50">
-            <Building2 size={16} className="text-purple-600" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/10">
+            <Building2 size={16} className="text-violet-300" />
           </div>
           <div>
-            <div className="text-[13px] font-semibold text-gray-800">All Vendors</div>
-            <div className="text-[11px] text-gray-400">{filtered.length} records</div>
+            <div className="text-[13px] font-semibold text-slate-100">All Vendors</div>
+            <div className="text-[11px] text-slate-400">{filtered.length} records</div>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input type="text" placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)}
-              className="h-9 w-56 rounded-lg border border-gray-200 bg-white pl-8 pr-4 text-[13px] placeholder-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100" />
+              className="glass-input h-9 w-56 pl-8 pr-4 text-[13px]" />
           </div>
           {canCreate && (
             <button onClick={() => { setShowRegister(true); setRegError(''); setRegForm({ ...EMPTY_FORM }); }}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 transition-colors">
+              className="btn-primary flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold">
               <Plus size={15} /> Register Vendor
             </button>
           )}
@@ -263,7 +263,7 @@ export default function VendorsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="glass flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
         <FilterSelect label="City" value={cityFilter} onChange={setCityFilter} options={cityChoices} />
         <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter}
           options={[{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
@@ -272,7 +272,7 @@ export default function VendorsPage() {
         <FilterSelect label="Business type" value={typeFilter} onChange={setTypeFilter}
           options={[{ value: 'all', label: 'All types' }, ...BUSINESS_TYPES.map(t => ({ value: t, label: t }))]} />
         {filtersActive && (
-          <button onClick={clearFilters} className="ml-auto text-[12px] font-semibold text-emerald-600 hover:text-emerald-700">
+          <button onClick={clearFilters} className="ml-auto text-[12px] font-semibold text-emerald-400 hover:text-emerald-300">
             Clear filters
           </button>
         )}
@@ -281,56 +281,56 @@ export default function VendorsPage() {
       <StatusNotice notice={notice} onDismiss={() => setNotice(null)} />
 
       {loading ? <Spinner /> : error ? (
-        <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>
+        <div className="rounded-xl bg-red-500/10 border border-red-400/20 px-5 py-4 text-red-300 text-sm">{error}</div>
       ) : (
-        <div className="rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
+        <div className="glass overflow-hidden">
           <table className="min-w-full">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-white/[0.08]">
                 {['Vendor','Email','Phone','City','Type','Status','Verification','Joined',''].map((h,i) => (
-                  <th key={i} className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
+                  <th key={i} className="px-5 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={9} className="px-5 py-12 text-center text-[13px] text-gray-400">{filtersActive ? `No vendors match these filters.` : `No vendors found.`}</td></tr>
+                <tr><td colSpan={9} className="px-5 py-12 text-center text-[13px] text-slate-400">{filtersActive ? `No vendors match these filters.` : `No vendors found.`}</td></tr>
               ) : filtered.map(v => (
-                <tr key={v._id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
-                  <td className="px-5 py-3.5"><div className="flex items-center gap-2.5"><Avatar name={v.name} /><span className="text-[13px] font-semibold text-gray-800">{v.name}</span></div></td>
-                  <td className="px-5 py-3.5 text-[13px] text-gray-500">{v.email}</td>
-                  <td className="px-5 py-3.5 text-[13px] text-gray-500">{v.phone || '—'}</td>
-                  <td className="px-5 py-3.5 text-[13px] text-gray-600">{v.address?.city?.trim() || '—'}</td>
-                  <td className="px-5 py-3.5"><span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-semibold text-purple-700">{v.businessType || '—'}</span></td>
+                <tr key={v._id} className="border-b border-white/[0.05] hover:bg-white/[0.04] transition-colors">
+                  <td className="px-5 py-3.5"><div className="flex items-center gap-2.5"><Avatar name={v.name} /><span className="text-[13px] font-semibold text-slate-100">{v.name}</span></div></td>
+                  <td className="px-5 py-3.5 text-[13px] text-slate-400">{v.email}</td>
+                  <td className="px-5 py-3.5 text-[13px] text-slate-400">{v.phone || '—'}</td>
+                  <td className="px-5 py-3.5 text-[13px] text-slate-300">{v.address?.city?.trim() || '—'}</td>
+                  <td className="px-5 py-3.5"><span className="rounded-full bg-violet-400/10 px-2.5 py-0.5 text-[11px] font-semibold text-violet-300">{v.businessType || '—'}</span></td>
                   <td className="px-5 py-3.5">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${v.isActive ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-gray-100 text-gray-500 ring-gray-200'}`}>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${v.isActive ? 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/25' : 'bg-white/[0.07] text-slate-400 ring-white/10'}`}>
                       {v.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${v.isVerified ? 'bg-blue-50 text-blue-700 ring-blue-100' : 'bg-gray-100 text-gray-400 ring-gray-200'}`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${v.isVerified ? 'bg-sky-400/10 text-sky-300 ring-sky-400/25' : 'bg-white/[0.07] text-slate-400 ring-white/10'}`}>
                       {v.isVerified && <ShieldCheck size={10} />}{v.isVerified ? 'Verified' : 'Pending'}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-[12px] text-gray-400">
+                  <td className="px-5 py-3.5 text-[12px] text-slate-400">
                     {new Date(v.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
                       {canEdit && (
-                        <button onClick={() => openEdit(v)} className="rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1">
+                        <button onClick={() => openEdit(v)} className="rounded-lg bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 hover:bg-white/[0.09] transition-colors flex items-center gap-1">
                           <Pencil size={11} />Edit
                         </button>
                       )}
                       {canDeactivate && (
                         <button onClick={() => toggleStatus(v)} disabled={toggling === v._id}
-                          className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${v.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
+                          className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${v.isActive ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20' : 'bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20'}`}>
                           {toggling === v._id ? <RefreshCw size={11} className="animate-spin" /> : v.isActive ? 'Deactivate' : 'Activate'}
                         </button>
                       )}
                       {canDelete && (
                         <button onClick={() => setDeleteTarget(v)} aria-label={`Delete ${v.name}`}
-                          className="rounded-lg bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 hover:bg-red-100 transition-colors flex items-center gap-1">
+                          className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-red-300 hover:bg-red-500/20 transition-colors flex items-center gap-1">
                           <Trash2 size={11} />Delete
                         </button>
                       )}
@@ -345,27 +345,27 @@ export default function VendorsPage() {
 
       {/* Register Modal */}
       {showRegister && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <h2 className="text-[15px] font-bold text-gray-800">Register New Vendor</h2>
-              <button onClick={() => setShowRegister(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-midnight-950/70 backdrop-blur-sm p-4">
+          <div className="glass-strong w-full max-w-lg">
+            <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
+              <h2 className="text-[15px] font-bold text-slate-100">Register New Vendor</h2>
+              <button onClick={() => setShowRegister(false)} className="text-slate-400 hover:text-slate-100"><X size={18} /></button>
             </div>
             <form onSubmit={submitRegister} className="max-h-[70vh] overflow-y-auto px-6 py-5 space-y-4">
-              {regError && <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-2.5 text-[13px] text-red-600">{regError}</div>}
+              {regError && <div className="rounded-lg bg-red-500/10 border border-red-400/20 px-4 py-2.5 text-[13px] text-red-300">{regError}</div>}
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Name *" value={regForm.name} onChange={v => setRegForm(f => ({...f, name:v}))} />
                 <Field label="Email *" type="email" value={regForm.email} onChange={v => setRegForm(f => ({...f, email:v}))} />
                 <div>
-                  <label className="block text-[12px] font-semibold text-gray-600 mb-1">Password *</label>
+                  <label className="block text-[12px] font-semibold text-slate-300 mb-1">Password *</label>
                   <div className="flex gap-2">
                     <input value={regForm.password} onChange={e => setRegForm(f => ({...f, password:e.target.value}))} className={inputCls} placeholder="Password" />
-                    <button type="button" onClick={() => setRegForm(f => ({...f, password: randomPassword()}))} className="shrink-0 rounded-lg bg-gray-100 px-2.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-200">Gen</button>
+                    <button type="button" onClick={() => setRegForm(f => ({...f, password: randomPassword()}))} className="shrink-0 rounded-lg bg-white/[0.07] px-2.5 text-[11px] font-semibold text-slate-300 hover:bg-white/[0.12]">Gen</button>
                   </div>
                 </div>
                 <Field label="Phone *" value={regForm.phone} onChange={v => setRegForm(f => ({...f, phone:v}))} />
                 <div>
-                  <label className="block text-[12px] font-semibold text-gray-600 mb-1">Business Type</label>
+                  <label className="block text-[12px] font-semibold text-slate-300 mb-1">Business Type</label>
                   <select value={regForm.businessType} onChange={e => setRegForm(f => ({...f, businessType:e.target.value}))} className={inputCls}>
                     {BUSINESS_TYPES.map(t => <option key={t}>{t}</option>)}
                   </select>
@@ -375,12 +375,12 @@ export default function VendorsPage() {
                 <Field label="Street" value={regForm.street} onChange={v => setRegForm(f => ({...f, street:v}))} />
               </div>
               <div>
-                <label className="block text-[12px] font-semibold text-gray-600 mb-1">Description</label>
+                <label className="block text-[12px] font-semibold text-slate-300 mb-1">Description</label>
                 <textarea value={regForm.description} onChange={e => setRegForm(f => ({...f, description:e.target.value}))} rows={2} className={inputCls + ' resize-none'} placeholder="Short description…" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowRegister(false)} className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
-                <button type="submit" disabled={regLoading} className="rounded-lg bg-emerald-600 px-5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">
+                <button type="button" onClick={() => setShowRegister(false)} className="rounded-lg border border-white/10 px-4 py-2 text-[13px] font-semibold text-slate-300 hover:bg-white/[0.05]">Cancel</button>
+                <button type="submit" disabled={regLoading} className="btn-primary px-5 py-2 text-[13px] font-semibold disabled:opacity-60">
                   {regLoading ? 'Registering…' : 'Register & Send Email'}
                 </button>
               </div>
@@ -391,19 +391,19 @@ export default function VendorsPage() {
 
       {/* Edit Modal */}
       {editTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <h2 className="text-[15px] font-bold text-gray-800">Edit Vendor — {editTarget.name}</h2>
-              <button onClick={() => setEditTarget(null)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-midnight-950/70 backdrop-blur-sm p-4">
+          <div className="glass-strong w-full max-w-lg">
+            <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
+              <h2 className="text-[15px] font-bold text-slate-100">Edit Vendor — {editTarget.name}</h2>
+              <button onClick={() => setEditTarget(null)} className="text-slate-400 hover:text-slate-100"><X size={18} /></button>
             </div>
             <form onSubmit={submitEdit} className="max-h-[70vh] overflow-y-auto px-6 py-5 space-y-4">
-              {editError && <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-2.5 text-[13px] text-red-600">{editError}</div>}
+              {editError && <div className="rounded-lg bg-red-500/10 border border-red-400/20 px-4 py-2.5 text-[13px] text-red-300">{editError}</div>}
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Name" value={editForm.name} onChange={v => setEditForm(f => ({...f, name:v}))} />
                 <Field label="Phone" value={editForm.phone} onChange={v => setEditForm(f => ({...f, phone:v}))} />
                 <div>
-                  <label className="block text-[12px] font-semibold text-gray-600 mb-1">Business Type</label>
+                  <label className="block text-[12px] font-semibold text-slate-300 mb-1">Business Type</label>
                   <select value={editForm.businessType} onChange={e => setEditForm(f => ({...f, businessType:e.target.value}))} className={inputCls}>
                     {BUSINESS_TYPES.map(t => <option key={t}>{t}</option>)}
                   </select>
@@ -413,7 +413,7 @@ export default function VendorsPage() {
                 <Field label="Street" value={editForm.street} onChange={v => setEditForm(f => ({...f, street:v}))} />
               </div>
               <div>
-                <label className="block text-[12px] font-semibold text-gray-600 mb-1">Description</label>
+                <label className="block text-[12px] font-semibold text-slate-300 mb-1">Description</label>
                 <textarea value={editForm.description} onChange={e => setEditForm(f => ({...f, description:e.target.value}))} rows={2} className={inputCls + ' resize-none'} placeholder="Short description…" />
               </div>
               <div className="flex items-center gap-6">
@@ -421,8 +421,8 @@ export default function VendorsPage() {
                 <Toggle label="Verified" checked={editForm.isVerified} onChange={v => setEditForm(f => ({...f, isVerified:v}))} />
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setEditTarget(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
-                <button type="submit" disabled={editLoading} className="rounded-lg bg-emerald-600 px-5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">
+                <button type="button" onClick={() => setEditTarget(null)} className="rounded-lg border border-white/10 px-4 py-2 text-[13px] font-semibold text-slate-300 hover:bg-white/[0.05]">Cancel</button>
+                <button type="submit" disabled={editLoading} className="btn-primary px-5 py-2 text-[13px] font-semibold disabled:opacity-60">
                   {editLoading ? 'Saving…' : 'Save Changes'}
                 </button>
               </div>
@@ -457,12 +457,12 @@ export default function VendorsPage() {
   );
 }
 
-const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-800 placeholder-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100';
+const inputCls = 'glass-input w-full px-3 py-2 text-[13px]';
 
 function Field({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
     <div>
-      <label className="block text-[12px] font-semibold text-gray-600 mb-1">{label}</label>
+      <label className="block text-[12px] font-semibold text-slate-300 mb-1">{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} className={inputCls} placeholder={label.replace(' *','')} />
     </div>
   );
@@ -471,10 +471,10 @@ function Field({ label, value, onChange, type = 'text' }: { label: string; value
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="flex items-center gap-2 cursor-pointer select-none">
-      <div onClick={() => onChange(!checked)} className={`relative h-5 w-9 rounded-full transition-colors ${checked ? 'bg-emerald-500' : 'bg-gray-200'}`}>
-        <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
+      <div onClick={() => onChange(!checked)} className={`relative h-5 w-9 rounded-full transition-colors ${checked ? 'bg-emerald-500' : 'bg-white/[0.12]'}`}>
+        <div className={`absolute top-0.5 h-4 w-4 rounded-full switch-knob shadow transition-transform ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
       </div>
-      <span className="text-[13px] font-medium text-gray-600">{label}</span>
+      <span className="text-[13px] font-medium text-slate-300">{label}</span>
     </label>
   );
 }

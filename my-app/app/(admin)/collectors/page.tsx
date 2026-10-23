@@ -6,9 +6,25 @@ import { Search, Truck, ShieldCheck, Plus, Pencil, X, RefreshCw, MapPin, Trash2 
 import { GoogleMap, Marker, Autocomplete, useJsApiLoader } from '@react-google-maps/api';
 import { ConfirmDeactivateModal, ConfirmDeleteModal, StatusNotice, FilterSelect, cityKey, cityOptions, type StatusNoticeData } from '@/components/admin-ui';
 import { useAccess } from '@/lib/access';
+import { useTheme } from '@/lib/theme';
 
 // Must be a stable reference outside the component to avoid re-loading the API
 const MAPS_LIBRARIES: ('places')[] = ['places'];
+
+// Midnight map style so the picker matches the glass theme
+const MIDNIGHT_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: 'geometry', stylers: [{ color: '#111a3a' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#94a3b8' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#0b1026' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#24316a' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#16204a' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#10372f' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1a2550' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#24316a' }] },
+  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#16204a' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#050816' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#475569' }] },
+];
 
 interface Collector {
   _id: string;
@@ -36,11 +52,11 @@ const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
 type Day = typeof DAYS[number];
 
 const AVATAR_COLORS = [
-  { bg: '#eff6ff', fg: '#2563eb' },
-  { bg: '#ecfdf5', fg: '#059669' },
-  { bg: '#fff7ed', fg: '#ea580c' },
-  { bg: '#fdf4ff', fg: '#9333ea' },
-  { bg: '#fef9c3', fg: '#ca8a04' },
+  { bg: 'rgba(96,165,250,0.15)', fg: 'var(--color-blue-400)' },
+  { bg: 'rgba(52,211,153,0.15)', fg: 'var(--color-emerald-400)' },
+  { bg: 'rgba(251,146,60,0.15)', fg: 'var(--color-orange-400)' },
+  { bg: 'rgba(192,132,252,0.15)', fg: 'var(--color-purple-400)' },
+  { bg: 'rgba(250,204,21,0.14)', fg: 'var(--color-yellow-400)' },
 ];
 
 // Default: centre of Sri Lanka
@@ -57,7 +73,7 @@ function Avatar({ name }: { name: string }) {
 }
 
 function Spinner() {
-  return <div className="flex justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-600 border-t-transparent" /></div>;
+  return <div className="flex justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-400 border-t-transparent" /></div>;
 }
 
 // Metrics-derived score — distinct from the user-submitted star rating.
@@ -66,21 +82,21 @@ function PerformanceCell({ performance }: { performance?: Collector['performance
   const score = performance?.score;
 
   if (score === null || score === undefined) {
-    return <span className="text-[11px] text-gray-400">No data yet</span>;
+    return <span className="text-[11px] text-slate-400">No data yet</span>;
   }
 
   const tone =
-    score >= 80 ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
-    : score >= 60 ? 'bg-blue-50 text-blue-700 ring-blue-100'
-    : score >= 40 ? 'bg-amber-50 text-amber-700 ring-amber-100'
-    : 'bg-gray-100 text-gray-500 ring-gray-200';
+    score >= 80 ? 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/25'
+    : score >= 60 ? 'bg-sky-400/10 text-sky-300 ring-sky-400/25'
+    : score >= 40 ? 'bg-amber-400/10 text-amber-300 ring-amber-400/25'
+    : 'bg-white/[0.07] text-slate-400 ring-white/10';
 
   return (
     <div className="flex flex-col gap-0.5">
       <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${tone}`}>
         {score}/100
       </span>
-      <span className="text-[10px] text-gray-400">
+      <span className="text-[10px] text-slate-400">
         {performance?.collectionsLast30Days ?? 0} in 30d
         {performance?.completionRate != null && ` · ${performance.completionRate}% done`}
       </span>
@@ -90,10 +106,10 @@ function PerformanceCell({ performance }: { performance?: Collector['performance
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color: string }) {
   return (
-    <div className="rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] p-4">
-      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">{label}</div>
+    <div className="glass p-4">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-1">{label}</div>
       <div className="text-2xl font-extrabold" style={{ color }}>{value}</div>
-      {sub && <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div>}
+      {sub && <div className="text-[11px] text-slate-400 mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -103,6 +119,7 @@ function LocationMapPicker({ value, onChange }: {
   value: { lat: number; lng: number } | null;
   onChange: (v: { lat: number; lng: number }) => void;
 }) {
+  const { theme } = useTheme();
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '',
     libraries: MAPS_LIBRARIES,
@@ -134,7 +151,7 @@ function LocationMapPicker({ value, onChange }: {
   }, [acRef, mapRef, onChange]);
 
   if (!isLoaded) return (
-    <div className="flex h-48 items-center justify-center rounded-lg bg-gray-50 text-[13px] text-gray-400">
+    <div className="flex h-48 items-center justify-center rounded-lg bg-white/[0.04] text-[13px] text-slate-400">
       Loading map…
     </div>
   );
@@ -144,11 +161,11 @@ function LocationMapPicker({ value, onChange }: {
       {/* Autocomplete search — must wrap a bare <input> directly */}
       {/* <Autocomplete onLoad={setAcRef} onPlaceChanged={handlePlaceChanged}>
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Search for a location (e.g. Global Recycle Center)…"
-            className="w-full rounded-lg border border-gray-200 bg-white pl-8 pr-4 py-2 text-[13px] placeholder-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            className="glass-input w-full pl-8 pr-4 py-2 text-[13px]"
           />
         </div>
       </Autocomplete> */}
@@ -157,10 +174,10 @@ function LocationMapPicker({ value, onChange }: {
       <GoogleMap
         zoom={value ? 13 : 7}
         center={marker}
-        mapContainerStyle={{ width: '100%', height: '220px', borderRadius: '10px' }}
+        mapContainerStyle={{ width: '100%', height: '220px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}
         onClick={handleClick}
         onLoad={setMapRef}
-        options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
+        options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, styles: theme === 'dark' ? MIDNIGHT_MAP_STYLES : [] }}
       >
         <Marker
           position={marker}
@@ -174,7 +191,7 @@ function LocationMapPicker({ value, onChange }: {
         />
       </GoogleMap>
 
-      <p className="text-[11px] text-gray-400">
+      <p className="text-[11px] text-slate-400">
         <MapPin size={10} className="inline mr-1" />
         {value
           ? `${value.lat.toFixed(6)}, ${value.lng.toFixed(6)} — search, click, or drag the pin`
@@ -208,22 +225,22 @@ function OperatingHoursEditor({ value, onChange }: { value: HoursState; onChange
     <div className="space-y-1.5">
       {DAYS.map(day => (
         <div key={day} className="flex items-center gap-3">
-          <span className="w-24 text-[12px] font-semibold capitalize text-gray-600">{day}</span>
+          <span className="w-24 text-[12px] font-semibold capitalize text-slate-300">{day}</span>
           <label className="flex items-center gap-1.5 cursor-pointer">
             <input type="checkbox" checked={!value[day].closed}
               onChange={e => onChange({ ...value, [day]: { ...value[day], closed: !e.target.checked } })}
               className="accent-emerald-600" />
-            <span className="text-[11px] text-gray-500">{value[day].closed ? 'Closed' : 'Open'}</span>
+            <span className="text-[11px] text-slate-400">{value[day].closed ? 'Closed' : 'Open'}</span>
           </label>
           {!value[day].closed && (
             <>
               <input type="time" value={value[day].open}
                 onChange={e => onChange({ ...value, [day]: { ...value[day], open: e.target.value } })}
-                className="rounded-lg border border-gray-200 px-2 py-1 text-[12px] focus:border-emerald-400 focus:outline-none" />
-              <span className="text-[11px] text-gray-400">to</span>
+                className="rounded-lg border border-white/10 px-2 py-1 text-[12px] focus:border-emerald-400/60 focus:outline-none" />
+              <span className="text-[11px] text-slate-400">to</span>
               <input type="time" value={value[day].close}
                 onChange={e => onChange({ ...value, [day]: { ...value[day], close: e.target.value } })}
-                className="rounded-lg border border-gray-200 px-2 py-1 text-[12px] focus:border-emerald-400 focus:outline-none" />
+                className="rounded-lg border border-white/10 px-2 py-1 text-[12px] focus:border-emerald-400/60 focus:outline-none" />
             </>
           )}
         </div>
@@ -253,12 +270,12 @@ const EMPTY_EDIT = {
   operatingHours: { ...DEFAULT_HOURS } as HoursState,
 };
 
-const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-800 placeholder-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100';
+const inputCls = 'glass-input w-full px-3 py-2 text-[13px]';
 
 function Field({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
     <div>
-      <label className="block text-[12px] font-semibold text-gray-600 mb-1">{label}</label>
+      <label className="block text-[12px] font-semibold text-slate-300 mb-1">{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} className={inputCls} placeholder={label.replace(' *', '')} />
     </div>
   );
@@ -267,10 +284,10 @@ function Field({ label, value, onChange, type = 'text' }: { label: string; value
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="flex items-center gap-2 cursor-pointer select-none">
-      <div onClick={() => onChange(!checked)} className={`relative h-5 w-9 rounded-full transition-colors ${checked ? 'bg-emerald-500' : 'bg-gray-200'}`}>
-        <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
+      <div onClick={() => onChange(!checked)} className={`relative h-5 w-9 rounded-full transition-colors ${checked ? 'bg-emerald-500' : 'bg-white/[0.12]'}`}>
+        <div className={`absolute top-0.5 h-4 w-4 rounded-full switch-knob shadow transition-transform ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
       </div>
-      <span className="text-[13px] font-medium text-gray-600">{label}</span>
+      <span className="text-[13px] font-medium text-slate-300">{label}</span>
     </label>
   );
 }
@@ -467,32 +484,32 @@ export default function CollectorsPage() {
     <div className="space-y-5">
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard label="Total Collectors" value={stats.total}    sub="All time"        color="#2563eb" />
-        <StatCard label="Active"           value={stats.active}   sub="Currently live"  color="#059669" />
-        <StatCard label="Verified"         value={stats.verified} sub="By admin"        color="#7c3aed" />
-        <StatCard label="New This Month"   value={stats.newMonth} sub="Joined recently" color="#ea580c" />
+        <StatCard label="Total Collectors" value={stats.total}    sub="All time"        color="var(--color-blue-400)" />
+        <StatCard label="Active"           value={stats.active}   sub="Currently live"  color="var(--color-emerald-400)" />
+        <StatCard label="Verified"         value={stats.verified} sub="By admin"        color="var(--color-violet-400)" />
+        <StatCard label="New This Month"   value={stats.newMonth} sub="Joined recently" color="var(--color-orange-400)" />
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50">
-            <Truck size={16} className="text-blue-600" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400/10">
+            <Truck size={16} className="text-sky-300" />
           </div>
           <div>
-            <div className="text-[13px] font-semibold text-gray-800">All Collectors</div>
-            <div className="text-[11px] text-gray-400">{filtered.length} records</div>
+            <div className="text-[13px] font-semibold text-slate-100">All Collectors</div>
+            <div className="text-[11px] text-slate-400">{filtered.length} records</div>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input type="text" placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)}
-              className="h-9 w-56 rounded-lg border border-gray-200 bg-white pl-8 pr-4 text-[13px] placeholder-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100" />
+              className="glass-input h-9 w-56 pl-8 pr-4 text-[13px]" />
           </div>
           {canCreate && (
             <button onClick={() => { setShowRegister(true); setRegError(''); setRegForm({ ...EMPTY_FORM, operatingHours: { ...DEFAULT_HOURS } }); }}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 transition-colors">
+              className="btn-primary flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold">
               <Plus size={15} /> Register Collector
             </button>
           )}
@@ -500,7 +517,7 @@ export default function CollectorsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="glass flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
         <FilterSelect label="City" value={cityFilter} onChange={setCityFilter} options={cityChoices} />
         <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter}
           options={[{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
@@ -509,7 +526,7 @@ export default function CollectorsPage() {
         <FilterSelect label="Waste type" value={wasteFilter} onChange={setWasteFilter}
           options={[{ value: 'all', label: 'All types' }, ...WASTE_TYPES.map(t => ({ value: t, label: t }))]} />
         {filtersActive && (
-          <button onClick={clearFilters} className="ml-auto text-[12px] font-semibold text-emerald-600 hover:text-emerald-700">
+          <button onClick={clearFilters} className="ml-auto text-[12px] font-semibold text-emerald-400 hover:text-emerald-300">
             Clear filters
           </button>
         )}
@@ -519,70 +536,70 @@ export default function CollectorsPage() {
       <StatusNotice notice={notice} onDismiss={() => setNotice(null)} />
 
       {loading ? <Spinner /> : error ? (
-        <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>
+        <div className="rounded-xl bg-red-500/10 border border-red-400/20 px-5 py-4 text-red-300 text-sm">{error}</div>
       ) : (
-        <div className="rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-x-auto">
+        <div className="glass overflow-x-auto">
           <table className="min-w-full">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-white/[0.08]">
                 {['Collector', 'Email', 'Phone', 'City', 'Waste Types', 'Performance', 'Status', 'Verification', 'Joined', ''].map((h, i) => (
-                  <th key={i} className="px-3 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{h}</th>
+                  <th key={i} className="px-3 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={10} className="px-5 py-12 text-center text-[13px] text-gray-400">{filtersActive ? `No collectors match these filters.` : `No collectors found.`}</td></tr>
+                <tr><td colSpan={10} className="px-5 py-12 text-center text-[13px] text-slate-400">{filtersActive ? `No collectors match these filters.` : `No collectors found.`}</td></tr>
               ) : filtered.map(c => (
-                <tr key={c._id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                <tr key={c._id} className="border-b border-white/[0.05] hover:bg-white/[0.04] transition-colors">
                   <td className="px-3 py-3.5">
                     <div className="flex items-center gap-2.5"><Avatar name={c.name} />
-                      <span className="whitespace-nowrap text-[13px] font-semibold text-gray-800">{c.name}</span>
+                      <span className="whitespace-nowrap text-[13px] font-semibold text-slate-100">{c.name}</span>
                     </div>
                   </td>
-                  <td className="px-3 py-3.5 text-[13px] text-gray-500">{c.email}</td>
-                  <td className="px-3 py-3.5 text-[13px] text-gray-500">{c.phone || '—'}</td>
-                  <td className="px-3 py-3.5 text-[13px] text-gray-600">{c.address?.city?.trim() || '—'}</td>
+                  <td className="px-3 py-3.5 text-[13px] text-slate-400">{c.email}</td>
+                  <td className="px-3 py-3.5 text-[13px] text-slate-400">{c.phone || '—'}</td>
+                  <td className="px-3 py-3.5 text-[13px] text-slate-300">{c.address?.city?.trim() || '—'}</td>
                   <td className="px-3 py-3.5">
                     <div className="flex flex-wrap gap-1">
                       {(c.acceptedWasteTypes || []).slice(0, 3).map(t => (
-                        <span key={t} className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600">{t}</span>
+                        <span key={t} className="rounded-full bg-sky-400/10 px-2 py-0.5 text-[10px] font-semibold text-sky-300">{t}</span>
                       ))}
-                      {(c.acceptedWasteTypes?.length || 0) > 3 && <span className="text-[10px] text-gray-400">+{(c.acceptedWasteTypes?.length || 0) - 3}</span>}
+                      {(c.acceptedWasteTypes?.length || 0) > 3 && <span className="text-[10px] text-slate-400">+{(c.acceptedWasteTypes?.length || 0) - 3}</span>}
                     </div>
                   </td>
                   <td className="px-3 py-3.5">
                     <PerformanceCell performance={c.performance} />
                   </td>
                   <td className="px-3 py-3.5">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${c.isActive ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-gray-100 text-gray-500 ring-gray-200'}`}>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${c.isActive ? 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/25' : 'bg-white/[0.07] text-slate-400 ring-white/10'}`}>
                       {c.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-3 py-3.5">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${c.isVerified ? 'bg-blue-50 text-blue-700 ring-blue-100' : 'bg-gray-100 text-gray-400 ring-gray-200'}`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${c.isVerified ? 'bg-sky-400/10 text-sky-300 ring-sky-400/25' : 'bg-white/[0.07] text-slate-400 ring-white/10'}`}>
                       {c.isVerified && <ShieldCheck size={10} />}{c.isVerified ? 'Verified' : 'Pending'}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3.5 text-[12px] text-gray-400">
+                  <td className="whitespace-nowrap px-3 py-3.5 text-[12px] text-slate-400">
                     {new Date(c.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-3 py-3.5">
                     <div className="flex items-center gap-2">
                       {canEdit && (
-                        <button onClick={() => openEdit(c)} className="rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                        <button onClick={() => openEdit(c)} className="rounded-lg bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 hover:bg-white/[0.09] flex items-center gap-1">
                           <Pencil size={11} />Edit
                         </button>
                       )}
                       {canDeactivate && (
                         <button onClick={() => toggleStatus(c)} disabled={toggling === c._id}
-                          className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${c.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
+                          className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${c.isActive ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20' : 'bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20'}`}>
                           {toggling === c._id ? <RefreshCw size={11} className="animate-spin" /> : c.isActive ? 'Deactivate' : 'Activate'}
                         </button>
                       )}
                       {canDelete && (
                         <button onClick={() => setDeleteTarget(c)} aria-label={`Delete ${c.name}`}
-                          className="rounded-lg bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 hover:bg-red-100 transition-colors flex items-center gap-1">
+                          className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-red-300 hover:bg-red-500/20 transition-colors flex items-center gap-1">
                           <Trash2 size={11} />Delete
                         </button>
                       )}
@@ -597,15 +614,15 @@ export default function CollectorsPage() {
 
       {/* ── Register Modal ── */}
       {showRegister && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 shrink-0">
-              <h2 className="text-[15px] font-bold text-gray-800">Register New Collector</h2>
-              <button onClick={() => setShowRegister(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-midnight-950/70 backdrop-blur-sm p-4">
+          <div className="glass-strong w-full max-w-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
+            <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4 shrink-0">
+              <h2 className="text-[15px] font-bold text-slate-100">Register New Collector</h2>
+              <button onClick={() => setShowRegister(false)} className="text-slate-400 hover:text-slate-100"><X size={18} /></button>
             </div>
 
             <form onSubmit={submitRegister} className="overflow-y-auto px-6 py-5 space-y-5 flex-1">
-              {regError && <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-2.5 text-[13px] text-red-600">{regError}</div>}
+              {regError && <div className="rounded-lg bg-red-500/10 border border-red-400/20 px-4 py-2.5 text-[13px] text-red-300">{regError}</div>}
 
               {/* Basic info */}
               <Section title="Basic Information">
@@ -613,10 +630,10 @@ export default function CollectorsPage() {
                   <Field label="Name *" value={regForm.name} onChange={v => setRegForm(f => ({ ...f, name: v }))} />
                   <Field label="Email *" type="email" value={regForm.email} onChange={v => setRegForm(f => ({ ...f, email: v }))} />
                   <div>
-                    <label className="block text-[12px] font-semibold text-gray-600 mb-1">Password *</label>
+                    <label className="block text-[12px] font-semibold text-slate-300 mb-1">Password *</label>
                     <div className="flex gap-2">
                       <input value={regForm.password} onChange={e => setRegForm(f => ({ ...f, password: e.target.value }))} className={inputCls} placeholder="Password" />
-                      <button type="button" onClick={() => setRegForm(f => ({ ...f, password: randomPassword() }))} className="shrink-0 rounded-lg bg-gray-100 px-2.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-200">Generate</button>
+                      <button type="button" onClick={() => setRegForm(f => ({ ...f, password: randomPassword() }))} className="shrink-0 rounded-lg bg-white/[0.07] px-2.5 text-[11px] font-semibold text-slate-300 hover:bg-white/[0.12]">Generate</button>
                     </div>
                   </div>
                   <Field label="Phone *" value={regForm.phone} onChange={v => setRegForm(f => ({ ...f, phone: v }))} />
@@ -631,7 +648,7 @@ export default function CollectorsPage() {
                   {WASTE_TYPES.map(t => (
                     <button type="button" key={t}
                       onClick={() => toggleWasteType(regForm.acceptedWasteTypes, t, v => setRegForm(f => ({ ...f, acceptedWasteTypes: v })))}
-                      className={`rounded-full px-3 py-1 text-[11px] font-semibold border transition-colors ${regForm.acceptedWasteTypes.includes(t) ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-gray-200 text-gray-600 hover:border-emerald-400'}`}>
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold border transition-colors ${regForm.acceptedWasteTypes.includes(t) ? 'bg-emerald-400 border-emerald-400 text-midnight-950' : 'border-white/10 text-slate-300 hover:border-emerald-400/60'}`}>
                       {t}
                     </button>
                   ))}
@@ -655,8 +672,8 @@ export default function CollectorsPage() {
               </Section>
 
               <div className="flex justify-end gap-3 pt-2 shrink-0">
-                <button type="button" onClick={() => setShowRegister(false)} className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
-                <button type="submit" disabled={regLoading} className="rounded-lg bg-emerald-600 px-5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">
+                <button type="button" onClick={() => setShowRegister(false)} className="rounded-lg border border-white/10 px-4 py-2 text-[13px] font-semibold text-slate-300 hover:bg-white/[0.05]">Cancel</button>
+                <button type="submit" disabled={regLoading} className="btn-primary px-5 py-2 text-[13px] font-semibold disabled:opacity-60">
                   {regLoading ? 'Registering…' : 'Register & Send Email'}
                 </button>
               </div>
@@ -667,15 +684,15 @@ export default function CollectorsPage() {
 
       {/* ── Edit Modal ── */}
       {editTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 shrink-0">
-              <h2 className="text-[15px] font-bold text-gray-800">Edit Collector — {editTarget.name}</h2>
-              <button onClick={() => setEditTarget(null)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-midnight-950/70 backdrop-blur-sm p-4">
+          <div className="glass-strong w-full max-w-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
+            <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4 shrink-0">
+              <h2 className="text-[15px] font-bold text-slate-100">Edit Collector — {editTarget.name}</h2>
+              <button onClick={() => setEditTarget(null)} className="text-slate-400 hover:text-slate-100"><X size={18} /></button>
             </div>
 
             <form onSubmit={submitEdit} className="overflow-y-auto px-6 py-5 space-y-5 flex-1">
-              {editError && <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-2.5 text-[13px] text-red-600">{editError}</div>}
+              {editError && <div className="rounded-lg bg-red-500/10 border border-red-400/20 px-4 py-2.5 text-[13px] text-red-300">{editError}</div>}
 
               <Section title="Basic Information">
                 <div className="grid grid-cols-2 gap-4">
@@ -695,7 +712,7 @@ export default function CollectorsPage() {
                   {WASTE_TYPES.map(t => (
                     <button type="button" key={t}
                       onClick={() => toggleWasteType(editForm.acceptedWasteTypes, t, v => setEditForm(f => ({ ...f, acceptedWasteTypes: v })))}
-                      className={`rounded-full px-3 py-1 text-[11px] font-semibold border transition-colors ${editForm.acceptedWasteTypes.includes(t) ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-gray-200 text-gray-600 hover:border-emerald-400'}`}>
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold border transition-colors ${editForm.acceptedWasteTypes.includes(t) ? 'bg-emerald-400 border-emerald-400 text-midnight-950' : 'border-white/10 text-slate-300 hover:border-emerald-400/60'}`}>
                       {t}
                     </button>
                   ))}
@@ -717,8 +734,8 @@ export default function CollectorsPage() {
               </Section>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setEditTarget(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
-                <button type="submit" disabled={editLoading} className="rounded-lg bg-emerald-600 px-5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">
+                <button type="button" onClick={() => setEditTarget(null)} className="rounded-lg border border-white/10 px-4 py-2 text-[13px] font-semibold text-slate-300 hover:bg-white/[0.05]">Cancel</button>
+                <button type="submit" disabled={editLoading} className="btn-primary px-5 py-2 text-[13px] font-semibold disabled:opacity-60">
                   {editLoading ? 'Saving…' : 'Save Changes'}
                 </button>
               </div>
@@ -757,8 +774,8 @@ function Section({ title, sub, children }: { title: string; sub?: string; childr
   return (
     <div>
       <div className="mb-3">
-        <p className="text-[13px] font-bold text-gray-700">{title}</p>
-        {sub && <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>}
+        <p className="text-[13px] font-bold text-slate-200">{title}</p>
+        {sub && <p className="text-[11px] text-slate-400 mt-0.5">{sub}</p>}
       </div>
       {children}
     </div>

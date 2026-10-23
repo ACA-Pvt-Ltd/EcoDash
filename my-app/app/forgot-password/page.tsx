@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { API_URL } from '@/lib/api';
+import { GlassBackdrop } from '@/components/glass-backdrop';
+import { ThemeToggle } from '@/lib/theme';
 import { Leaf, Mail, Lock, KeyRound, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 const inputClass =
-  'w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 py-2.5 text-[13px] placeholder-gray-400 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100';
-const labelClass = 'block text-[12px] font-semibold text-gray-600 uppercase tracking-wide mb-1.5';
+  'glass-input w-full pl-10 pr-4 py-2.5 text-[13px]';
+const labelClass = 'field-label';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -70,34 +72,36 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f4f6f5] px-6 py-12">
+    <div className="relative flex min-h-screen items-center justify-center px-6 py-12">
+      <GlassBackdrop />
+      <ThemeToggle className="fixed right-5 top-5 z-10" />
       <div className="w-full max-w-[400px]">
 
         <div className="flex items-center gap-2.5 mb-10">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ backgroundColor: '#0d2218' }}>
-            <Leaf size={15} className="text-emerald-400" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400/30 to-teal-500/10 ring-1 ring-emerald-300/30 shadow-[0_0_20px_-4px_rgba(52,211,153,0.6)]">
+            <Leaf size={15} className="text-emerald-300" />
           </div>
-          <span className="text-[15px] font-semibold text-gray-800">EcoDash Admin</span>
+          <span className="text-[15px] font-semibold text-slate-100">EcoDash Admin</span>
         </div>
 
-        <div className="rounded-2xl bg-white p-8 shadow-[0_4px_24px_rgba(0,0,0,0.07)] border border-gray-100">
-          <h2 className="text-[22px] font-bold text-gray-900 mb-1">Reset your password</h2>
-          <p className="text-[13px] text-gray-400 mb-7">
+        <div className="glass-strong p-8">
+          <h2 className="text-[22px] font-bold text-slate-50 mb-1">Reset your password</h2>
+          <p className="text-[13px] text-slate-400 mb-7">
             {step === 'request'
               ? "Enter your admin email and we'll send you a 6-digit code."
               : `Enter the code sent to ${email.toLowerCase().trim()} and choose a new password.`}
           </p>
 
           {error && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-100 px-4 py-3">
-              <AlertCircle size={15} className="text-red-500 mt-0.5 shrink-0" />
-              <span className="text-[13px] text-red-600">{error}</span>
+            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-red-500/10 border border-red-400/20 px-4 py-3">
+              <AlertCircle size={15} className="text-red-400 mt-0.5 shrink-0" />
+              <span className="text-[13px] text-red-300">{error}</span>
             </div>
           )}
           {notice && step === 'reset' && !error && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
-              <CheckCircle2 size={15} className="text-emerald-600 mt-0.5 shrink-0" />
-              <span className="text-[13px] text-emerald-700">{notice}</span>
+            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-emerald-400/10 border border-emerald-400/20 px-4 py-3">
+              <CheckCircle2 size={15} className="text-emerald-400 mt-0.5 shrink-0" />
+              <span className="text-[13px] text-emerald-300">{notice}</span>
             </div>
           )}
 
@@ -106,15 +110,14 @@ export default function ForgotPasswordPage() {
               <div>
                 <label className={labelClass}>Email Address</label>
                 <div className="relative">
-                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@ecodash.com" required className={inputClass} />
                 </div>
               </div>
               <button type="submit" disabled={loading}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-[14px] font-semibold text-white transition-all disabled:opacity-60"
-                style={{ backgroundColor: '#0d2218' }}
+                className="btn-primary mt-2 w-full py-2.5 text-[14px]"
               >
-                {loading ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> Sending...</> : 'Send Code'}
+                {loading ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-midnight-950 border-t-transparent" /> Sending...</> : 'Send Code'}
               </button>
             </form>
           ) : (
@@ -122,7 +125,7 @@ export default function ForgotPasswordPage() {
               <div>
                 <label className={labelClass}>Reset Code</label>
                 <div className="relative">
-                  <KeyRound size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <KeyRound size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   <input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code}
                     onChange={e => setCode(e.target.value.replace(/\D/g, ''))} placeholder="000000" required
                     className={`${inputClass} tracking-[0.4em] font-semibold`}
@@ -132,26 +135,25 @@ export default function ForgotPasswordPage() {
               <div>
                 <label className={labelClass}>New Password</label>
                 <div className="relative">
-                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   <input type="password" autoComplete="new-password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="At least 6 characters" required className={inputClass} />
                 </div>
               </div>
               <div>
                 <label className={labelClass}>Confirm New Password</label>
                 <div className="relative">
-                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   <input type="password" autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" required className={inputClass} />
                 </div>
               </div>
               <button type="submit" disabled={loading}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-[14px] font-semibold text-white transition-all disabled:opacity-60"
-                style={{ backgroundColor: '#0d2218' }}
+                className="btn-primary mt-2 w-full py-2.5 text-[14px]"
               >
-                {loading ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> Resetting...</> : 'Reset Password'}
+                {loading ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-midnight-950 border-t-transparent" /> Resetting...</> : 'Reset Password'}
               </button>
-              <p className="text-center text-[12px] text-gray-400">
+              <p className="text-center text-[12px] text-slate-400">
                 Didn&apos;t get it?{' '}
-                <button type="button" onClick={() => handleSendCode()} disabled={loading} className="font-semibold text-emerald-600 hover:text-emerald-700 disabled:opacity-60">
+                <button type="button" onClick={() => handleSendCode()} disabled={loading} className="font-semibold text-emerald-400 hover:text-emerald-300 disabled:opacity-60">
                   Resend code
                 </button>
               </p>
@@ -159,7 +161,7 @@ export default function ForgotPasswordPage() {
           )}
         </div>
 
-        <Link href="/login" className="mt-6 flex items-center justify-center gap-1.5 text-[12px] font-semibold text-gray-500 hover:text-gray-700">
+        <Link href="/login" className="mt-6 flex items-center justify-center gap-1.5 text-[12px] font-semibold text-slate-400 hover:text-slate-100">
           <ArrowLeft size={13} /> Back to sign in
         </Link>
       </div>

@@ -63,15 +63,15 @@ const TYPE_META: Record<TxType, { tab: string; from: string; to: string; empty: 
 };
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; ring: string }> = {
-  verified:  { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-100' },
-  completed: { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-100' },
-  active:    { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-100' },
-  accepted:  { bg: 'bg-blue-50',    text: 'text-blue-700',    ring: 'ring-blue-100'    },
-  used:      { bg: 'bg-blue-50',    text: 'text-blue-700',    ring: 'ring-blue-100'    },
-  pending:   { bg: 'bg-amber-50',   text: 'text-amber-700',   ring: 'ring-amber-100'   },
-  rejected:  { bg: 'bg-red-50',     text: 'text-red-600',     ring: 'ring-red-100'     },
-  cancelled: { bg: 'bg-gray-100',   text: 'text-gray-500',    ring: 'ring-gray-200'    },
-  expired:   { bg: 'bg-gray-100',   text: 'text-gray-500',    ring: 'ring-gray-200'    },
+  verified:  { bg: 'bg-emerald-400/10', text: 'text-emerald-300', ring: 'ring-emerald-400/25' },
+  completed: { bg: 'bg-emerald-400/10', text: 'text-emerald-300', ring: 'ring-emerald-400/25' },
+  active:    { bg: 'bg-emerald-400/10', text: 'text-emerald-300', ring: 'ring-emerald-400/25' },
+  accepted:  { bg: 'bg-sky-400/10',    text: 'text-sky-300',    ring: 'ring-sky-400/25'    },
+  used:      { bg: 'bg-sky-400/10',    text: 'text-sky-300',    ring: 'ring-sky-400/25'    },
+  pending:   { bg: 'bg-amber-400/10',   text: 'text-amber-300',   ring: 'ring-amber-400/25'   },
+  rejected:  { bg: 'bg-red-500/10',     text: 'text-red-300',     ring: 'ring-red-400/25'     },
+  cancelled: { bg: 'bg-white/[0.07]',   text: 'text-slate-400',    ring: 'ring-white/10'    },
+  expired:   { bg: 'bg-white/[0.07]',   text: 'text-slate-400',    ring: 'ring-white/10'    },
 };
 
 const WASTE_COLORS: Record<string, string> = {
@@ -84,25 +84,25 @@ const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2
 
 function Avatar({ name }: { name: string }) {
   return (
-    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-500">
+    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[10px] font-bold text-slate-400">
       {(name || '?').charAt(0).toUpperCase()}
     </div>
   );
 }
 
 function Spinner() {
-  return <div className="flex justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-600 border-t-transparent" /></div>;
+  return <div className="flex justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-400 border-t-transparent" /></div>;
 }
 
 function StatCard({ label, value, Icon, bg, color }: { label: string; value: string; Icon: LucideIcon; bg: string; color: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] px-5 py-4">
+    <div className="glass flex items-center gap-3 px-5 py-4">
       <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ backgroundColor: bg, color }}>
         <Icon size={16} />
       </div>
       <div>
         <div className="text-[18px] font-bold tabular-nums" style={{ color }}>{value}</div>
-        <div className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{label}</div>
+        <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">{label}</div>
       </div>
     </div>
   );
@@ -113,8 +113,8 @@ function PartyCell({ party, strong }: { party: Party | null; strong?: boolean })
     <div className="flex items-center gap-2">
       {strong && <Avatar name={party?.name || '?'} />}
       <div>
-        <div className={`text-[13px] ${strong ? 'font-semibold text-gray-800' : 'text-gray-700'}`}>{party?.name || 'Unknown'}</div>
-        <div className="text-[11px] text-gray-400">{party?.email || ''}</div>
+        <div className={`text-[13px] ${strong ? 'font-semibold text-slate-100' : 'text-slate-200'}`}>{party?.name || 'Unknown'}</div>
+        <div className="text-[11px] text-slate-400">{party?.email || ''}</div>
       </div>
     </div>
   );
@@ -124,24 +124,24 @@ function statCards(type: TxType, s: Summary) {
   const by = s.byStatus || {};
   if (type === 'dropoff') {
     return [
-      { label: 'Total Drop-offs',  value: s.total.toLocaleString(),                      Icon: ClipboardList, bg: '#fff7ed', color: '#ea580c' },
-      { label: 'Verified Waste',   value: `${(s.verifiedKg ?? 0).toLocaleString()} kg`,   Icon: Package,       bg: '#ecfdf5', color: '#059669' },
-      { label: 'Points Awarded',   value: (s.pointsAwarded ?? 0).toLocaleString(),        Icon: Coins,         bg: '#fefce8', color: '#ca8a04' },
-      { label: 'Cash Awarded',     value: lkr(s.cashAwarded ?? 0),                        Icon: Banknote,      bg: '#f0fdf4', color: '#16a34a' },
-      { label: 'Pending Review',   value: (by.pending ?? 0).toLocaleString(),             Icon: BarChart3,     bg: '#eff6ff', color: '#2563eb' },
+      { label: 'Total Drop-offs',  value: s.total.toLocaleString(),                      Icon: ClipboardList, bg: 'rgba(251,146,60,0.15)', color: 'var(--color-orange-400)' },
+      { label: 'Verified Waste',   value: `${(s.verifiedKg ?? 0).toLocaleString()} kg`,   Icon: Package,       bg: 'rgba(52,211,153,0.15)', color: 'var(--color-emerald-400)' },
+      { label: 'Points Awarded',   value: (s.pointsAwarded ?? 0).toLocaleString(),        Icon: Coins,         bg: 'rgba(250,204,21,0.14)', color: 'var(--color-yellow-400)' },
+      { label: 'Cash Awarded',     value: lkr(s.cashAwarded ?? 0),                        Icon: Banknote,      bg: 'rgba(74,222,128,0.14)', color: 'var(--color-green-400)' },
+      { label: 'Pending Review',   value: (by.pending ?? 0).toLocaleString(),             Icon: BarChart3,     bg: 'rgba(96,165,250,0.15)', color: 'var(--color-blue-400)' },
     ];
   }
   if (type === 'redemption') {
     return [
-      { label: 'Redemptions',      value: s.total.toLocaleString(),                       Icon: Gift,          bg: '#fdf4ff', color: '#9333ea' },
-      { label: 'Points Redeemed',  value: (s.pointsRedeemed ?? 0).toLocaleString(),       Icon: Coins,         bg: '#fefce8', color: '#ca8a04' },
+      { label: 'Redemptions',      value: s.total.toLocaleString(),                       Icon: Gift,          bg: 'rgba(192,132,252,0.15)', color: 'var(--color-purple-400)' },
+      { label: 'Points Redeemed',  value: (s.pointsRedeemed ?? 0).toLocaleString(),       Icon: Coins,         bg: 'rgba(250,204,21,0.14)', color: 'var(--color-yellow-400)' },
     ];
   }
   return [
-    { label: 'Total Requests',   value: s.total.toLocaleString(),                         Icon: ClipboardList, bg: '#fff7ed', color: '#ea580c' },
-    { label: 'Completed',        value: (by.completed ?? 0).toLocaleString(),             Icon: CheckCircle2,  bg: '#ecfdf5', color: '#059669' },
-    { label: 'Completed Value',  value: lkr(s.completedValue ?? 0),                       Icon: Banknote,      bg: '#f0fdf4', color: '#16a34a' },
-    { label: 'Pending',          value: (by.pending ?? 0).toLocaleString(),               Icon: Clock,         bg: '#eff6ff', color: '#2563eb' },
+    { label: 'Total Requests',   value: s.total.toLocaleString(),                         Icon: ClipboardList, bg: 'rgba(251,146,60,0.15)', color: 'var(--color-orange-400)' },
+    { label: 'Completed',        value: (by.completed ?? 0).toLocaleString(),             Icon: CheckCircle2,  bg: 'rgba(52,211,153,0.15)', color: 'var(--color-emerald-400)' },
+    { label: 'Completed Value',  value: lkr(s.completedValue ?? 0),                       Icon: Banknote,      bg: 'rgba(74,222,128,0.14)', color: 'var(--color-green-400)' },
+    { label: 'Pending',          value: (by.pending ?? 0).toLocaleString(),               Icon: Clock,         bg: 'rgba(96,165,250,0.15)', color: 'var(--color-blue-400)' },
   ];
 }
 
@@ -214,16 +214,16 @@ function Transactions() {
           const n = sectionCount(s);
           return (
             <button key={s.key} onClick={() => !active && navigate({ section: s.key })} aria-pressed={active}
-              className={`flex items-center gap-3 rounded-xl border px-5 py-4 text-left transition-colors ${active ? 'border-emerald-300 bg-emerald-50' : 'border-gray-100 bg-white hover:bg-gray-50'}`}>
-              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${active ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+              className={`flex items-center gap-3 rounded-xl border px-5 py-4 text-left transition-colors ${active ? 'border-emerald-400/50 bg-emerald-400/10 shadow-[0_0_30px_-8px_rgba(52,211,153,0.5)]' : 'border-white/[0.08] bg-white/[0.05] hover:bg-white/[0.08]'} backdrop-blur-xl`}>
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${active ? 'bg-emerald-400 text-midnight-950' : 'bg-white/[0.07] text-slate-400'}`}>
                 <s.Icon size={16} />
               </div>
               <div className="min-w-0">
-                <div className={`flex items-center gap-2 text-[14px] font-bold ${active ? 'text-emerald-800' : 'text-gray-800'}`}>
+                <div className={`flex items-center gap-2 text-[14px] font-bold ${active ? 'text-emerald-300' : 'text-slate-100'}`}>
                   {s.label}
-                  {n != null && <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${active ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-500'}`}>{n}</span>}
+                  {n != null && <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${active ? 'bg-emerald-400 text-midnight-950' : 'bg-white/[0.07] text-slate-400'}`}>{n}</span>}
                 </div>
-                <div className="truncate text-[11px] text-gray-400">{s.hint}</div>
+                <div className="truncate text-[11px] text-slate-400">{s.hint}</div>
               </div>
             </button>
           );
@@ -232,14 +232,14 @@ function Transactions() {
 
       {/* Sub-tabs (Users ↔ Collectors has two) + status filter */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+        <div className="flex gap-1 rounded-lg bg-white/[0.07] p-1">
           {section.types.map(t => {
             const active = t === type;
             return (
               <button key={t} onClick={() => !active && navigate({ type: t })} aria-pressed={active}
-                className={`rounded-md px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${active ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                className={`rounded-md px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${active ? 'bg-white/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]' : 'text-slate-400 hover:text-slate-100'}`}>
                 {TYPE_META[t].tab}
-                {counts && <span className="ml-1.5 text-[11px] font-medium text-gray-400">{counts[t] ?? 0}</span>}
+                {counts && <span className="ml-1.5 text-[11px] font-medium text-slate-400">{counts[t] ?? 0}</span>}
               </button>
             );
           })}
@@ -258,36 +258,36 @@ function Transactions() {
       )}
 
       {error ? (
-        <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>
+        <div className="rounded-xl bg-red-500/10 border border-red-400/20 px-5 py-4 text-red-300 text-sm">{error}</div>
       ) : loading || !shown ? <Spinner /> : (
-        <div className="rounded-xl bg-white border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-x-auto">
+        <div className="glass overflow-x-auto">
           <table className="min-w-full">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-white/[0.08]">
                 {(type === 'redemption'
                   ? [meta.from, meta.to, 'Reward', 'Points', 'Status', 'Date']
                   : [meta.from, meta.to, 'Waste Type', 'Quantity', type === 'dropoff' ? 'Reward' : 'Amount', 'Status', 'Date']
                 ).map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {shown.data.length === 0 ? (
-                <tr><td colSpan={7} className="px-5 py-12 text-center text-[13px] text-gray-400">
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-[13px] text-slate-400">
                   {status === 'all' ? meta.empty : `No ${status} records.`}
                 </td></tr>
               ) : shown.data.map(tx => {
-                const sc = STATUS_CONFIG[tx.status] ?? { bg: 'bg-gray-100', text: 'text-gray-500', ring: 'ring-gray-200' };
+                const sc = STATUS_CONFIG[tx.status] ?? { bg: 'bg-white/[0.07]', text: 'text-slate-400', ring: 'ring-white/10' };
                 const wc = WASTE_COLORS[tx.wasteType ?? ''] ?? '#64748b';
                 return (
-                  <tr key={tx._id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                  <tr key={tx._id} className="border-b border-white/[0.05] hover:bg-white/[0.04] transition-colors">
                     <td className="px-5 py-3.5"><PartyCell party={tx.from} strong /></td>
                     <td className="px-5 py-3.5"><PartyCell party={tx.to} /></td>
                     {type === 'redemption' ? (
                       <>
-                        <td className="px-5 py-3.5 text-[13px] text-gray-700">{typeof tx.reward === 'string' ? tx.reward : '—'}</td>
-                        <td className="px-5 py-3.5 text-[13px] font-bold text-gray-800 tabular-nums">{(tx.points ?? 0).toLocaleString()}</td>
+                        <td className="px-5 py-3.5 text-[13px] text-slate-200">{typeof tx.reward === 'string' ? tx.reward : '—'}</td>
+                        <td className="px-5 py-3.5 text-[13px] font-bold text-slate-100 tabular-nums">{(tx.points ?? 0).toLocaleString()}</td>
                       </>
                     ) : (
                       <>
@@ -297,26 +297,26 @@ function Transactions() {
                               <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: wc }} />
                               {tx.wasteType}
                             </span>
-                          ) : <span className="text-[13px] text-gray-400">—</span>}
+                          ) : <span className="text-[13px] text-slate-400">—</span>}
                         </td>
-                        <td className="px-5 py-3.5 text-[13px] font-semibold text-gray-700 tabular-nums whitespace-nowrap">
-                          {tx.quantity ? <>{tx.quantity.value} <span className="text-[11px] font-normal text-gray-400">{tx.quantity.unit}</span></> : '—'}
+                        <td className="px-5 py-3.5 text-[13px] font-semibold text-slate-200 tabular-nums whitespace-nowrap">
+                          {tx.quantity ? <>{tx.quantity.value} <span className="text-[11px] font-normal text-slate-400">{tx.quantity.unit}</span></> : '—'}
                         </td>
-                        <td className="px-5 py-3.5 text-[13px] font-bold text-gray-800 tabular-nums whitespace-nowrap">
+                        <td className="px-5 py-3.5 text-[13px] font-bold text-slate-100 tabular-nums whitespace-nowrap">
                           {type === 'dropoff' && tx.reward && typeof tx.reward === 'object'
                             ? tx.reward.type === 'cash'
-                              ? <span className="text-green-700">{lkr(tx.reward.amount)}</span>
-                              : <>{tx.reward.amount.toLocaleString()} <span className="text-[11px] font-normal text-gray-400">pts</span></>
+                              ? <span className="text-emerald-300">{lkr(tx.reward.amount)}</span>
+                              : <>{tx.reward.amount.toLocaleString()} <span className="text-[11px] font-normal text-slate-400">pts</span></>
                             : lkr(tx.amount)}
                         </td>
                       </>
                     )}
                     <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ring-1 ${sc.bg} ${sc.text} ${sc.ring}`}>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ring-1 ${sc.bg}    ${sc.text}    ${sc.ring}`}>
                         {tx.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-[12px] text-gray-400 tabular-nums whitespace-nowrap">{fmtDate(tx.date)}</td>
+                    <td className="px-5 py-3.5 text-[12px] text-slate-400 tabular-nums whitespace-nowrap">{fmtDate(tx.date)}</td>
                   </tr>
                 );
               })}
@@ -325,16 +325,16 @@ function Transactions() {
 
           {/* Pagination */}
           {shown.total > 0 && (
-            <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3 text-[12px] text-gray-500">
+            <div className="flex items-center justify-between border-t border-white/[0.08] px-5 py-3 text-[12px] text-slate-400">
               <span>Showing {firstRow}–{lastRow} of {shown.total.toLocaleString()}</span>
               <div className="flex items-center gap-2">
                 <button onClick={() => navigate({ page: shown.page - 1 })} disabled={shown.page <= 1}
-                  className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40">
+                  className="flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 font-semibold text-slate-300 hover:bg-white/[0.05] disabled:opacity-40">
                   <ChevronLeft size={13} />Prev
                 </button>
                 <span className="tabular-nums">Page {shown.page} of {shown.pages}</span>
                 <button onClick={() => navigate({ page: shown.page + 1 })} disabled={shown.page >= shown.pages}
-                  className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40">
+                  className="flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 font-semibold text-slate-300 hover:bg-white/[0.05] disabled:opacity-40">
                   Next<ChevronRight size={13} />
                 </button>
               </div>

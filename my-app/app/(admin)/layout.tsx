@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { AccessProvider, useAccess } from '@/lib/access';
 import { NoAccessCard } from '@/components/admin-ui';
+import { GlassBackdrop } from '@/components/glass-backdrop';
+import { ThemeToggle } from '@/lib/theme';
 
 // `permission` must match a key in backend/config/adminPermissions.js
 const NAV_ITEMS: { label: string; href: string; Icon: LucideIcon; permission: string }[] = [
@@ -68,40 +70,41 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f4f6f5]">
+    <div className="relative flex h-screen gap-4 overflow-hidden p-4">
+      <GlassBackdrop />
 
       {/* Sidebar */}
-      <aside className="flex w-[240px] shrink-0 flex-col" style={{ backgroundColor: '#0d2218' }}>
+      <aside className="glass-strong flex w-[248px] shrink-0 flex-col overflow-hidden">
 
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.07]">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: '#1a4a2a' }}>
-            <Leaf size={15} className="text-emerald-400" />
+        <div className="flex items-center gap-3 border-b border-white/[0.08] px-5 py-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400/30 to-teal-500/10 ring-1 ring-emerald-300/30 shadow-[0_0_24px_-4px_rgba(52,211,153,0.6)]">
+            <Leaf size={16} className="text-emerald-300" />
           </div>
           <div>
             <div className="text-[16px] font-semibold tracking-tight text-white">EcoDash</div>
-            <div className="text-[10px] font-medium tracking-widest text-white/40 uppercase">Admin Portal</div>
+            <div className="text-[10px] font-medium uppercase tracking-widest text-slate-400">Admin Portal</div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {navItems.map(({ label, href, Icon }) => {
             const isActive = pathname.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
-                className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[16px] font-medium transition-all ${
+                className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-all ${
                   isActive
-                    ? 'bg-white/[0.09] text-white'
-                    : 'text-white/50 hover:bg-white/[0.05] hover:text-white/80'
+                    ? 'bg-white/[0.10] text-white ring-1 ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                    : 'text-slate-400 hover:bg-white/[0.05] hover:text-slate-100'
                 }`}
               >
                 {isActive && (
-                  <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-emerald-400" />
+                  <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
                 )}
-                <Icon size={20} className={isActive ? 'text-emerald-400' : ''} />
+                <Icon size={19} className={isActive ? 'text-emerald-300 drop-shadow-[0_0_6px_rgba(52,211,153,0.7)]' : ''} />
                 {label}
               </Link>
             );
@@ -109,24 +112,21 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Admin info + logout */}
-        <div className="px-3 pb-4 pt-3 border-t border-white/[0.07] space-y-1">
+        <div className="space-y-1 border-t border-white/[0.08] px-3 pb-4 pt-3">
           {me && (
-            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg">
-              <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                style={{ backgroundColor: '#1e5c34', color: '#6ee7a0' }}
-              >
+            <div className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-[11px] font-bold text-emerald-300 ring-1 ring-emerald-400/30">
                 {initial}
               </div>
               <div className="min-w-0">
-                <div className="truncate text-[12px] font-semibold text-white/80">{adminName}</div>
-                <div className="text-[10px] text-white/40">{me.role?.name ?? 'No role'}</div>
+                <div className="truncate text-[12px] font-semibold text-slate-100">{adminName}</div>
+                <div className="text-[10px] text-slate-400">{me.role?.name ?? 'No role'}</div>
               </div>
             </div>
           )}
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-white/50 transition-all hover:bg-white/[0.05] hover:text-white/80"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-400 transition-all hover:bg-white/[0.05] hover:text-slate-100"
           >
             <LogOut size={14} />
             Sign Out
@@ -135,30 +135,28 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-[56px] shrink-0 items-center justify-between border-b border-gray-200/70 bg-white px-6">
-          <h1 className="text-[15px] font-semibold text-gray-800">{pageTitle}</h1>
+      <div className="flex flex-1 flex-col gap-4 overflow-hidden">
+        <header className="glass-strong flex h-[60px] shrink-0 items-center justify-between px-6">
+          <h1 className="text-[16px] font-semibold tracking-tight text-slate-100">{pageTitle}</h1>
           <div className="flex items-center gap-2.5">
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold"
-              style={{ backgroundColor: '#e6f4ea', color: '#166534' }}
-            >
+            <ThemeToggle className="mr-1" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-400/15 text-[11px] font-bold text-emerald-300 ring-1 ring-emerald-400/30">
               {initial}
             </div>
-            <span className="text-[13px] font-medium text-gray-700">{adminName}</span>
+            <span className="text-[13px] font-medium text-slate-200">{adminName}</span>
             {me?.role && (
-              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100">
+              <span className="chip-green rounded-full px-2 py-0.5 text-[11px] font-semibold">
                 {me.role.name}
               </span>
             )}
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto rounded-2xl pb-2 pr-1">
           {loading ? (
-            <div className="flex justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-600 border-t-transparent" /></div>
+            <div className="flex justify-center py-24"><div className="spinner" /></div>
           ) : error ? (
-            <div className="rounded-xl bg-red-50 border border-red-100 px-5 py-4 text-red-600 text-sm">{error}</div>
+            <div className="notice-error px-5 py-4 text-sm">{error}</div>
           ) : allowed ? (
             children
           ) : (
